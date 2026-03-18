@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:isar/isar.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
+import '../models/jump_test.dart';
 import '../services/isar_service.dart';
 
 /// Provides the IsarService singleton (initialized before app starts).
@@ -36,4 +37,18 @@ final groupAthletesProvider = StreamProvider<List<Athlete>>((ref) {
     await group.athletes.load();
     return group.athletes.toList();
   });
+});
+
+/// Stream of all jump tests for the active athlete, sorted by date.
+final athleteJumpHistoryProvider = StreamProvider<List<JumpTest>>((ref) {
+  final athlete = ref.watch(activeAthleteProvider);
+  if (athlete == null) return Stream.value([]);
+
+  final service = ref.watch(isarServiceProvider);
+
+  return service.db.jumpTests
+      .filter()
+      .athleteIdEqualTo(athlete.id)
+      .sortByTimestampDesc()
+      .watch(fireImmediately: true);
 });

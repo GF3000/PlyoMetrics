@@ -84,7 +84,7 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
   void reset() => state = const CmjSessionState();
 
   void _recalculate(List<JumpResult> jumps) {
-    if (jumps.length < 2) {
+    if (jumps.isEmpty) {
       state = CmjSessionState(
         jumps: jumps,
         outlierFlags: List.filled(jumps.length, false),
@@ -92,18 +92,21 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
       return;
     }
 
+    final flags = List.filled(jumps.length, false);
+
     // Outlier detection: a jump is an outlier if its difference from the
     // mean of the OTHER jumps exceeds max(10% of its height, 2 * deltaH).
-    final flags = List.filled(jumps.length, false);
-    for (int i = 0; i < jumps.length; i++) {
-      final others = <double>[
-        for (int j = 0; j < jumps.length; j++)
-          if (j != i) jumps[j].heightCm,
-      ];
-      final meanOthers = others.reduce((a, b) => a + b) / others.length;
-      final diff = (jumps[i].heightCm - meanOthers).abs();
-      final threshold = max(0.10 * jumps[i].heightCm, 2.0 * jumps[i].deltaHCm);
-      flags[i] = diff > threshold;
+    if (jumps.length >= 2) {
+      for (int i = 0; i < jumps.length; i++) {
+        final others = <double>[
+          for (int j = 0; j < jumps.length; j++)
+            if (j != i) jumps[j].heightCm,
+        ];
+        final meanOthers = others.reduce((a, b) => a + b) / others.length;
+        final diff = (jumps[i].heightCm - meanOthers).abs();
+        final threshold = max(0.10 * jumps[i].heightCm, 2.0 * jumps[i].deltaHCm);
+        flags[i] = diff > threshold;
+      }
     }
 
     // Average excluding outliers
@@ -130,7 +133,7 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
       outlierFlags: flags,
       averageHeightCm: avgHeight,
       propagatedErrorCm: propagatedError,
-      canSave: valid.length >= 2,
+      canSave: valid.length >= 1,
     );
   }
 }

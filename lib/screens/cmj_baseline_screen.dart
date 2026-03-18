@@ -76,7 +76,7 @@ class CmjBaselineScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Record at least 2 jumps to establish a baseline.\n'
+                          'Record at least 1 jump to establish a baseline.\n'
                           'Maximum 3 jumps allowed.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -179,31 +179,29 @@ class CmjBaselineScreen extends ConsumerWidget {
     CmjSessionState session,
   ) async {
     final athlete = ref.read(activeAthleteProvider);
-    if (athlete == null) return;
-
-    final service = ref.read(isarServiceProvider);
-    final sessionId = DateTime.now().millisecondsSinceEpoch;
-
-    // Create JumpTest records
-    final tests = <JumpTest>[];
-    for (int i = 0; i < session.jumps.length; i++) {
-      final jump = session.jumps[i];
-      final test = JumpTest()
-        ..athleteId = athlete.id
-        ..testType = 'cmj_baseline'
-        ..timestamp = DateTime.now()
-        ..takeoffFrame = jump.takeoffFrame
-        ..landingFrame = jump.landingFrame
-        ..fps = jump.fps
-        ..flightTimeMs = jump.flightTimeMs
-        ..heightCm = jump.heightCm
-        ..deltaHCm = jump.deltaHCm
-        ..baselineSessionId = sessionId
-        ..isOutlier = session.outlierFlags[i];
-      tests.add(test);
+    if (athlete == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No athlete selected')),
+      );
+      return;
     }
 
-    await service.saveJumpTests(tests);
+    final service = ref.read(isarServiceProvider);
+
+    // Create a single JumpTest record for the average
+    final test = JumpTest()
+      ..athleteId = athlete.id
+      ..testType = 'cmj_baseline'
+      ..timestamp = DateTime.now()
+      ..takeoffFrame = 0
+      ..landingFrame = 0
+      ..fps = session.jumps.isNotEmpty ? session.jumps.first.fps : 0
+      ..flightTimeMs = 0
+      ..heightCm = session.averageHeightCm!
+      ..deltaHCm = session.propagatedErrorCm!
+      ..isOutlier = false;
+
+    await service.saveJumpTests([test]);
     await service.updateAthleteBaseline(
       athlete.id,
       session.averageHeightCm!,

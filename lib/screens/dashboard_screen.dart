@@ -9,6 +9,7 @@ import '../widgets/add_athlete_dialog.dart';
 import '../widgets/add_group_dialog.dart';
 import '../widgets/delete_athlete_dialog.dart';
 import 'cmj_baseline_screen.dart';
+import 'athlete_history_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -223,110 +224,122 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final athlete = ref.watch(activeAthleteProvider);
 
     if (athlete == null) {
-      return Container(
+      return Container(/* ... existing placeholder code ... */);
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AthleteHistoryScreen()),
+        );
+      },
+      child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: AppColors.card,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.borderLight),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(80),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        child: const Center(
-          child: Text(
-            'Select or add an athlete to get started',
-            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.borderLight),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(80),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Avatar with status indicator
-          Stack(
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.brand, width: 2),
-                ),
-                padding: const EdgeInsets.all(2),
-                child: CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.card,
-                  child: Text(
-                    athlete.name[0],
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.brand,
+        child: Row(
+          children: [
+            // Avatar ...
+            Stack(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.brand, width: 2),
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppColors.card,
+                    child: Text(
+                      athlete.name[0],
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.brand,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.card, width: 2),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.card, width: 2),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 16),
-          // Name + meta
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                athlete.name,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
+              ],
+            ),
+            const SizedBox(width: 16),
+            // Name + meta
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.circle,
-                      size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${athlete.weightKg.toInt()}kg',
-                    style: const TextStyle(
-                        fontSize: 13, color: AppColors.textSecondary),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        athlete.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.fitness_center,
+                          size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${athlete.weightKg.toInt()}kg',
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                      if (athlete.baselineCmjHeight != null) ...[
+                        const SizedBox(width: 12),
+                        const Icon(Icons.height,
+                            size: 14, color: AppColors.brand),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${athlete.baselineCmjHeight!.toStringAsFixed(1)}cm',
+                          style: const TextStyle(
+                              fontSize: 13, color: AppColors.brand),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
-
   // ── Action card (CMJ, Fatigue, RSI) ──
 
   Widget _buildActionCard({
