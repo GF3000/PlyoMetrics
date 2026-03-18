@@ -1,0 +1,109 @@
+import 'package:flutter/material.dart';
+import '../core/theme.dart';
+import '../models/athlete.dart';
+import '../models/athlete_group.dart';
+import '../services/isar_service.dart';
+
+/// Dialog to create a new Athlete within a given [group].
+/// Returns the newly created [Athlete] via Navigator.pop, or null if cancelled.
+class AddAthleteDialog extends StatefulWidget {
+  final AthleteGroup group;
+
+  const AddAthleteDialog({super.key, required this.group});
+
+  @override
+  State<AddAthleteDialog> createState() => _AddAthleteDialogState();
+}
+
+class _AddAthleteDialogState extends State<AddAthleteDialog> {
+  final _nameController = TextEditingController();
+  final _weightController = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _add() async {
+    final name = _nameController.text.trim();
+    final weightStr = _weightController.text.trim();
+    if (name.isEmpty ||  weightStr.isEmpty) return;
+
+    final weight = double.tryParse(weightStr);
+    if (weight == null || weight <= 0) return;
+
+    setState(() => _saving = true);
+    try {
+      final athlete = await IsarService.instance.addAthlete(
+        name: name,
+        weightKg: weight,
+        group: widget.group,
+      );
+      if (mounted) Navigator.of(context).pop(athlete);
+    } catch (_) {
+      setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.card,
+      title: const Text('Add Athlete', style: TextStyle(color: Colors.white)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildField(_nameController, 'Name', TextInputType.text),
+            const SizedBox(height: 12),
+            _buildField(
+                _weightController, 'Weight (kg)', TextInputType.number),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _saving ? null : _add,
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Add'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildField(
+    TextEditingController controller,
+    String label,
+    TextInputType type,
+  ) {
+    return TextField(
+      controller: controller,
+      keyboardType: type,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: AppColors.textSecondary),
+        enabledBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppColors.borderLight),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: const BorderSide(color: AppColors.brand),
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+  }
+}
