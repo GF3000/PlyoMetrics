@@ -1,0 +1,566 @@
+import 'dart:developer' as developer;
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../core/theme.dart';
+import '../providers/cmj_session_provider.dart';
+import '../services/video_service.dart';
+
+/// Phase 2: Fine frame-by-frame scrubber.
+/// Extracts frames via FFmpeg, then lets the user mark takeoff/landing
+/// with single-frame precision.
+class CmjVideoScrubberScreen extends ConsumerStatefulWidget {
+  final String videoPath;
+  final double startTimeSeconds;
+
+  const CmjVideoScrubberScreen({
+    super.key,
+    required this.videoPath,
+    required this.startTimeSeconds,
+  });
+
+  @override
+  ConsumerState<CmjVideoScrubberScreen> createState() =>
+      _CmjVideoScrubberScreenState();
+}
+
+class _CmjVideoScrubberScreenState
+    extends ConsumerState<CmjVideoScrubberScreen> {
+  // Extraction state
+  bool _isExtracting = true;
+  double _extractionProgress = 0.0;
+  String? _errorMessage;
+
+  // Frame data
+  List<String> _framePaths = [];
+  double _fps = 0;
+  int _currentFrame = 0;
+
+  // Marking state
+  int? _takeoffFrame;
+  int? _landingFrame;
+
+  // Temp directory for cleanup
+  String? _tempDir;
+
+  @override
+  void initState() {
+    super.initState();
+    _startExtraction();
+  }
+
+  @override
+  void dispose() {
+    _cleanupTempFiles();
+    super.dispose();
+  }
+
+  Future<void> _cleanupTempFiles() async {
+    if (_tempDir != null) {
+      final dir = Directory(_tempDir!);
+      if (await dir.exists()) {
+        await dir.delete(recursive: true);
+      }
+    }
+  }
+
+  Future<void> _startExtraction() async {
+    const tag = 'CmjScrubber';
+    try {
+      final videoService = ref.read(videoServiceProvider);
+
+      developer.log(
+          'Starting extraction: path="${widget.videoPath}", startTime=${widget.startTimeSeconds}s',
+          name: tag);
+
+      // Get framerate
+      _fps = await videoService.getFramerate(widget.videoPath);
+      developer.log('Framerate detected: $_fps FPS', name: tag);
+
+      // Prepare temp directory
+      final tempBase = await getTemporaryDirectory();
+      _tempDir = '${tempBase.path}/plyometrics_frames';
+      developer.log('Temp dir: $_tempDir', name: tag);
+
+      // Extract frames
+      final frames = await videoService.extractFrames(
+        videoPath: widget.videoPath,
+        startTimeSeconds: widget.startTimeSeconds,
+        outputDir: _tempDir!,
+        onProgress: (progress) {
+          if (mounted) {
+            setState(() => _extractionProgress = progress);
+          }
+        },
+      );
+
+      developer.log('Extraction complete: ${frames.length} frames', name: tag);
+
+      if (mounted) {
+        setState(() {
+          _framePaths = frames;
+          _isExtracting = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      developer.log('Extraction FAILED: $e\n$stackTrace',
+          name: tag, level: 900);
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString();
+          _isExtracting = false;
+        });
+      }
+    }
+  }
+
+  void _confirmSelection() {
+    if (_takeoffFrame == null || _landingFrame == null) return;
+    if (_landingFrame! <= _takeoffFrame!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Landing frame must be after takeoff frame'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
+    final flightTimeMs = flightTimeSec * 1000;
+    const g = 9.81;
+    final heightMeters = g * flightTimeSec * flightTimeSec / 8;
+    final heightCm = heightMeters * 100;
+    final deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+
+    final result = JumpResult(
+      takeoffFrame: _takeoffFrame!,
+      landingFrame: _landingFrame!,
+      fps: _fps,
+      flightTimeMs: flightTimeMs,
+      heightCm: heightCm,
+      deltaHCm: deltaHCm,
+      videoPath: widget.videoPath,
+    );
+
+    Navigator.of(context).pop(result);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        title: const Text(
+          'Frame Analysis',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
+      body: _isExtracting
+          ? _buildExtractionProgress()
+          : _errorMessage != null
+              ? _buildError()
+              : _buildScrubber(),
+    );
+  }
+
+  Widget _buildExtractionProgress() {
+    final percent = (_extractionProgress * 100).toInt();
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.auto_fix_high,
+              size: 48,
+              color: AppColors.brand,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Extracting Frames',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Processing video at ${_fps > 0 ? '${_fps.toStringAsFixed(0)} FPS' : '...'}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: _extractionProgress,
+                minHeight: 8,
+                backgroundColor: AppColors.borderLight,
+                valueColor:
+                    const AlwaysStoppedAnimation<Color>(AppColors.brand),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              '$percent%',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+                color: AppColors.brand,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(
+              'Extraction Failed',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScrubber() {
+    if (_framePaths.isEmpty) {
+      return const Center(
+        child: Text(
+          'No frames extracted',
+          style: TextStyle(color: AppColors.textSecondary),
+        ),
+      );
+    }
+
+    final frameCount = _framePaths.length;
+    final currentTimeMs = (_currentFrame / _fps * 1000).toStringAsFixed(1);
+
+    // Compute results if both markers set
+    double? flightTimeMs;
+    double? heightCm;
+    double? deltaHCm;
+    if (_takeoffFrame != null &&
+        _landingFrame != null &&
+        _landingFrame! > _takeoffFrame!) {
+      final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
+      flightTimeMs = flightTimeSec * 1000;
+      const g = 9.81;
+      final heightMeters = g * flightTimeSec * flightTimeSec / 8;
+      heightCm = heightMeters * 100;
+      deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+    }
+
+    return Column(
+      children: [
+        // Frame image
+        Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: _takeoffFrame == _currentFrame
+                    ? Colors.green
+                    : _landingFrame == _currentFrame
+                        ? Colors.red
+                        : AppColors.borderLight,
+                width: 2,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: Image.file(
+                File(_framePaths[_currentFrame]),
+                fit: BoxFit.contain,
+                width: double.infinity,
+              ),
+            ),
+          ),
+        ),
+
+        // Frame info
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Frame ${_currentFrame + 1} / $frameCount',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                '${_fps.toStringAsFixed(0)} FPS',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.brand,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                '$currentTimeMs ms',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // Slider + step buttons
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            children: [
+              IconButton(
+                onPressed: _currentFrame > 0
+                    ? () => setState(() => _currentFrame--)
+                    : null,
+                icon: const Icon(Icons.remove),
+                color: AppColors.brand,
+                disabledColor: AppColors.textTertiary,
+                tooltip: '-1 frame',
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderThemeData(
+                    activeTrackColor: AppColors.brand,
+                    inactiveTrackColor: AppColors.borderLight,
+                    thumbColor: AppColors.brand,
+                    overlayColor: AppColors.brand.withAlpha(40),
+                    trackHeight: 3,
+                  ),
+                  child: Slider(
+                    value: _currentFrame.toDouble(),
+                    max: (frameCount - 1).toDouble(),
+                    divisions: frameCount > 1 ? frameCount - 1 : 1,
+                    onChanged: (value) {
+                      setState(() => _currentFrame = value.toInt());
+                    },
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: _currentFrame < frameCount - 1
+                    ? () => setState(() => _currentFrame++)
+                    : null,
+                icon: const Icon(Icons.add),
+                color: AppColors.brand,
+                disabledColor: AppColors.textTertiary,
+                tooltip: '+1 frame',
+              ),
+            ],
+          ),
+        ),
+
+        // Controls section
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: const BoxDecoration(
+            color: AppColors.card,
+            border: Border(
+              top: BorderSide(color: AppColors.borderLight),
+            ),
+          ),
+          child: Column(
+            children: [
+              // Mark buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMarkButton(
+                      label: 'Mark Takeoff',
+                      icon: Icons.flight_takeoff,
+                      color: Colors.green,
+                      markedFrame: _takeoffFrame,
+                      onPressed: () =>
+                          setState(() => _takeoffFrame = _currentFrame),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildMarkButton(
+                      label: 'Mark Landing',
+                      icon: Icons.flight_land,
+                      color: Colors.red,
+                      markedFrame: _landingFrame,
+                      onPressed: () =>
+                          setState(() => _landingFrame = _currentFrame),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Results summary
+              if (heightCm != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMetric(
+                        'Flight Time',
+                        '${flightTimeMs!.toStringAsFixed(1)} ms',
+                      ),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: AppColors.borderLight,
+                      ),
+                      _buildMetric(
+                        'Height',
+                        '${heightCm.toStringAsFixed(1)} cm',
+                      ),
+                      Container(
+                        width: 1,
+                        height: 32,
+                        color: AppColors.borderLight,
+                      ),
+                      _buildMetric(
+                        'Error',
+                        '\u00b1 ${deltaHCm!.toStringAsFixed(1)} cm',
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Confirm button
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: _confirmSelection,
+                    icon: const Icon(Icons.check_circle),
+                    label: const Text('Confirm Jump'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brand,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      textStyle: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMarkButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required int? markedFrame,
+    required VoidCallback onPressed,
+  }) {
+    final isMarked = markedFrame != null;
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 18),
+      label: Text(isMarked ? '$label (#${markedFrame + 1})' : label),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isMarked ? Colors.black : color,
+        backgroundColor: isMarked ? color : Colors.transparent,
+        side: BorderSide(color: color),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        textStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetric(String label, String value) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: AppColors.brand,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}

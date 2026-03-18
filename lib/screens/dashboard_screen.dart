@@ -4,9 +4,11 @@ import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
 import '../providers/management_providers.dart';
+import '../providers/cmj_session_provider.dart';
 import '../widgets/add_athlete_dialog.dart';
 import '../widgets/add_group_dialog.dart';
 import '../widgets/delete_athlete_dialog.dart';
+import 'cmj_baseline_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -61,6 +63,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       subtitle: 'Vertical jump metrics & flight time',
                       icon: Icons.trending_up,
                       hasGlow: true,
+                      onTap: () {
+                        final athlete = ref.read(activeAthleteProvider);
+                        if (athlete == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Please select an athlete first'),
+                            ),
+                          );
+                          return;
+                        }
+                        ref.read(cmjSessionProvider.notifier).reset();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const CmjBaselineScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildActionCard(
                       tag: 'MONITORING',
@@ -315,15 +335,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String subtitle,
     required IconData icon,
     bool hasGlow = false,
+    VoidCallback? onTap,
   }) {
     return Material(
       color: AppColors.card,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          // TODO: navigate to test screen
-        },
+        onTap: onTap ?? () {},
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(

@@ -9,4 +9,5 @@ class Athlete {
   late String name;
   late double weightKg;
   String? avatarUrl;
+  double? baselineCmjHeight; // in cm, null until first baseline is set
 }

@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
+import '../models/jump_test.dart';
 
 class IsarService {
   late final Isar _db;
@@ -16,7 +17,7 @@ class IsarService {
     if (_initialized) return;
     final dir = await getApplicationSupportDirectory();
     _db = await Isar.open(
-      [AthleteSchema, AthleteGroupSchema],
+      [AthleteSchema, AthleteGroupSchema, JumpTestSchema],
       directory: dir.path,
     );
     _initialized = true;
@@ -76,5 +77,35 @@ class IsarService {
   Future<List<Athlete>> getAthletesForGroup(AthleteGroup group) async {
     await group.athletes.load();
     return group.athletes.toList();
+  }
+
+  // ── JumpTest CRUD ──
+
+  Future<void> saveJumpTests(List<JumpTest> tests) async {
+    await _db.writeTxn(() async {
+      await _db.jumpTests.putAll(tests);
+    });
+  }
+
+  Future<void> updateAthleteBaseline(int athleteId, double heightCm) async {
+    await _db.writeTxn(() async {
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete != null) {
+        athlete.baselineCmjHeight = heightCm;
+        await _db.athletes.put(athlete);
+      }
+    });
+  }
+
+  Future<List<JumpTest>> getJumpTestsForAthlete(
+    int athleteId,
+    String testType,
+  ) {
+    return _db.jumpTests
+        .filter()
+        .athleteIdEqualTo(athleteId)
+        .testTypeEqualTo(testType)
+        .sortByTimestampDesc()
+        .findAll();
   }
 }

@@ -22,13 +22,18 @@ const AthleteSchema = CollectionSchema(
       name: r'avatarUrl',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(
+    r'baselineCmjHeight': PropertySchema(
       id: 1,
+      name: r'baselineCmjHeight',
+      type: IsarType.double,
+    ),
+    r'name': PropertySchema(
+      id: 2,
       name: r'name',
       type: IsarType.string,
     ),
     r'weightKg': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'weightKg',
       type: IsarType.double,
     )
@@ -70,8 +75,9 @@ void _athleteSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeString(offsets[0], object.avatarUrl);
-  writer.writeString(offsets[1], object.name);
-  writer.writeDouble(offsets[2], object.weightKg);
+  writer.writeDouble(offsets[1], object.baselineCmjHeight);
+  writer.writeString(offsets[2], object.name);
+  writer.writeDouble(offsets[3], object.weightKg);
 }
 
 Athlete _athleteDeserialize(
@@ -82,9 +88,10 @@ Athlete _athleteDeserialize(
 ) {
   final object = Athlete();
   object.avatarUrl = reader.readStringOrNull(offsets[0]);
+  object.baselineCmjHeight = reader.readDoubleOrNull(offsets[1]);
   object.id = id;
-  object.name = reader.readString(offsets[1]);
-  object.weightKg = reader.readDouble(offsets[2]);
+  object.name = reader.readString(offsets[2]);
+  object.weightKg = reader.readDouble(offsets[3]);
   return object;
 }
 
@@ -98,8 +105,10 @@ P _athleteDeserializeProp<P>(
     case 0:
       return (reader.readStringOrNull(offset)) as P;
     case 1:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 2:
+      return (reader.readString(offset)) as P;
+    case 3:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -337,6 +346,90 @@ extension AthleteQueryFilter
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'avatarUrl',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'baselineCmjHeight',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'baselineCmjHeight',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'baselineCmjHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'baselineCmjHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'baselineCmjHeight',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineCmjHeightBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'baselineCmjHeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -605,6 +698,18 @@ extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineCmjHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineCmjHeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineCmjHeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineCmjHeight', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -641,6 +746,18 @@ extension AthleteQuerySortThenBy
   QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByAvatarUrlDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'avatarUrl', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineCmjHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineCmjHeight', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineCmjHeightDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineCmjHeight', Sort.desc);
     });
   }
 
@@ -690,6 +807,12 @@ extension AthleteQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByBaselineCmjHeight() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'baselineCmjHeight');
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -715,6 +838,12 @@ extension AthleteQueryProperty
   QueryBuilder<Athlete, String?, QQueryOperations> avatarUrlProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'avatarUrl');
+    });
+  }
+
+  QueryBuilder<Athlete, double?, QQueryOperations> baselineCmjHeightProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'baselineCmjHeight');
     });
   }
 
