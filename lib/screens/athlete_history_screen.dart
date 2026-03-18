@@ -62,7 +62,47 @@ class AthleteHistoryScreen extends ConsumerWidget {
               final test = tests[index];
               final dateStr = DateFormat('MMM dd, yyyy • HH:mm').format(test.timestamp);
 
-              return Container(
+              return Dismissible(
+                key: ValueKey(test.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade700,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (_) async {
+                  return await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: AppColors.card,
+                      title: const Text('Delete Jump',
+                          style: TextStyle(color: Colors.white)),
+                      content: Text(
+                        'Remove this ${test.testType.replaceAll('_', ' ')} record from ${dateStr}?',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).pop(true),
+                          child: Text('Delete',
+                              style: TextStyle(color: Colors.red.shade400)),
+                        ),
+                      ],
+                    ),
+                  ) ?? false;
+                },
+                onDismissed: (_) {
+                  ref.read(isarServiceProvider).deleteJumpTest(test.id);
+                },
+                child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppColors.card,
@@ -124,6 +164,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+              ),
               );
             },
           );

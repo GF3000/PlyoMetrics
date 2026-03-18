@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
 
@@ -43,6 +44,11 @@ class _CmjVideoScrubberScreenState
   int? _takeoffFrame;
   int? _landingFrame;
 
+  // Playback state
+  bool _isPlaying = false;
+  Timer? _playTimer;
+  Timer? _longPressTimer;
+
   // Temp directory for cleanup
   String? _tempDir;
 
@@ -54,6 +60,8 @@ class _CmjVideoScrubberScreenState
 
   @override
   void dispose() {
+    _stopPlayback();
+    _longPressTimer?.cancel();
     _cleanupTempFiles();
     super.dispose();
   }
@@ -82,7 +90,8 @@ class _CmjVideoScrubberScreenState
 
       // Prepare temp directory
       final tempBase = await getTemporaryDirectory();
-      _tempDir = '${tempBase.path}/plyometrics_frames';
+      final sessionId = DateTime.now().millisecondsSinceEpoch;
+      _tempDir = '${tempBase.path}/plyometrics_frames_$sessionId';
       developer.log('Temp dir: $_tempDir', name: tag);
 
       // Extract frames
@@ -115,6 +124,51 @@ class _CmjVideoScrubberScreenState
         });
       }
     }
+  }
+
+  void _togglePlayback() {
+    if (_isPlaying) {
+      _stopPlayback();
+    } else {
+      if (_currentFrame >= _framePaths.length - 1) return;
+      setState(() => _isPlaying = true);
+      final interval = Duration(milliseconds: (1000 / _fps).round());
+      _playTimer = Timer.periodic(interval, (_) {
+        if (!mounted || _currentFrame >= _framePaths.length - 1) {
+          _stopPlayback();
+          return;
+        }
+        setState(() => _currentFrame++);
+      });
+    }
+  }
+
+  void _stopPlayback() {
+    _playTimer?.cancel();
+    _playTimer = null;
+    if (mounted) {
+      setState(() => _isPlaying = false);
+    }
+  }
+
+  void _startLongPress(int delta) {
+    _stopPlayback();
+    _longPressTimer = Timer.periodic(
+      const Duration(milliseconds: 50),
+      (_) {
+        final next = _currentFrame + delta;
+        if (next < 0 || next >= _framePaths.length) {
+          _longPressTimer?.cancel();
+          return;
+        }
+        if (mounted) setState(() => _currentFrame = next);
+      },
+    );
+  }
+
+  void _stopLongPress() {
+    _longPressTimer?.cancel();
+    _longPressTimer = null;
   }
 
   void _confirmSelection() {
@@ -363,49 +417,84 @@ class _CmjVideoScrubberScreenState
 
         const SizedBox(height: 8),
 
-        // Slider + step buttons
+        // Step buttons + play/pause
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                onPressed: _currentFrame > 0
-                    ? () => setState(() => _currentFrame--)
+              GestureDetector(
+                onLongPressStart: _currentFrame > 0
+                    ? (_) => _startLongPress(-1)
                     : null,
-                icon: const Icon(Icons.remove),
-                color: AppColors.brand,
-                disabledColor: AppColors.textTertiary,
-                tooltip: '-1 frame',
-              ),
-              Expanded(
-                child: SliderTheme(
-                  data: SliderThemeData(
-                    activeTrackColor: AppColors.brand,
-                    inactiveTrackColor: AppColors.borderLight,
-                    thumbColor: AppColors.brand,
-                    overlayColor: AppColors.brand.withAlpha(40),
-                    trackHeight: 3,
-                  ),
-                  child: Slider(
-                    value: _currentFrame.toDouble(),
-                    max: (frameCount - 1).toDouble(),
-                    divisions: frameCount > 1 ? frameCount - 1 : 1,
-                    onChanged: (value) {
-                      setState(() => _currentFrame = value.toInt());
-                    },
-                  ),
+                onLongPressEnd: (_) => _stopLongPress(),
+                child: IconButton(
+                  onPressed: _currentFrame > 0
+                      ? () {
+                          _stopPlayback();
+                          setState(() => _currentFrame--);
+                        }
+                      : null,
+                  icon: const Icon(Icons.remove),
+                  color: AppColors.brand,
+                  disabledColor: AppColors.textTertiary,
+                  tooltip: '-1 frame',
                 ),
               ),
+              const SizedBox(width: 24),
               IconButton(
-                onPressed: _currentFrame < frameCount - 1
-                    ? () => setState(() => _currentFrame++)
-                    : null,
-                icon: const Icon(Icons.add),
+                onPressed: _framePaths.isNotEmpty ? _togglePlayback : null,
+                icon: Icon(
+                  _isPlaying ? Icons.pause_circle : Icons.play_circle,
+                  size: 40,
+                ),
                 color: AppColors.brand,
                 disabledColor: AppColors.textTertiary,
-                tooltip: '+1 frame',
+                tooltip: _isPlaying ? 'Pause' : 'Play',
+              ),
+              const SizedBox(width: 24),
+              GestureDetector(
+                onLongPressStart: _currentFrame < frameCount - 1
+                    ? (_) => _startLongPress(1)
+                    : null,
+                onLongPressEnd: (_) => _stopLongPress(),
+                child: IconButton(
+                  onPressed: _currentFrame < frameCount - 1
+                      ? () {
+                          _stopPlayback();
+                          setState(() => _currentFrame++);
+                        }
+                      : null,
+                  icon: const Icon(Icons.add),
+                  color: AppColors.brand,
+                  disabledColor: AppColors.textTertiary,
+                  tooltip: '+1 frame',
+                ),
               ),
             ],
+          ),
+        ),
+
+        // Slider
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: SliderTheme(
+            data: SliderThemeData(
+              activeTrackColor: AppColors.brand,
+              inactiveTrackColor: AppColors.borderLight,
+              thumbColor: AppColors.brand,
+              overlayColor: AppColors.brand.withAlpha(40),
+              trackHeight: 3,
+            ),
+            child: Slider(
+              value: _currentFrame.toDouble(),
+              max: (frameCount - 1).toDouble(),
+              divisions: frameCount > 1 ? frameCount - 1 : 1,
+              onChanged: (value) {
+                _stopPlayback();
+                setState(() => _currentFrame = value.toInt());
+              },
+            ),
           ),
         ),
 

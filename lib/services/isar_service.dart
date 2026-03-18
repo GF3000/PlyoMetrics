@@ -97,6 +97,12 @@ class IsarService {
     });
   }
 
+  Future<void> deleteJumpTest(int testId) async {
+    await _db.writeTxn(() async {
+      await _db.jumpTests.delete(testId);
+    });
+  }
+
   Future<List<JumpTest>> getJumpTestsForAthlete(
     int athleteId,
     String testType,
