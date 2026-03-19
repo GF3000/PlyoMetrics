@@ -49,6 +49,14 @@ class IsarService {
     });
   }
 
+  Future<AthleteGroup> updateGroup(AthleteGroup group, String newName) async {
+    await _db.writeTxn(() async {
+      group.name = newName;
+      await _db.athleteGroups.put(group);
+    });
+    return group;
+  }
+
   // ── Athlete CRUD ──
 
   Future<Athlete> addAthlete({

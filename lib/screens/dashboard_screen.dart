@@ -195,15 +195,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            g.name,
-                            style: TextStyle(
-                              color: isSelected ? AppColors.brand : Colors.white,
-                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          Expanded(
+                            child: Text(
+                              g.name,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.brand : Colors.white,
+                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (isSelected)
-                            const Icon(Icons.check, color: AppColors.brand, size: 18),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isSelected)
+                                const Icon(Icons.check, color: AppColors.brand, size: 18),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  Navigator.pop(context); // Dismiss the popup menu
+                                  _showGroupOptions(context, g, groups); // Open bottom sheet
+                                },
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     );
@@ -973,5 +991,132 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ],
       ),
     );
+  }
+
+  void _showGroupOptions(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                group.name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+            const Divider(color: AppColors.borderLight, height: 1),
+            ListTile(
+              leading: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
+              title: const Text('Rename Group', style: TextStyle(color: AppColors.textPrimary)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _renameGroup(context, group);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              title: const Text('Delete Group', style: TextStyle(color: Colors.redAccent)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _deleteGroup(context, group, allGroups);
+              },
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _renameGroup(BuildContext context, AthleteGroup group) async {
+    final controller = TextEditingController(text: group.name);
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Rename Group', style: TextStyle(color: Colors.white)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            labelText: 'Group Name',
+            labelStyle: const TextStyle(color: AppColors.textSecondary),
+            enabledBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.borderLight),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: AppColors.brand),
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (newName != null && newName.isNotEmpty && newName != group.name) {
+      final updatedGroup = await IsarService.instance.updateGroup(group, newName);
+      if (ref.read(activeGroupProvider)?.id == updatedGroup.id) {
+        ref.read(activeGroupProvider.notifier).state = updatedGroup;
+      }
+    }
+  }
+
+  Future<void> _deleteGroup(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        title: const Text('Delete Group', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Are you sure you want to delete "${group.name}"?',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await IsarService.instance.deleteGroup(group.id);
+      if (ref.read(activeGroupProvider)?.id == group.id) {
+        final remainingGroups = allGroups.where((g) => g.id != group.id).toList();
+        ref.read(activeGroupProvider.notifier).state = remainingGroups.isNotEmpty ? remainingGroups.first : null;
+        ref.read(activeAthleteProvider.notifier).state = null;
+      }
+    }
   }
 }
