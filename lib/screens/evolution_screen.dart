@@ -6,25 +6,21 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../models/jump_test.dart';
 import '../providers/management_providers.dart';
+import '../widgets/neon_mode_toggle.dart';
 
-class EvolutionScreen extends ConsumerStatefulWidget {
+class EvolutionScreen extends ConsumerWidget {
   const EvolutionScreen({super.key});
 
   @override
-  ConsumerState<EvolutionScreen> createState() => _EvolutionScreenState();
-}
-
-class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
-  int _tabIndex = 0; // 0 = CMJ/Fatigue, 1 = RSI
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final athlete = ref.watch(activeAthleteProvider);
     final historyAsync = ref.watch(athleteJumpHistoryProvider);
     final stats = ref.watch(athleteEvolutionStatsProvider);
     final baselines = ref.watch(baselineHistoryProvider);
     final fatigueTests = ref.watch(fatigueHistoryProvider);
     final rsiTests = ref.watch(rsiHistoryProvider);
+
+    final mode = ref.watch(historyModeProvider);
 
     if (athlete == null) {
       return const Center(
@@ -66,22 +62,7 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
         // Tab selector
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text('CMJ / Fatigue')),
-              ButtonSegment(value: 1, label: Text('RSI')),
-            ],
-            selected: {_tabIndex},
-            onSelectionChanged: (set) => setState(() => _tabIndex = set.first),
-            style: SegmentedButton.styleFrom(
-              selectedBackgroundColor: AppColors.brand,
-              selectedForegroundColor: Colors.black,
-              foregroundColor: AppColors.textSecondary,
-              backgroundColor: AppColors.card,
-              side: const BorderSide(color: AppColors.borderLight),
-              textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-            ),
-          ),
+          child: const NeonModeToggle(),
         ),
         // Content
         Expanded(
@@ -94,7 +75,7 @@ class _EvolutionScreenState extends ConsumerState<EvolutionScreen> {
                   style: const TextStyle(color: AppColors.textSecondary)),
             ),
             data: (allTests) {
-              if (_tabIndex == 1) {
+              if (mode == 1) {
                 return _buildRsiTab(rsiTests, allTests);
               }
               if (baselines.length < 2 && fatigueTests.isEmpty) {

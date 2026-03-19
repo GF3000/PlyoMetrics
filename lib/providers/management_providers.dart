@@ -124,3 +124,6 @@ final rsiHistoryProvider = Provider<List<JumpTest>>((ref) {
       ) ??
       [];
 });
+
+/// The current mode for history/evolution screens: 0 = CMJ & Fatigue, 1 = RSI.
+final historyModeProvider = StateProvider<int>((ref) => 0);

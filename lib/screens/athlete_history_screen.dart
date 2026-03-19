@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../models/jump_test.dart';
 import '../providers/management_providers.dart';
+import '../widgets/neon_mode_toggle.dart';
 
 class AthleteHistoryScreen extends ConsumerWidget {
   const AthleteHistoryScreen({super.key});
