@@ -4,10 +4,12 @@ import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
 import '../providers/management_providers.dart';
+import '../services/isar_service.dart';
 import '../providers/cmj_session_provider.dart';
 import '../widgets/add_athlete_dialog.dart';
 import '../widgets/add_group_dialog.dart';
 import '../widgets/delete_athlete_dialog.dart';
+import '../widgets/edit_athlete_dialog.dart';
 import 'cmj_baseline_screen.dart';
 import 'athlete_history_screen.dart';
 
@@ -20,6 +22,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedNavIndex = 0;
+  bool _rosterExpanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -452,10 +455,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {},
-                  child: const Text(
-                    'View All',
-                    style: TextStyle(
+                  onTap: () => setState(() => _rosterExpanded = !_rosterExpanded),
+                  child: Text(
+                    _rosterExpanded ? 'Collapse' : 'View All',
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: AppColors.brand,
@@ -466,34 +469,194 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 80,
-            child: athletesAsync.when(
-              loading: () => const Center(
+          athletesAsync.when(
+            loading: () => const SizedBox(
+              height: 80,
+              child: Center(
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
-              error: (_, __) => const Center(
+            ),
+            error: (_, __) => const SizedBox(
+              height: 80,
+              child: Center(
                 child: Text('Error loading athletes',
                     style: TextStyle(color: Colors.red)),
               ),
-              data: (athletes) => ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: athletes.length + 1, // +1 for Add button
-                separatorBuilder: (_, __) => const SizedBox(width: 20),
-                itemBuilder: (context, index) {
-                  if (index == athletes.length) {
-                    return _buildAddAthleteButton(activeGroup);
-                  }
-                  final athlete = athletes[index];
-                  final isSelected = athlete.id == activeAthlete?.id;
-                  return _buildAthleteAvatar(athlete, isSelected);
-                },
-              ),
             ),
+            data: (athletes) => _rosterExpanded
+                ? _buildExpandedRoster(athletes, activeAthlete, activeGroup)
+                : SizedBox(
+                    height: 80,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: athletes.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(width: 20),
+                      itemBuilder: (context, index) {
+                        if (index == athletes.length) {
+                          return _buildAddAthleteButton(activeGroup);
+                        }
+                        final athlete = athletes[index];
+                        final isSelected = athlete.id == activeAthlete?.id;
+                        return _buildAthleteAvatar(athlete, isSelected);
+                      },
+                    ),
+                  ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildExpandedRoster(
+      List<Athlete> athletes, Athlete? activeAthlete, AthleteGroup? activeGroup) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 300),
+      child: ReorderableListView.builder(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: athletes.length,
+        proxyDecorator: (child, index, animation) {
+          return Material(
+            color: Colors.transparent,
+            elevation: 4,
+            shadowColor: Colors.black54,
+            borderRadius: BorderRadius.circular(8),
+            child: child,
+          );
+        },
+        onReorder: (oldIndex, newIndex) {
+          if (newIndex > oldIndex) newIndex--;
+          final reordered = List<Athlete>.from(athletes);
+          final item = reordered.removeAt(oldIndex);
+          reordered.insert(newIndex, item);
+          IsarService.instance.reorderAthletes(reordered);
+        },
+        footer: _buildAddAthleteRow(activeGroup),
+        itemBuilder: (context, index) {
+          final athlete = athletes[index];
+          final isSelected = athlete.id == activeAthlete?.id;
+          return _buildAthleteRow(athlete, isSelected);
+        },
+      ),
+    );
+  }
+
+  Widget _buildAthleteRow(Athlete athlete, bool isSelected) {
+    return Container(
+      key: ValueKey(athlete.id),
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: isSelected ? AppColors.card : Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: isSelected
+            ? Border.all(color: AppColors.brand.withAlpha(80))
+            : null,
+      ),
+      child: ListTile(
+        dense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+        leading: CircleAvatar(
+          radius: 18,
+          backgroundColor: isSelected ? AppColors.card : AppColors.card.withAlpha(180),
+          child: Text(
+            athlete.name[0],
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? AppColors.brand : AppColors.textSecondary,
+            ),
+          ),
+        ),
+        title: Text(
+          athlete.name,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : AppColors.textSecondary,
+          ),
+        ),
+        subtitle: Text(
+          '${athlete.weightKg.toInt()} kg',
+          style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              color: AppColors.textSecondary,
+              onPressed: () async {
+                final updated = await showDialog<Athlete>(
+                  context: context,
+                  builder: (_) => EditAthleteDialog(athlete: athlete),
+                );
+                if (updated != null &&
+                    ref.read(activeAthleteProvider)?.id == updated.id) {
+                  ref.read(activeAthleteProvider.notifier).state = updated;
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 18),
+              color: AppColors.textSecondary,
+              onPressed: () async {
+                final deleted = await showDialog<bool>(
+                  context: context,
+                  builder: (_) => DeleteAthleteDialog(athlete: athlete),
+                );
+                if (deleted == true) {
+                  final active = ref.read(activeAthleteProvider);
+                  if (active?.id == athlete.id) {
+                    ref.read(activeAthleteProvider.notifier).state = null;
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+        onTap: () =>
+            ref.read(activeAthleteProvider.notifier).state = athlete,
+      ),
+    );
+  }
+
+  Widget _buildAddAthleteRow(AthleteGroup? group) {
+    return ListTile(
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+      leading: CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.textTertiary, width: 1.5),
+          ),
+          child: const Center(
+            child: Icon(Icons.add, color: AppColors.textTertiary, size: 18),
+          ),
+        ),
+      ),
+      title: const Text(
+        'Add Athlete',
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textTertiary,
+        ),
+      ),
+      onTap: group == null
+          ? null
+          : () async {
+              final athlete = await showDialog<Athlete>(
+                context: context,
+                builder: (_) => AddAthleteDialog(group: group),
+              );
+              if (athlete != null) {
+                ref.read(activeAthleteProvider.notifier).state = athlete;
+              }
+            },
     );
   }
 

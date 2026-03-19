@@ -32,8 +32,13 @@ const AthleteSchema = CollectionSchema(
       name: r'name',
       type: IsarType.string,
     ),
-    r'weightKg': PropertySchema(
+    r'sortOrder': PropertySchema(
       id: 3,
+      name: r'sortOrder',
+      type: IsarType.long,
+    ),
+    r'weightKg': PropertySchema(
+      id: 4,
       name: r'weightKg',
       type: IsarType.double,
     )
@@ -77,7 +82,8 @@ void _athleteSerialize(
   writer.writeString(offsets[0], object.avatarUrl);
   writer.writeDouble(offsets[1], object.baselineCmjHeight);
   writer.writeString(offsets[2], object.name);
-  writer.writeDouble(offsets[3], object.weightKg);
+  writer.writeLong(offsets[3], object.sortOrder);
+  writer.writeDouble(offsets[4], object.weightKg);
 }
 
 Athlete _athleteDeserialize(
@@ -91,7 +97,8 @@ Athlete _athleteDeserialize(
   object.baselineCmjHeight = reader.readDoubleOrNull(offsets[1]);
   object.id = id;
   object.name = reader.readString(offsets[2]);
-  object.weightKg = reader.readDouble(offsets[3]);
+  object.sortOrder = reader.readLong(offsets[3]);
+  object.weightKg = reader.readDouble(offsets[4]);
   return object;
 }
 
@@ -109,6 +116,8 @@ P _athleteDeserializeProp<P>(
     case 2:
       return (reader.readString(offset)) as P;
     case 3:
+      return (reader.readLong(offset)) as P;
+    case 4:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -616,6 +625,59 @@ extension AthleteQueryFilter
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> sortOrderEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'sortOrder',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> sortOrderGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'sortOrder',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> sortOrderLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'sortOrder',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> sortOrderBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'sortOrder',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgEqualTo(
     double value, {
     double epsilon = Query.epsilon,
@@ -722,6 +784,18 @@ extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortBySortOrder() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortOrder', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortBySortOrderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortOrder', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByWeightKg() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'weightKg', Sort.asc);
@@ -785,6 +859,18 @@ extension AthleteQuerySortThenBy
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenBySortOrder() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortOrder', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenBySortOrderDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'sortOrder', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByWeightKg() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'weightKg', Sort.asc);
@@ -820,6 +906,12 @@ extension AthleteQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctBySortOrder() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'sortOrder');
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QDistinct> distinctByWeightKg() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'weightKg');
@@ -850,6 +942,12 @@ extension AthleteQueryProperty
   QueryBuilder<Athlete, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<Athlete, int, QQueryOperations> sortOrderProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'sortOrder');
     });
   }
 

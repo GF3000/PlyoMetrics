@@ -375,6 +375,7 @@ class _CmjVideoScrubberScreenState
                 File(_framePaths[_currentFrame]),
                 fit: BoxFit.contain,
                 width: double.infinity,
+                gaplessPlayback: true,
               ),
             ),
           ),
@@ -423,23 +424,14 @@ class _CmjVideoScrubberScreenState
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              GestureDetector(
-                onLongPressStart: _currentFrame > 0
-                    ? (_) => _startLongPress(-1)
-                    : null,
-                onLongPressEnd: (_) => _stopLongPress(),
-                child: IconButton(
-                  onPressed: _currentFrame > 0
-                      ? () {
-                          _stopPlayback();
-                          setState(() => _currentFrame--);
-                        }
-                      : null,
-                  icon: const Icon(Icons.remove),
-                  color: AppColors.brand,
-                  disabledColor: AppColors.textTertiary,
-                  tooltip: '-1 frame',
-                ),
+              _buildStepButton(
+                icon: Icons.remove,
+                enabled: _currentFrame > 0,
+                onTap: () {
+                  _stopPlayback();
+                  setState(() => _currentFrame--);
+                },
+                onLongPressStart: () => _startLongPress(-1),
               ),
               const SizedBox(width: 24),
               IconButton(
@@ -453,23 +445,14 @@ class _CmjVideoScrubberScreenState
                 tooltip: _isPlaying ? 'Pause' : 'Play',
               ),
               const SizedBox(width: 24),
-              GestureDetector(
-                onLongPressStart: _currentFrame < frameCount - 1
-                    ? (_) => _startLongPress(1)
-                    : null,
-                onLongPressEnd: (_) => _stopLongPress(),
-                child: IconButton(
-                  onPressed: _currentFrame < frameCount - 1
-                      ? () {
-                          _stopPlayback();
-                          setState(() => _currentFrame++);
-                        }
-                      : null,
-                  icon: const Icon(Icons.add),
-                  color: AppColors.brand,
-                  disabledColor: AppColors.textTertiary,
-                  tooltip: '+1 frame',
-                ),
+              _buildStepButton(
+                icon: Icons.add,
+                enabled: _currentFrame < frameCount - 1,
+                onTap: () {
+                  _stopPlayback();
+                  setState(() => _currentFrame++);
+                },
+                onLongPressStart: () => _startLongPress(1),
               ),
             ],
           ),
@@ -600,6 +583,24 @@ class _CmjVideoScrubberScreenState
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStepButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+    required VoidCallback onLongPressStart,
+  }) {
+    final color = enabled ? AppColors.brand : AppColors.textTertiary;
+    return GestureDetector(
+      onTap: enabled ? onTap : null,
+      onLongPressStart: enabled ? (_) => onLongPressStart() : null,
+      onLongPressEnd: (_) => _stopLongPress(),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Icon(icon, color: color),
+      ),
     );
   }
 

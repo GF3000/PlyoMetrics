@@ -74,9 +74,29 @@ class IsarService {
     });
   }
 
+  Future<Athlete> updateAthlete(Athlete athlete, {String? name, double? weightKg}) async {
+    await _db.writeTxn(() async {
+      if (name != null) athlete.name = name;
+      if (weightKg != null) athlete.weightKg = weightKg;
+      await _db.athletes.put(athlete);
+    });
+    return athlete;
+  }
+
   Future<List<Athlete>> getAthletesForGroup(AthleteGroup group) async {
     await group.athletes.load();
-    return group.athletes.toList();
+    final list = group.athletes.toList();
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return list;
+  }
+
+  Future<void> reorderAthletes(List<Athlete> athletes) async {
+    await _db.writeTxn(() async {
+      for (int i = 0; i < athletes.length; i++) {
+        athletes[i].sortOrder = i;
+      }
+      await _db.athletes.putAll(athletes);
+    });
   }
 
   // ── JumpTest CRUD ──

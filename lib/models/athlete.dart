@@ -10,4 +10,5 @@ class Athlete {
   late double weightKg;
   String? avatarUrl;
   double? baselineCmjHeight; // in cm, null until first baseline is set
+  int sortOrder = 0;
 }

@@ -35,7 +35,9 @@ final groupAthletesProvider = StreamProvider<List<Athlete>>((ref) {
       .watch(fireImmediately: true)
       .asyncMap((_) async {
     await group.athletes.load();
-    return group.athletes.toList();
+    final list = group.athletes.toList();
+    list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return list;
   });
 });
 
