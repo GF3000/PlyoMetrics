@@ -1020,7 +1020,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Expanded(
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => setState(() => _selectedNavIndex = index),
+        onTap: () {
+          if (index == 4) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Profile coming soon!')),
+            );
+            return;
+          }
+          setState(() => _selectedNavIndex = index);
+        },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
