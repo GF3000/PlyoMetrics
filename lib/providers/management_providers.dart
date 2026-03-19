@@ -95,28 +95,37 @@ final athleteEvolutionStatsProvider =
     final groupAthletes = groupAthletesAsync.whenOrNull(data: (l) => l) ?? [];
 
     // Height gain: current baseline minus earliest recorded baseline height
-    double? heightGain;
-    if (baselines.isNotEmpty && athlete?.baselineCmjHeight != null) {
-      heightGain = athlete!.baselineCmjHeight! - baselines.first.heightCm;
+    String heightGainStr;
+    if (baselines.length < 2) {
+      heightGainStr = "-";
+    } else if (athlete?.baselineCmjHeight != null) {
+      double heightGain = athlete!.baselineCmjHeight! - baselines.first.heightCm;
+      heightGainStr = '${heightGain >= 0 ? '+' : ''}${heightGain.toStringAsFixed(1)} cm';
+    } else {
+      heightGainStr = "-";
     }
 
     // Group mean comparison
-    double? groupMeanDiff;
-    if (athlete?.baselineCmjHeight != null && groupAthletes.length > 1) {
-      final withBaseline = groupAthletes.where((a) => a.baselineCmjHeight != null).toList();
-      if (withBaseline.length > 1) {
-        final mean = withBaseline.map((a) => a.baselineCmjHeight!).reduce((a, b) => a + b) / withBaseline.length;
-        groupMeanDiff = athlete!.baselineCmjHeight! - mean;
-      }
+    String groupMeanDiffStr;
+    final hasActiveBaseline = athlete?.baselineCmjHeight != null;
+    final withBaseline = groupAthletes.where((a) => a.baselineCmjHeight != null).toList();
+    if (withBaseline.length <= 1) {
+      groupMeanDiffStr = "-";
+    } else if (hasActiveBaseline) {
+      final mean = withBaseline.map((a) => a.baselineCmjHeight!).reduce((a, b) => a + b) / withBaseline.length;
+      double groupMeanDiff = athlete!.baselineCmjHeight! - mean;
+      groupMeanDiffStr = '${groupMeanDiff >= 0 ? '+' : ''}${groupMeanDiff.toStringAsFixed(1)} cm';
+    } else {
+      groupMeanDiffStr = "-";
     }
 
     String title1 = 'Height Gain';
-    String val1 = heightGain == null ? '—' : '${heightGain >= 0 ? '+' : ''}${heightGain.toStringAsFixed(1)} cm';
-    bool isPositive1 = heightGain == null ? false : heightGain >= 0;
+    String val1 = heightGainStr;
+    bool isPositive1 = heightGainStr == "-" ? false : (heightGainStr.contains('+') ? true : false);
 
     String title2 = 'vs Group Mean';
-    String val2 = groupMeanDiff == null ? '—' : '${groupMeanDiff >= 0 ? '+' : ''}${groupMeanDiff.toStringAsFixed(1)} cm';
-    bool isPositive2 = groupMeanDiff == null ? false : groupMeanDiff >= 0;
+    String val2 = groupMeanDiffStr;
+    bool isPositive2 = groupMeanDiffStr == "-" ? false : (groupMeanDiffStr.contains('+') ? true : false);
 
     return (title1: title1, val1: val1, title2: title2, val2: val2, isPositive1: isPositive1, isPositive2: isPositive2);
   } else {
@@ -125,12 +134,13 @@ final athleteEvolutionStatsProvider =
     final groupAthletes = groupAthletesAsync.whenOrNull(data: (l) => l) ?? [];
 
     // RSI gain: latest minus first, if >=2 tests
-    double gain = 0.00;
-    if (rsiTests.length >= 2) {
-      gain = rsiTests.last.rsiScore! - rsiTests.first.rsiScore!;
+    String gainStr;
+    if (rsiTests.length < 2) {
+      gainStr = "-";
+    } else {
+      double gain = rsiTests.last.rsiScore! - rsiTests.first.rsiScore!;
+      gainStr = '${gain >= 0 ? '+' : ''}${gain.toStringAsFixed(2)}';
     }
-    String val1 = '${gain >= 0 && gain != 0 ? '+' : gain < 0 ? '' : ''}${gain.toStringAsFixed(2)}';
-    bool isPositive1 = gain > 0;
 
     // RSI vs group mean: active max RSI minus group average max RSI
     double? activeMaxRsi;
@@ -138,9 +148,9 @@ final athleteEvolutionStatsProvider =
       activeMaxRsi = rsiTests.map((t) => t.rsiScore!).reduce((a, b) => a > b ? a : b);
     }
 
+    List<double> maxes = [];
     double? groupMean;
     if (groupAthletes.isNotEmpty) {
-      List<double> maxes = [];
       for (final a in groupAthletes) {
         final tests = await service.db.jumpTests.filter().athleteIdEqualTo(a.id).testTypeEqualTo('rsi').findAll();
         if (tests.isNotEmpty) {
@@ -156,15 +166,23 @@ final athleteEvolutionStatsProvider =
       }
     }
 
-    double? diff;
-    if (activeMaxRsi != null && groupMean != null) {
-      diff = activeMaxRsi - groupMean;
+    String diffStr;
+    if (maxes.length <= 1) {
+      diffStr = "-";
+    } else if (activeMaxRsi != null) {
+      double diff = activeMaxRsi - groupMean!;
+      diffStr = '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(2)}';
+    } else {
+      diffStr = "-";
     }
 
     String title1 = 'RSI Gain';
+    String val1 = gainStr;
+    bool isPositive1 = gainStr == "-" ? false : (gainStr.contains('+') ? true : false);
+
     String title2 = 'vs Group Mean';
-    String val2 = diff == null ? '—' : '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(2)}';
-    bool isPositive2 = diff == null ? false : diff > 0;
+    String val2 = diffStr;
+    bool isPositive2 = diffStr == "-" ? false : (diffStr.contains('+') ? true : false);
 
     return (title1: title1, val1: val1, title2: title2, val2: val2, isPositive1: isPositive1, isPositive2: isPositive2);
   }

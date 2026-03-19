@@ -84,28 +84,25 @@ class EvolutionScreen extends ConsumerWidget {
                       style: const TextStyle(color: AppColors.textSecondary)),
                 ),
                 data: (stats) {
-                  if (mode == 1) {
-                    return _buildRsiTab(rsiTests, allTests, stats);
-                  }
-                  if (baselines.length < 2 && fatigueTests.isEmpty) {
-                    return _buildEmptyState();
-                  }
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 12),
-                        _buildMetricCards(stats),
-                        const SizedBox(height: 20),
-                        _buildChart(baselines, fatigueTests),
-                        const SizedBox(height: 24),
-                        _buildRecentTests(allTests),
-                        const SizedBox(height: 16),
-                      ],
-                    ),
-                  );
-                },
+                   if (mode == 1) {
+                     return _buildRsiTab(rsiTests, allTests, stats);
+                   }
+                   return SingleChildScrollView(
+                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         const SizedBox(height: 12),
+                         _buildMetricCards(stats),
+                         const SizedBox(height: 20),
+                         _buildChart(baselines, fatigueTests),
+                         const SizedBox(height: 24),
+                         _buildRecentTests(allTests),
+                         const SizedBox(height: 16),
+                       ],
+                     ),
+                   );
+                 },
               );
             },
           ),
@@ -115,33 +112,6 @@ class EvolutionScreen extends ConsumerWidget {
   }
 
   Widget _buildRsiTab(List<JumpTest> rsiTests, List<JumpTest> allTests, ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
-    if (rsiTests.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.show_chart_rounded,
-                size: 48, color: AppColors.textTertiary.withAlpha(100)),
-            const SizedBox(height: 12),
-            const Text(
-              'No RSI data yet',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Record drop jump tests\nto see RSI evolution',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-          ],
-        ),
-      );
-    }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -295,32 +265,6 @@ class EvolutionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.show_chart_rounded,
-              size: 48, color: AppColors.textTertiary.withAlpha(100)),
-          const SizedBox(height: 12),
-          const Text(
-            'Not enough data yet',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Record at least 2 baseline jumps\nto see evolution',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildMetricCards(
       ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
@@ -351,9 +295,7 @@ class EvolutionScreen extends ConsumerWidget {
     required bool isPositive,
   }) {
     final Color valueColor;
-    if (value == '—') {
-      valueColor = AppColors.textTertiary;
-    } else if (value.contains('0.00') || value.contains('0.0')) {
+    if (value == '-') {
       valueColor = AppColors.textSecondary;
     } else {
       valueColor = isPositive ? const Color(0xFF4ADE80) : const Color(0xFFF87171);
