@@ -677,11 +677,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: displayAthletes.length,
         proxyDecorator: (child, index, animation) {
-          return Material(
-            color: Colors.transparent,
-            elevation: 4,
-            shadowColor: Colors.black54,
-            borderRadius: BorderRadius.circular(8),
+          return AnimatedBuilder(
+            animation: animation,
+            builder: (BuildContext context, Widget? child) {
+              // Scale up by 4% when fully lifted
+              final double scale = 1.0 + (animation.value * 0.04);
+              return Transform.scale(
+                scale: scale,
+                child: Material(
+                  color: AppColors.card,
+                  elevation: 12, // Stronger shadow
+                  shadowColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: AppColors.brand.withAlpha((animation.value * 255).toInt()),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: child,
+                ),
+              );
+            },
             child: child,
           );
         },
@@ -697,13 +714,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         itemBuilder: (context, index) {
           final athlete = displayAthletes[index];
           final isSelected = athlete.id == activeAthlete?.id;
-          return _buildAthleteRow(athlete, isSelected);
+          return _buildAthleteRow(athlete, isSelected, index);
         },
       ),
     );
   }
 
-  Widget _buildAthleteRow(Athlete athlete, bool isSelected) {
+  Widget _buildAthleteRow(Athlete athlete, bool isSelected, int index) {
     return Container(
       key: ValueKey(athlete.id),
       margin: const EdgeInsets.only(bottom: 4),
