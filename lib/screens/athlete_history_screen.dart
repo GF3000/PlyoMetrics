@@ -12,29 +12,36 @@ class AthleteHistoryScreen extends ConsumerWidget {
     final athlete = ref.watch(activeAthleteProvider);
     final historyAsync = ref.watch(athleteJumpHistoryProvider);
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Performance History',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Performance History',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (athlete != null)
+                      Text(
+                        athlete.name,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                  ],
+                ),
+              ],
             ),
-            if (athlete != null)
-              Text(
-                athlete.name,
-                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-              ),
-          ],
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ),
-      body: historyAsync.when(
+          ),
+          Expanded(child: historyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (tests) {
@@ -169,6 +176,8 @@ class AthleteHistoryScreen extends ConsumerWidget {
             },
           );
         },
+      )),
+        ],
       ),
     );
   }

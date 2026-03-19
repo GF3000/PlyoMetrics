@@ -57,77 +57,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           children: [
             _buildHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  spacing: 16,
-                  children: [
-                    _buildAthleteCard(),
-                    _buildActionCard(
-                      tag: 'PERFORMANCE',
-                      title: 'CMJ Baseline Measurement',
-                      subtitle: 'Vertical jump metrics & flight time',
-                      icon: Icons.trending_up,
-                      hasGlow: true,
-                      onTap: () {
-                        final athlete = ref.read(activeAthleteProvider);
-                        if (athlete == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Please select an athlete first'),
-                            ),
-                          );
-                          return;
-                        }
-                        ref.read(cmjSessionProvider.notifier).reset();
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const CmjBaselineScreen(),
-                          ),
-                        );
-                      },
+              child: IndexedStack(
+                index: _selectedNavIndex == 0
+                    ? 0
+                    : _selectedNavIndex == 3
+                        ? 1
+                        : 2,
+                children: [
+                  _buildHomeTab(),
+                  const AthleteHistoryScreen(),
+                  Center(
+                    child: Text(
+                      _selectedNavIndex == 1 ? 'Evolution' : 'Profile',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
                     ),
-                    _buildActionCard(
-                      tag: 'MONITORING',
-                      title: 'Readiness / Fatigue Test',
-                      subtitle: 'Daily CNS & recovery tracking',
-                      icon: Icons.check_circle_outline,
-                      onTap: () {
-                        final athlete = ref.read(activeAthleteProvider);
-                        if (athlete == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Please select an athlete first'),
-                            ),
-                          );
-                          return;
-                        }
-                        if (athlete.baselineCmjHeight == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text('Complete a CMJ Baseline first'),
-                            ),
-                          );
-                          return;
-                        }
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const FatigueTestScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildActionCard(
-                      tag: 'REACTIVE STRENGTH',
-                      title: 'RSI Drop Jump Test',
-                      subtitle: 'Ground contact & efficiency',
-                      icon: Icons.timer_outlined,
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             _buildAthleteRoster(),
@@ -249,6 +197,80 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  // ── Home tab content ──
+
+  Widget _buildHomeTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        spacing: 16,
+        children: [
+          _buildAthleteCard(),
+          _buildActionCard(
+            tag: 'PERFORMANCE',
+            title: 'CMJ Baseline Measurement',
+            subtitle: 'Vertical jump metrics & flight time',
+            icon: Icons.trending_up,
+            hasGlow: true,
+            onTap: () {
+              final athlete = ref.read(activeAthleteProvider);
+              if (athlete == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select an athlete first'),
+                  ),
+                );
+                return;
+              }
+              ref.read(cmjSessionProvider.notifier).reset();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const CmjBaselineScreen(),
+                ),
+              );
+            },
+          ),
+          _buildActionCard(
+            tag: 'MONITORING',
+            title: 'Readiness / Fatigue Test',
+            subtitle: 'Daily CNS & recovery tracking',
+            icon: Icons.check_circle_outline,
+            onTap: () {
+              final athlete = ref.read(activeAthleteProvider);
+              if (athlete == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please select an athlete first'),
+                  ),
+                );
+                return;
+              }
+              if (athlete.baselineCmjHeight == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Complete a CMJ Baseline first'),
+                  ),
+                );
+                return;
+              }
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const FatigueTestScreen(),
+                ),
+              );
+            },
+          ),
+          _buildActionCard(
+            tag: 'REACTIVE STRENGTH',
+            title: 'RSI Drop Jump Test',
+            subtitle: 'Ground contact & efficiency',
+            icon: Icons.timer_outlined,
+          ),
+        ],
+      ),
+    );
+  }
+
   // ── Selected athlete profile card ──
 
   Widget _buildAthleteCard() {
@@ -259,11 +281,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
 
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const AthleteHistoryScreen()),
-        );
-      },
+      onTap: () => setState(() => _selectedNavIndex = 3),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
