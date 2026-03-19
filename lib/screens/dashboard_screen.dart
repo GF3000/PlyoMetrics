@@ -1278,8 +1278,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               subtitle: const Text('Ground contact & efficiency', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               onTap: () {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('RSI Drop Jump coming soon!')),
+                final athlete = ref.read(activeAthleteProvider);
+                if (athlete == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select an athlete first')),
+                  );
+                  return;
+                }
+                ref.read(rsiSessionProvider.notifier).reset();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const RsiTestScreen()),
                 );
               },
             ),
