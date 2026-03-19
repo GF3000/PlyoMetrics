@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
@@ -102,16 +103,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
-            'PlyoMetrics',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: AppColors.brand,
-              letterSpacing: -0.5,
-            ),
-          ),
-          groupsAsync.when(
+           RichText(
+             text: TextSpan(
+               children: [
+                 TextSpan(
+                   text: 'Plyo',
+                   style: GoogleFonts.orbitron(
+                     fontSize: 22,
+                     fontWeight: FontWeight.w800,
+                     color: Colors.white,
+                     letterSpacing: -0.5,
+                   ),
+                 ),
+                 TextSpan(
+                   text: 'Metrics',
+                   style: GoogleFonts.orbitron(
+                     fontSize: 22,
+                     fontWeight: FontWeight.w800,
+                     color: AppColors.brand,
+                     letterSpacing: -0.5,
+                   ),
+                 ),
+               ],
+             ),
+           ),
+           groupsAsync.when(
             loading: () => const SizedBox(
               width: 16,
               height: 16,
