@@ -958,24 +958,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _buildNavItem(Icons.home_outlined, 'Home', 0),
           _buildNavItem(Icons.bar_chart, 'Evolution', 1),
           // Center FAB-style button
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 48,
-              height: 48,
-              transform: Matrix4.translationValues(0, -16, 0),
-              decoration: BoxDecoration(
-                color: AppColors.brand,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.surface, width: 4),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.brand.withAlpha(50),
-                    blurRadius: 12,
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _showNewTestMenu(context),
+              child: Container(
+                width: 48,
+                height: 48,
+                transform: Matrix4.translationValues(0, -16, 0),
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surface, width: 4),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brand.withAlpha(50),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: AppColors.brand,
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias, // Ensures the ripple stays inside the circle
+                  child: InkWell(
+                    onTap: () => _showNewTestMenu(context),
+                    splashColor: Colors.black26, // A subtle dark ripple looks great on the bright brand color
+                    highlightColor: Colors.black12,
+                    child: const Center(
+                      child: Icon(Icons.add, color: Colors.black, size: 28),
+                    ),
                   ),
-                ],
+                ),
               ),
-              child: const Icon(Icons.add, color: Colors.black, size: 24),
             ),
           ),
           _buildNavItem(Icons.access_time, 'Log', 3),
@@ -987,25 +1002,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildNavItem(IconData icon, String label, int index) {
     final isActive = _selectedNavIndex == index;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedNavIndex = index),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isActive ? AppColors.brand : AppColors.textTertiary,
+    return Expanded(
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => setState(() => _selectedNavIndex = index),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 24,
+                color: isActive ? AppColors.brand : AppColors.textTertiary,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: isActive ? AppColors.brand : AppColors.textTertiary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isActive ? AppColors.brand : AppColors.textTertiary,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1135,5 +1156,122 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.read(activeAthleteProvider.notifier).state = null;
       }
     }
+  }
+
+  void _showNewTestMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Drag handle pill
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderLight,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const Text(
+              'New Measurement',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // CMJ Baseline Option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withAlpha(25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.trending_up, color: AppColors.brand),
+              ),
+              title: const Text('CMJ Baseline', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: const Text('Vertical jump metrics', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx); // Dismiss the sheet
+                final athlete = ref.read(activeAthleteProvider);
+                if (athlete == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select an athlete first')),
+                  );
+                  return;
+                }
+                ref.read(cmjSessionProvider.notifier).reset();
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
+                );
+              },
+            ),
+            // Fatigue Test Option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withAlpha(25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.check_circle_outline, color: AppColors.brand),
+              ),
+              title: const Text('Fatigue Test', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: const Text('Daily readiness tracking', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx);
+                final athlete = ref.read(activeAthleteProvider);
+                if (athlete == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please select an athlete first')),
+                  );
+                  return;
+                }
+                if (athlete.baselineCmjHeight == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Complete a CMJ Baseline first')),
+                  );
+                  return;
+                }
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const FatigueTestScreen()),
+                );
+              },
+            ),
+            // RSI Test Option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withAlpha(25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.timer_outlined, color: AppColors.brand),
+              ),
+              title: const Text('RSI Drop Jump', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: const Text('Ground contact & efficiency', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('RSI Drop Jump coming soon!')),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
   }
 }
