@@ -25,6 +25,8 @@ class JumpTest {
   double? contactTimeMs; // RSI only
   double? rsiScore; // RSI only
 
+  double? baselineAtTest; // baseline height at time of fatigue test
+
   int? baselineSessionId;
   bool isOutlier = false;
 }

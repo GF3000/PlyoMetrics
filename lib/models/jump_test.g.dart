@@ -22,63 +22,68 @@ const JumpTestSchema = CollectionSchema(
       name: r'athleteId',
       type: IsarType.long,
     ),
-    r'baselineSessionId': PropertySchema(
+    r'baselineAtTest': PropertySchema(
       id: 1,
+      name: r'baselineAtTest',
+      type: IsarType.double,
+    ),
+    r'baselineSessionId': PropertySchema(
+      id: 2,
       name: r'baselineSessionId',
       type: IsarType.long,
     ),
     r'contactTimeMs': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'contactTimeMs',
       type: IsarType.double,
     ),
     r'deltaHCm': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'deltaHCm',
       type: IsarType.double,
     ),
     r'flightTimeMs': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'flightTimeMs',
       type: IsarType.double,
     ),
     r'fps': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'fps',
       type: IsarType.double,
     ),
     r'heightCm': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'heightCm',
       type: IsarType.double,
     ),
     r'isOutlier': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'isOutlier',
       type: IsarType.bool,
     ),
     r'landingFrame': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'landingFrame',
       type: IsarType.long,
     ),
     r'rsiScore': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'rsiScore',
       type: IsarType.double,
     ),
     r'takeoffFrame': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'takeoffFrame',
       type: IsarType.long,
     ),
     r'testType': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'testType',
       type: IsarType.string,
     ),
     r'timestamp': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -141,18 +146,19 @@ void _jumpTestSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeLong(offsets[0], object.athleteId);
-  writer.writeLong(offsets[1], object.baselineSessionId);
-  writer.writeDouble(offsets[2], object.contactTimeMs);
-  writer.writeDouble(offsets[3], object.deltaHCm);
-  writer.writeDouble(offsets[4], object.flightTimeMs);
-  writer.writeDouble(offsets[5], object.fps);
-  writer.writeDouble(offsets[6], object.heightCm);
-  writer.writeBool(offsets[7], object.isOutlier);
-  writer.writeLong(offsets[8], object.landingFrame);
-  writer.writeDouble(offsets[9], object.rsiScore);
-  writer.writeLong(offsets[10], object.takeoffFrame);
-  writer.writeString(offsets[11], object.testType);
-  writer.writeDateTime(offsets[12], object.timestamp);
+  writer.writeDouble(offsets[1], object.baselineAtTest);
+  writer.writeLong(offsets[2], object.baselineSessionId);
+  writer.writeDouble(offsets[3], object.contactTimeMs);
+  writer.writeDouble(offsets[4], object.deltaHCm);
+  writer.writeDouble(offsets[5], object.flightTimeMs);
+  writer.writeDouble(offsets[6], object.fps);
+  writer.writeDouble(offsets[7], object.heightCm);
+  writer.writeBool(offsets[8], object.isOutlier);
+  writer.writeLong(offsets[9], object.landingFrame);
+  writer.writeDouble(offsets[10], object.rsiScore);
+  writer.writeLong(offsets[11], object.takeoffFrame);
+  writer.writeString(offsets[12], object.testType);
+  writer.writeDateTime(offsets[13], object.timestamp);
 }
 
 JumpTest _jumpTestDeserialize(
@@ -163,19 +169,20 @@ JumpTest _jumpTestDeserialize(
 ) {
   final object = JumpTest();
   object.athleteId = reader.readLong(offsets[0]);
-  object.baselineSessionId = reader.readLongOrNull(offsets[1]);
-  object.contactTimeMs = reader.readDoubleOrNull(offsets[2]);
-  object.deltaHCm = reader.readDouble(offsets[3]);
-  object.flightTimeMs = reader.readDouble(offsets[4]);
-  object.fps = reader.readDouble(offsets[5]);
-  object.heightCm = reader.readDouble(offsets[6]);
+  object.baselineAtTest = reader.readDoubleOrNull(offsets[1]);
+  object.baselineSessionId = reader.readLongOrNull(offsets[2]);
+  object.contactTimeMs = reader.readDoubleOrNull(offsets[3]);
+  object.deltaHCm = reader.readDouble(offsets[4]);
+  object.flightTimeMs = reader.readDouble(offsets[5]);
+  object.fps = reader.readDouble(offsets[6]);
+  object.heightCm = reader.readDouble(offsets[7]);
   object.id = id;
-  object.isOutlier = reader.readBool(offsets[7]);
-  object.landingFrame = reader.readLong(offsets[8]);
-  object.rsiScore = reader.readDoubleOrNull(offsets[9]);
-  object.takeoffFrame = reader.readLong(offsets[10]);
-  object.testType = reader.readString(offsets[11]);
-  object.timestamp = reader.readDateTime(offsets[12]);
+  object.isOutlier = reader.readBool(offsets[8]);
+  object.landingFrame = reader.readLong(offsets[9]);
+  object.rsiScore = reader.readDoubleOrNull(offsets[10]);
+  object.takeoffFrame = reader.readLong(offsets[11]);
+  object.testType = reader.readString(offsets[12]);
+  object.timestamp = reader.readDateTime(offsets[13]);
   return object;
 }
 
@@ -189,11 +196,11 @@ P _jumpTestDeserializeProp<P>(
     case 0:
       return (reader.readLong(offset)) as P;
     case 1:
-      return (reader.readLongOrNull(offset)) as P;
-    case 2:
       return (reader.readDoubleOrNull(offset)) as P;
+    case 2:
+      return (reader.readLongOrNull(offset)) as P;
     case 3:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 4:
       return (reader.readDouble(offset)) as P;
     case 5:
@@ -201,16 +208,18 @@ P _jumpTestDeserializeProp<P>(
     case 6:
       return (reader.readDouble(offset)) as P;
     case 7:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 10:
       return (reader.readLong(offset)) as P;
+    case 10:
+      return (reader.readDoubleOrNull(offset)) as P;
     case 11:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -498,6 +507,88 @@ extension JumpTestQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      baselineAtTestIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'baselineAtTest',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      baselineAtTestIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'baselineAtTest',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> baselineAtTestEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'baselineAtTest',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      baselineAtTestGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'baselineAtTest',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      baselineAtTestLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'baselineAtTest',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> baselineAtTestBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'baselineAtTest',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
       ));
     });
   }
@@ -1357,6 +1448,18 @@ extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByBaselineAtTest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineAtTest', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByBaselineAtTestDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineAtTest', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByBaselineSessionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'baselineSessionId', Sort.asc);
@@ -1513,6 +1616,18 @@ extension JumpTestQuerySortThenBy
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByAthleteIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'athleteId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByBaselineAtTest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineAtTest', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByBaselineAtTestDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineAtTest', Sort.desc);
     });
   }
 
@@ -1681,6 +1796,12 @@ extension JumpTestQueryWhereDistinct
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByBaselineAtTest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'baselineAtTest');
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByBaselineSessionId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'baselineSessionId');
@@ -1766,6 +1887,12 @@ extension JumpTestQueryProperty
   QueryBuilder<JumpTest, int, QQueryOperations> athleteIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'athleteId');
+    });
+  }
+
+  QueryBuilder<JumpTest, double?, QQueryOperations> baselineAtTestProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'baselineAtTest');
     });
   }
 

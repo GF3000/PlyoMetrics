@@ -125,10 +125,35 @@ class IsarService {
     });
   }
 
-  Future<void> deleteJumpTest(int testId) async {
+  Future<Athlete?> deleteJumpTest(int testId) async {
+    Athlete? updatedAthlete;
     await _db.writeTxn(() async {
+      final test = await _db.jumpTests.get(testId);
+      if (test == null) return;
+
+      final athleteId = test.athleteId;
       await _db.jumpTests.delete(testId);
+
+      // Recalculate baseline from remaining jumps
+      final remaining = await _db.jumpTests
+          .filter()
+          .athleteIdEqualTo(athleteId)
+          .findAll();
+
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete != null) {
+        if (remaining.isEmpty) {
+          athlete.baselineCmjHeight = null;
+        } else {
+          athlete.baselineCmjHeight = remaining
+              .map((t) => t.heightCm)
+              .reduce((a, b) => a > b ? a : b);
+        }
+        await _db.athletes.put(athlete);
+        updatedAthlete = athlete;
+      }
     });
+    return updatedAthlete;
   }
 
   Future<List<JumpTest>> getJumpTestsForAthlete(

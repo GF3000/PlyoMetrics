@@ -222,7 +222,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       ..fps = _jumpResult!.fps
       ..flightTimeMs = _jumpResult!.flightTimeMs
       ..heightCm = _jumpResult!.heightCm
-      ..deltaHCm = _jumpResult!.deltaHCm;
+      ..deltaHCm = _jumpResult!.deltaHCm
+      ..baselineAtTest = athlete.baselineCmjHeight;
 
     await ref.read(isarServiceProvider).saveJumpTests([test]);
 
