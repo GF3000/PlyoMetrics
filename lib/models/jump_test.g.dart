@@ -42,48 +42,63 @@ const JumpTestSchema = CollectionSchema(
       name: r'deltaHCm',
       type: IsarType.double,
     ),
-    r'flightTimeMs': PropertySchema(
+    r'deltaRsi': PropertySchema(
       id: 5,
+      name: r'deltaRsi',
+      type: IsarType.double,
+    ),
+    r'dropHeightCm': PropertySchema(
+      id: 6,
+      name: r'dropHeightCm',
+      type: IsarType.double,
+    ),
+    r'flightTimeMs': PropertySchema(
+      id: 7,
       name: r'flightTimeMs',
       type: IsarType.double,
     ),
     r'fps': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'fps',
       type: IsarType.double,
     ),
     r'heightCm': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'heightCm',
       type: IsarType.double,
     ),
     r'isOutlier': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'isOutlier',
       type: IsarType.bool,
     ),
+    r'landing1Frame': PropertySchema(
+      id: 11,
+      name: r'landing1Frame',
+      type: IsarType.long,
+    ),
     r'landingFrame': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'landingFrame',
       type: IsarType.long,
     ),
     r'rsiScore': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'rsiScore',
       type: IsarType.double,
     ),
     r'takeoffFrame': PropertySchema(
-      id: 11,
+      id: 14,
       name: r'takeoffFrame',
       type: IsarType.long,
     ),
     r'testType': PropertySchema(
-      id: 12,
+      id: 15,
       name: r'testType',
       type: IsarType.string,
     ),
     r'timestamp': PropertySchema(
-      id: 13,
+      id: 16,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -150,15 +165,18 @@ void _jumpTestSerialize(
   writer.writeLong(offsets[2], object.baselineSessionId);
   writer.writeDouble(offsets[3], object.contactTimeMs);
   writer.writeDouble(offsets[4], object.deltaHCm);
-  writer.writeDouble(offsets[5], object.flightTimeMs);
-  writer.writeDouble(offsets[6], object.fps);
-  writer.writeDouble(offsets[7], object.heightCm);
-  writer.writeBool(offsets[8], object.isOutlier);
-  writer.writeLong(offsets[9], object.landingFrame);
-  writer.writeDouble(offsets[10], object.rsiScore);
-  writer.writeLong(offsets[11], object.takeoffFrame);
-  writer.writeString(offsets[12], object.testType);
-  writer.writeDateTime(offsets[13], object.timestamp);
+  writer.writeDouble(offsets[5], object.deltaRsi);
+  writer.writeDouble(offsets[6], object.dropHeightCm);
+  writer.writeDouble(offsets[7], object.flightTimeMs);
+  writer.writeDouble(offsets[8], object.fps);
+  writer.writeDouble(offsets[9], object.heightCm);
+  writer.writeBool(offsets[10], object.isOutlier);
+  writer.writeLong(offsets[11], object.landing1Frame);
+  writer.writeLong(offsets[12], object.landingFrame);
+  writer.writeDouble(offsets[13], object.rsiScore);
+  writer.writeLong(offsets[14], object.takeoffFrame);
+  writer.writeString(offsets[15], object.testType);
+  writer.writeDateTime(offsets[16], object.timestamp);
 }
 
 JumpTest _jumpTestDeserialize(
@@ -173,16 +191,19 @@ JumpTest _jumpTestDeserialize(
   object.baselineSessionId = reader.readLongOrNull(offsets[2]);
   object.contactTimeMs = reader.readDoubleOrNull(offsets[3]);
   object.deltaHCm = reader.readDouble(offsets[4]);
-  object.flightTimeMs = reader.readDouble(offsets[5]);
-  object.fps = reader.readDouble(offsets[6]);
-  object.heightCm = reader.readDouble(offsets[7]);
+  object.deltaRsi = reader.readDoubleOrNull(offsets[5]);
+  object.dropHeightCm = reader.readDoubleOrNull(offsets[6]);
+  object.flightTimeMs = reader.readDouble(offsets[7]);
+  object.fps = reader.readDouble(offsets[8]);
+  object.heightCm = reader.readDouble(offsets[9]);
   object.id = id;
-  object.isOutlier = reader.readBool(offsets[8]);
-  object.landingFrame = reader.readLong(offsets[9]);
-  object.rsiScore = reader.readDoubleOrNull(offsets[10]);
-  object.takeoffFrame = reader.readLong(offsets[11]);
-  object.testType = reader.readString(offsets[12]);
-  object.timestamp = reader.readDateTime(offsets[13]);
+  object.isOutlier = reader.readBool(offsets[10]);
+  object.landing1Frame = reader.readLongOrNull(offsets[11]);
+  object.landingFrame = reader.readLong(offsets[12]);
+  object.rsiScore = reader.readDoubleOrNull(offsets[13]);
+  object.takeoffFrame = reader.readLong(offsets[14]);
+  object.testType = reader.readString(offsets[15]);
+  object.timestamp = reader.readDateTime(offsets[16]);
   return object;
 }
 
@@ -204,22 +225,28 @@ P _jumpTestDeserializeProp<P>(
     case 4:
       return (reader.readDouble(offset)) as P;
     case 5:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 6:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 7:
       return (reader.readDouble(offset)) as P;
     case 8:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 9:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 10:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 11:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 12:
-      return (reader.readString(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 13:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 14:
+      return (reader.readLong(offset)) as P;
+    case 15:
+      return (reader.readString(offset)) as P;
+    case 16:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -810,6 +837,164 @@ extension JumpTestQueryFilter
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'deltaRsi',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'deltaRsi',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'deltaRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'deltaRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'deltaRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> deltaRsiBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'deltaRsi',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> dropHeightCmIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dropHeightCm',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      dropHeightCmIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dropHeightCm',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> dropHeightCmEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dropHeightCm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      dropHeightCmGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dropHeightCm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> dropHeightCmLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dropHeightCm',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> dropHeightCmBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dropHeightCm',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> flightTimeMsEqualTo(
     double value, {
     double epsilon = Query.epsilon,
@@ -1055,6 +1240,78 @@ extension JumpTestQueryFilter
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isOutlier',
         value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      landing1FrameIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'landing1Frame',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      landing1FrameIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'landing1Frame',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> landing1FrameEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'landing1Frame',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      landing1FrameGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'landing1Frame',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> landing1FrameLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'landing1Frame',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> landing1FrameBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'landing1Frame',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -1496,6 +1753,30 @@ extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByDeltaRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deltaRsi', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByDeltaRsiDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deltaRsi', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByDropHeightCm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dropHeightCm', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByDropHeightCmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dropHeightCm', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByFlightTimeMs() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'flightTimeMs', Sort.asc);
@@ -1541,6 +1822,18 @@ extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByIsOutlierDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isOutlier', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByLanding1Frame() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'landing1Frame', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByLanding1FrameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'landing1Frame', Sort.desc);
     });
   }
 
@@ -1667,6 +1960,30 @@ extension JumpTestQuerySortThenBy
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByDeltaRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deltaRsi', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByDeltaRsiDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'deltaRsi', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByDropHeightCm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dropHeightCm', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByDropHeightCmDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dropHeightCm', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByFlightTimeMs() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'flightTimeMs', Sort.asc);
@@ -1724,6 +2041,18 @@ extension JumpTestQuerySortThenBy
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByIsOutlierDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isOutlier', Sort.desc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByLanding1Frame() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'landing1Frame', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByLanding1FrameDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'landing1Frame', Sort.desc);
     });
   }
 
@@ -1820,6 +2149,18 @@ extension JumpTestQueryWhereDistinct
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByDeltaRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'deltaRsi');
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByDropHeightCm() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dropHeightCm');
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByFlightTimeMs() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'flightTimeMs');
@@ -1841,6 +2182,12 @@ extension JumpTestQueryWhereDistinct
   QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByIsOutlier() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isOutlier');
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByLanding1Frame() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'landing1Frame');
     });
   }
 
@@ -1914,6 +2261,18 @@ extension JumpTestQueryProperty
     });
   }
 
+  QueryBuilder<JumpTest, double?, QQueryOperations> deltaRsiProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'deltaRsi');
+    });
+  }
+
+  QueryBuilder<JumpTest, double?, QQueryOperations> dropHeightCmProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dropHeightCm');
+    });
+  }
+
   QueryBuilder<JumpTest, double, QQueryOperations> flightTimeMsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'flightTimeMs');
@@ -1935,6 +2294,12 @@ extension JumpTestQueryProperty
   QueryBuilder<JumpTest, bool, QQueryOperations> isOutlierProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isOutlier');
+    });
+  }
+
+  QueryBuilder<JumpTest, int?, QQueryOperations> landing1FrameProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'landing1Frame');
     });
   }
 

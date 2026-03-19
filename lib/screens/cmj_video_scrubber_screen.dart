@@ -8,19 +8,25 @@ import 'package:path_provider/path_provider.dart';
 
 import '../core/theme.dart';
 import '../providers/cmj_session_provider.dart';
+import '../providers/rsi_session_provider.dart';
 import '../services/video_service.dart';
+
+enum ScrubberMode { cmj, rsi }
 
 /// Phase 2: Fine frame-by-frame scrubber.
 /// Extracts frames via FFmpeg, then lets the user mark takeoff/landing
 /// with single-frame precision.
+/// In RSI mode, captures 3 frames: Landing 1, Takeoff, Landing 2.
 class CmjVideoScrubberScreen extends ConsumerStatefulWidget {
   final String videoPath;
   final double startTimeSeconds;
+  final ScrubberMode mode;
 
   const CmjVideoScrubberScreen({
     super.key,
     required this.videoPath,
     required this.startTimeSeconds,
+    this.mode = ScrubberMode.cmj,
   });
 
   @override
@@ -43,6 +49,7 @@ class _CmjVideoScrubberScreenState
   // Marking state
   int? _takeoffFrame;
   int? _landingFrame;
+  int? _landing1Frame; // RSI only: first ground contact
 
   // Playback state
   bool _isPlaying = false;
@@ -172,6 +179,14 @@ class _CmjVideoScrubberScreenState
   }
 
   void _confirmSelection() {
+    if (widget.mode == ScrubberMode.rsi) {
+      _confirmRsiSelection();
+    } else {
+      _confirmCmjSelection();
+    }
+  }
+
+  void _confirmCmjSelection() {
     if (_takeoffFrame == null || _landingFrame == null) return;
     if (_landingFrame! <= _takeoffFrame!) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -197,6 +212,36 @@ class _CmjVideoScrubberScreenState
       flightTimeMs: flightTimeMs,
       heightCm: heightCm,
       deltaHCm: deltaHCm,
+      videoPath: widget.videoPath,
+    );
+
+    Navigator.of(context).pop(result);
+  }
+
+  void _confirmRsiSelection() {
+    if (_landing1Frame == null ||
+        _takeoffFrame == null ||
+        _landingFrame == null) {
+      return;
+    }
+    if (!(_landing1Frame! < _takeoffFrame! &&
+        _takeoffFrame! < _landingFrame!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Frames must be in order: Landing 1 < Takeoff < Landing 2'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final result = RsiJumpResult.fromFrames(
+      landing1Frame: _landing1Frame!,
+      takeoffFrame: _takeoffFrame!,
+      landing2Frame: _landingFrame!,
+      fps: _fps,
+      dropHeightCm: 0, // set by the test screen
       videoPath: widget.videoPath,
     );
 
@@ -336,19 +381,43 @@ class _CmjVideoScrubberScreenState
     final frameCount = _framePaths.length;
     final currentTimeMs = (_currentFrame / _fps * 1000).toStringAsFixed(1);
 
-    // Compute results if both markers set
+    // Compute results based on mode
+    final bool isRsi = widget.mode == ScrubberMode.rsi;
     double? flightTimeMs;
     double? heightCm;
     double? deltaHCm;
-    if (_takeoffFrame != null &&
-        _landingFrame != null &&
-        _landingFrame! > _takeoffFrame!) {
-      final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
-      flightTimeMs = flightTimeSec * 1000;
-      const g = 9.81;
-      final heightMeters = g * flightTimeSec * flightTimeSec / 8;
-      heightCm = heightMeters * 100;
-      deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+    double? contactTimeMs;
+    double? rsiScore;
+    final bool hasResults;
+
+    if (isRsi) {
+      hasResults = _landing1Frame != null &&
+          _takeoffFrame != null &&
+          _landingFrame != null &&
+          _landing1Frame! < _takeoffFrame! &&
+          _takeoffFrame! < _landingFrame!;
+      if (hasResults) {
+        const g = 9.81;
+        final contactSec = (_takeoffFrame! - _landing1Frame!) / _fps;
+        final flightSec = (_landingFrame! - _takeoffFrame!) / _fps;
+        contactTimeMs = contactSec * 1000;
+        flightTimeMs = flightSec * 1000;
+        final heightMeters = g * flightSec * flightSec / 8;
+        heightCm = heightMeters * 100;
+        rsiScore = heightMeters / contactSec;
+      }
+    } else {
+      hasResults = _takeoffFrame != null &&
+          _landingFrame != null &&
+          _landingFrame! > _takeoffFrame!;
+      if (hasResults) {
+        final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
+        flightTimeMs = flightTimeSec * 1000;
+        const g = 9.81;
+        final heightMeters = g * flightTimeSec * flightTimeSec / 8;
+        heightCm = heightMeters * 100;
+        deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+      }
     }
 
     return Column(
@@ -365,7 +434,9 @@ class _CmjVideoScrubberScreenState
                     ? Colors.green
                     : _landingFrame == _currentFrame
                         ? Colors.red
-                        : AppColors.borderLight,
+                        : (isRsi && _landing1Frame == _currentFrame)
+                            ? Colors.amber
+                            : AppColors.borderLight,
                 width: 2,
               ),
             ),
@@ -493,34 +564,75 @@ class _CmjVideoScrubberScreenState
           child: Column(
             children: [
               // Mark buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMarkButton(
-                      label: 'Mark Takeoff',
-                      icon: Icons.flight_takeoff,
-                      color: Colors.green,
-                      markedFrame: _takeoffFrame,
-                      onPressed: () =>
-                          setState(() => _takeoffFrame = _currentFrame),
+              if (isRsi)
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildMarkButton(
+                        label: 'Landing 1',
+                        icon: Icons.flight_land,
+                        color: Colors.amber,
+                        markedFrame: _landing1Frame,
+                        onPressed: () =>
+                            setState(() => _landing1Frame = _currentFrame),
+                        compact: true,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildMarkButton(
-                      label: 'Mark Landing',
-                      icon: Icons.flight_land,
-                      color: Colors.red,
-                      markedFrame: _landingFrame,
-                      onPressed: () =>
-                          setState(() => _landingFrame = _currentFrame),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMarkButton(
+                        label: 'Takeoff',
+                        icon: Icons.flight_takeoff,
+                        color: Colors.green,
+                        markedFrame: _takeoffFrame,
+                        onPressed: () =>
+                            setState(() => _takeoffFrame = _currentFrame),
+                        compact: true,
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _buildMarkButton(
+                        label: 'Landing 2',
+                        icon: Icons.flight_land,
+                        color: Colors.red,
+                        markedFrame: _landingFrame,
+                        onPressed: () =>
+                            setState(() => _landingFrame = _currentFrame),
+                        compact: true,
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildMarkButton(
+                        label: 'Mark Takeoff',
+                        icon: Icons.flight_takeoff,
+                        color: Colors.green,
+                        markedFrame: _takeoffFrame,
+                        onPressed: () =>
+                            setState(() => _takeoffFrame = _currentFrame),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildMarkButton(
+                        label: 'Mark Landing',
+                        icon: Icons.flight_land,
+                        color: Colors.red,
+                        markedFrame: _landingFrame,
+                        onPressed: () =>
+                            setState(() => _landingFrame = _currentFrame),
+                      ),
+                    ),
+                  ],
+                ),
 
               // Results summary
-              if (heightCm != null) ...[
+              if (hasResults) ...[
                 const SizedBox(height: 16),
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -529,33 +641,67 @@ class _CmjVideoScrubberScreenState
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: AppColors.borderLight),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildMetric(
-                        'Flight Time',
-                        '${flightTimeMs!.toStringAsFixed(1)} ms',
-                      ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: AppColors.borderLight,
-                      ),
-                      _buildMetric(
-                        'Height',
-                        '${heightCm.toStringAsFixed(1)} cm',
-                      ),
-                      Container(
-                        width: 1,
-                        height: 32,
-                        color: AppColors.borderLight,
-                      ),
-                      _buildMetric(
-                        'Error',
-                        '\u00b1 ${deltaHCm!.toStringAsFixed(1)} cm',
-                      ),
-                    ],
-                  ),
+                  child: isRsi
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildMetric(
+                              'Contact',
+                              '${contactTimeMs!.toStringAsFixed(1)} ms',
+                            ),
+                            Container(
+                                width: 1,
+                                height: 32,
+                                color: AppColors.borderLight),
+                            _buildMetric(
+                              'Flight',
+                              '${flightTimeMs!.toStringAsFixed(1)} ms',
+                            ),
+                            Container(
+                                width: 1,
+                                height: 32,
+                                color: AppColors.borderLight),
+                            _buildMetric(
+                              'Height',
+                              '${heightCm!.toStringAsFixed(1)} cm',
+                            ),
+                            Container(
+                                width: 1,
+                                height: 32,
+                                color: AppColors.borderLight),
+                            _buildMetric(
+                              'RSI',
+                              rsiScore!.toStringAsFixed(2),
+                            ),
+                          ],
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildMetric(
+                              'Flight Time',
+                              '${flightTimeMs!.toStringAsFixed(1)} ms',
+                            ),
+                            Container(
+                              width: 1,
+                              height: 32,
+                              color: AppColors.borderLight,
+                            ),
+                            _buildMetric(
+                              'Height',
+                              '${heightCm!.toStringAsFixed(1)} cm',
+                            ),
+                            Container(
+                              width: 1,
+                              height: 32,
+                              color: AppColors.borderLight,
+                            ),
+                            _buildMetric(
+                              'Error',
+                              '\u00b1 ${deltaHCm!.toStringAsFixed(1)} cm',
+                            ),
+                          ],
+                        ),
                 ),
 
                 const SizedBox(height: 16),
@@ -610,19 +756,22 @@ class _CmjVideoScrubberScreenState
     required Color color,
     required int? markedFrame,
     required VoidCallback onPressed,
+    bool compact = false,
   }) {
     final isMarked = markedFrame != null;
+    final fontSize = compact ? 11.0 : 13.0;
+    final hPadding = compact ? 4.0 : 8.0;
     return OutlinedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: compact ? 14 : 18),
       label: Text(isMarked ? '$label (#${markedFrame + 1})' : label),
       style: OutlinedButton.styleFrom(
         foregroundColor: isMarked ? Colors.black : color,
         backgroundColor: isMarked ? color : Colors.transparent,
         side: BorderSide(color: color),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        textStyle: const TextStyle(
-          fontSize: 13,
+        padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
+        textStyle: TextStyle(
+          fontSize: fontSize,
           fontWeight: FontWeight.w600,
         ),
       ),

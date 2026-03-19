@@ -169,7 +169,9 @@ class AthleteHistoryScreen extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '${test.heightCm.toStringAsFixed(1)} cm',
+                              test.testType == 'rsi' && test.rsiScore != null
+                                  ? test.rsiScore!.toStringAsFixed(2)
+                                  : '${test.heightCm.toStringAsFixed(1)} cm',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w700,
@@ -183,6 +185,14 @@ class AthleteHistoryScreen extends ConsumerWidget {
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: _fatigueColor(fatiguePercent),
+                                ),
+                              )
+                            else if (test.testType == 'rsi' && test.deltaRsi != null)
+                              Text(
+                                '\u00b1${test.deltaRsi!.toStringAsFixed(2)} RSI',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textTertiary,
                                 ),
                               )
                             else
@@ -307,7 +317,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
       _DetailItem('Height', '${test.heightCm.toStringAsFixed(1)} cm'),
       _DetailItem('Flight Time', '${test.flightTimeMs.toStringAsFixed(1)} ms'),
       _DetailItem('FPS', test.fps.toStringAsFixed(0)),
-      _DetailItem('Error Margin', '\u00b1${test.deltaHCm.toStringAsFixed(1)} cm'),
+      if (isRsi && test.deltaRsi != null)
+        _DetailItem('RSI Error', '\u00b1${test.deltaRsi!.toStringAsFixed(2)}')
+      else
+        _DetailItem('Error Margin', '\u00b1${test.deltaHCm.toStringAsFixed(1)} cm'),
       if (isRsi && test.contactTimeMs != null)
         _DetailItem('Contact Time', '${test.contactTimeMs!.toStringAsFixed(1)} ms'),
       if (isRsi && test.rsiScore != null)

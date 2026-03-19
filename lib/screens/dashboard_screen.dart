@@ -12,7 +12,10 @@ import '../widgets/delete_athlete_dialog.dart';
 import '../widgets/edit_athlete_dialog.dart';
 import 'cmj_baseline_screen.dart';
 import 'athlete_history_screen.dart';
+import 'evolution_screen.dart';
 import 'fatigue_test_screen.dart';
+import 'rsi_test_screen.dart';
+import '../providers/rsi_session_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -57,18 +60,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _buildHeader(),
             Expanded(
               child: IndexedStack(
-                index: _selectedNavIndex == 0
-                    ? 0
-                    : _selectedNavIndex == 3
-                    ? 1
-                    : 2,
+                index: const [0, 1, 3, 2][_selectedNavIndex],
                 children: [
                   _buildHomeTab(),
+                  const EvolutionScreen(),
                   const AthleteHistoryScreen(),
-                  Center(
+                  const Center(
                     child: Text(
-                      _selectedNavIndex == 1 ? 'Evolution' : 'Profile',
-                      style: const TextStyle(
+                      'Profile',
+                      style: TextStyle(
                         color: AppColors.textSecondary,
                         fontSize: 16,
                       ),
@@ -345,6 +345,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             title: 'RSI Drop Jump Test',
             subtitle: 'Ground contact & efficiency',
             icon: Icons.timer_outlined,
+            onTap: () {
+              final athlete = ref.read(activeAthleteProvider);
+              if (athlete == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Select an athlete first'),
+                  ),
+                );
+                return;
+              }
+              ref.read(rsiSessionProvider.notifier).reset();
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RsiTestScreen()),
+              );
+            },
           ),
         ],
       ),

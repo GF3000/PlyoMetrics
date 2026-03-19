@@ -54,3 +54,73 @@ final athleteJumpHistoryProvider = StreamProvider<List<JumpTest>>((ref) {
       .sortByTimestampDesc()
       .watch(fireImmediately: true);
 });
+
+// ── Evolution Providers ──
+
+/// Baseline (CMJ) tests for the active athlete, sorted ascending by date.
+final baselineHistoryProvider = Provider<List<JumpTest>>((ref) {
+  final history = ref.watch(athleteJumpHistoryProvider);
+  return history.whenOrNull(
+        data: (tests) => tests
+            .where((t) => t.testType == 'cmj_baseline' && !t.isOutlier)
+            .toList()
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+      ) ??
+      [];
+});
+
+/// Fatigue tests for the active athlete, sorted ascending by date.
+final fatigueHistoryProvider = Provider<List<JumpTest>>((ref) {
+  final history = ref.watch(athleteJumpHistoryProvider);
+  return history.whenOrNull(
+        data: (tests) => tests
+            .where((t) => t.testType == 'fatigue')
+            .toList()
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+      ) ??
+      [];
+});
+
+/// Computed stats for the Evolution tab metric cards.
+final athleteEvolutionStatsProvider =
+    Provider<({double? heightGainCm, double? groupMeanDiffCm})>((ref) {
+  final athlete = ref.watch(activeAthleteProvider);
+  final baselines = ref.watch(baselineHistoryProvider);
+  final groupAthletes = ref.watch(groupAthletesProvider);
+
+  // Height gain: current baseline minus earliest recorded baseline height
+  double? heightGain;
+  if (baselines.isNotEmpty && athlete?.baselineCmjHeight != null) {
+    heightGain = athlete!.baselineCmjHeight! - baselines.first.heightCm;
+  }
+
+  // Group mean comparison
+  double? groupMeanDiff;
+  if (athlete?.baselineCmjHeight != null) {
+    final withBaseline = groupAthletes.whenOrNull(
+            data: (list) =>
+                list.where((a) => a.baselineCmjHeight != null).toList()) ??
+        [];
+    if (withBaseline.length > 1) {
+      final mean = withBaseline
+              .map((a) => a.baselineCmjHeight!)
+              .reduce((a, b) => a + b) /
+          withBaseline.length;
+      groupMeanDiff = athlete!.baselineCmjHeight! - mean;
+    }
+  }
+
+  return (heightGainCm: heightGain, groupMeanDiffCm: groupMeanDiff);
+});
+
+/// RSI test history for the active athlete, sorted chronologically.
+final rsiHistoryProvider = Provider<List<JumpTest>>((ref) {
+  final history = ref.watch(athleteJumpHistoryProvider);
+  return history.whenOrNull(
+        data: (tests) => tests
+            .where((t) => t.testType == 'rsi')
+            .toList()
+          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+      ) ??
+      [];
+});

@@ -29,4 +29,9 @@ class JumpTest {
 
   int? baselineSessionId;
   bool isOutlier = false;
+
+  double? deltaRsi; // RSI: margin of error (±1 frame)
+
+  double? dropHeightCm; // RSI: drop height in cm
+  int? landing1Frame; // RSI: first ground contact frame
 }
