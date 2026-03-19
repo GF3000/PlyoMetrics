@@ -44,8 +44,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         final active = ref.read(activeAthleteProvider);
         if (athletes.isEmpty) {
           ref.read(activeAthleteProvider.notifier).state = null;
-        } else if (active == null ||
-            !athletes.any((a) => a.id == active.id)) {
+        } else if (active == null || !athletes.any((a) => a.id == active.id)) {
           ref.read(activeAthleteProvider.notifier).state = athletes.first;
         }
       });
@@ -61,8 +60,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 index: _selectedNavIndex == 0
                     ? 0
                     : _selectedNavIndex == 3
-                        ? 1
-                        : 2,
+                    ? 1
+                    : 2,
                 children: [
                   _buildHomeTab(),
                   const AthleteHistoryScreen(),
@@ -112,90 +111,157 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               letterSpacing: -0.5,
             ),
           ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.card,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: groupsAsync.when(
-                  loading: () => const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (_, __) => const Text('Error',
-                      style: TextStyle(color: Colors.red)),
-                  data: (groups) {
-                    if (groups.isEmpty) {
-                      return const Text(
-                        'No groups',
-                        style:
-                            TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                      );
+          groupsAsync.when(
+            loading: () => const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            error: (_, __) =>
+                const Text('Error', style: TextStyle(color: Colors.red)),
+            data: (groups) {
+              if (groups.isEmpty) {
+                return GestureDetector(
+                  onTap: () async {
+                    final group = await showDialog<AthleteGroup>(
+                      context: context,
+                      builder: (_) => const AddGroupDialog(),
+                    );
+                    if (group != null && mounted) {
+                      ref.read(activeGroupProvider.notifier).state = group;
+                      ref.read(activeAthleteProvider.notifier).state = null;
                     }
-                    return DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: activeGroup?.id,
-                        isDense: true,
-                        dropdownColor: AppColors.card,
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.card,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.brand.withAlpha(100)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add, color: AppColors.brand, size: 16),
+                        SizedBox(width: 6),
+                        Text(
+                          'New Group',
+                          style: TextStyle(
+                            color: AppColors.brand,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return PopupMenuButton<int>(
+                initialValue: activeGroup?.id,
+                tooltip: 'Select Group',
+                color: AppColors.card,
+                elevation: 8,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: AppColors.borderLight),
+                ),
+                position: PopupMenuPosition.under,
+                offset: const Offset(0, 8),
+                onSelected: (id) async {
+                  if (id == -1) {
+                    // "New Group" selected
+                    final group = await showDialog<AthleteGroup>(
+                      context: context,
+                      builder: (_) => const AddGroupDialog(),
+                    );
+                    if (group != null && mounted) {
+                      ref.read(activeGroupProvider.notifier).state = group;
+                      ref.read(activeAthleteProvider.notifier).state = null;
+                    }
+                  } else {
+                    // Existing group selected
+                    final group = groups.firstWhere((g) => g.id == id);
+                    ref.read(activeGroupProvider.notifier).state = group;
+                    ref.read(activeAthleteProvider.notifier).state = null;
+                  }
+                },
+                itemBuilder: (context) {
+                  final items = groups.map((g) {
+                    final isSelected = g.id == activeGroup?.id;
+                    return PopupMenuItem<int>(
+                      value: g.id,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            g.name,
+                            style: TextStyle(
+                              color: isSelected ? AppColors.brand : Colors.white,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            ),
+                          ),
+                          if (isSelected)
+                            const Icon(Icons.check, color: AppColors.brand, size: 18),
+                        ],
+                      ),
+                    );
+                  }).toList();
+
+                  // Append the Add Group button to the bottom of the list
+                  items.add(
+                    const PopupMenuItem<int>(
+                      value: -1,
+                      child: Row(
+                        children: [
+                          Icon(Icons.add, color: AppColors.brand, size: 18),
+                          SizedBox(width: 8),
+                          Text(
+                            'New Group',
+                            style: TextStyle(
+                              color: AppColors.brand,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+
+                  return items;
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.borderLight),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        activeGroup?.name ?? 'Select Group',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
-                        icon: const Icon(Icons.keyboard_arrow_down,
-                            color: Colors.white, size: 18),
-                        items: groups
-                            .map((g) => DropdownMenuItem<int>(
-                                value: g.id, child: Text(g.name)))
-                            .toList(),
-                        onChanged: (id) {
-                          if (id == null) return;
-                          final group = groups.firstWhere((g) => g.id == id);
-                          ref.read(activeGroupProvider.notifier).state = group;
-                          // Reset athlete selection when switching groups
-                          ref.read(activeAthleteProvider.notifier).state = null;
-                        },
                       ),
-                    );
-                  },
+                      const SizedBox(width: 6),
+                      const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 18),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              _buildAddGroupButton(),
-            ],
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildAddGroupButton() {
-    return GestureDetector(
-      onTap: () async {
-        final group = await showDialog<AthleteGroup>(
-          context: context,
-          builder: (_) => const AddGroupDialog(),
-        );
-        if (group != null) {
-          ref.read(activeGroupProvider.notifier).state = group;
-          ref.read(activeAthleteProvider.notifier).state = null;
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Icon(Icons.add, color: AppColors.brand, size: 18),
-      ),
-    );
-  }
 
   // ── Home tab content ──
 
@@ -224,9 +290,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               }
               ref.read(cmjSessionProvider.notifier).reset();
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const CmjBaselineScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
               );
             },
           ),
@@ -254,9 +318,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 return;
               }
               Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const FatigueTestScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const FatigueTestScreen()),
               );
             },
           ),
@@ -354,29 +416,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           color: Colors.white,
                         ),
                       ),
-                      const Icon(Icons.chevron_right, color: AppColors.textTertiary),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textTertiary,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.fitness_center,
-                          size: 14, color: AppColors.textSecondary),
+                      const Icon(
+                        Icons.fitness_center,
+                        size: 14,
+                        color: AppColors.textSecondary,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         '${athlete.weightKg.toInt()}kg',
                         style: const TextStyle(
-                            fontSize: 13, color: AppColors.textSecondary),
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       if (athlete.baselineCmjHeight != null) ...[
                         const SizedBox(width: 12),
-                        const Icon(Icons.height,
-                            size: 14, color: AppColors.brand),
+                        const Icon(
+                          Icons.height,
+                          size: 14,
+                          color: AppColors.brand,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '${athlete.baselineCmjHeight!.toStringAsFixed(1)}cm',
                           style: const TextStyle(
-                              fontSize: 13, color: AppColors.brand),
+                            fontSize: 13,
+                            color: AppColors.brand,
+                          ),
                         ),
                       ],
                     ],
@@ -415,7 +490,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     BoxShadow(
                       color: AppColors.brand.withAlpha(50),
                       blurRadius: 10,
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -501,7 +576,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => setState(() => _rosterExpanded = !_rosterExpanded),
+                  onTap: () =>
+                      setState(() => _rosterExpanded = !_rosterExpanded),
                   child: Text(
                     _rosterExpanded ? 'Collapse' : 'View All',
                     style: const TextStyle(
@@ -518,15 +594,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           athletesAsync.when(
             loading: () => const SizedBox(
               height: 80,
-              child: Center(
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
             error: (_, __) => const SizedBox(
               height: 80,
               child: Center(
-                child: Text('Error loading athletes',
-                    style: TextStyle(color: Colors.red)),
+                child: Text(
+                  'Error loading athletes',
+                  style: TextStyle(color: Colors.red),
+                ),
               ),
             ),
             data: (athletes) => _rosterExpanded
@@ -562,7 +638,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildExpandedRoster(
-      List<Athlete> athletes, Athlete? activeAthlete, AthleteGroup? activeGroup) {
+    List<Athlete> athletes,
+    Athlete? activeAthlete,
+    AthleteGroup? activeGroup,
+  ) {
     // Use optimistic local order if available, otherwise use stream data
     final displayAthletes = _reorderedAthletes ?? athletes;
     // Clear the override once the stream catches up with the same order
@@ -622,7 +701,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 12),
         leading: CircleAvatar(
           radius: 18,
-          backgroundColor: isSelected ? AppColors.card : AppColors.card.withAlpha(180),
+          backgroundColor: isSelected
+              ? AppColors.card
+              : AppColors.card.withAlpha(180),
           child: Text(
             athlete.name[0],
             style: TextStyle(
@@ -679,8 +760,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ],
         ),
-        onTap: () =>
-            ref.read(activeAthleteProvider.notifier).state = athlete,
+        onTap: () => ref.read(activeAthleteProvider.notifier).state = athlete,
       ),
     );
   }
@@ -726,8 +806,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildAthleteAvatar(Athlete athlete, bool isSelected) {
     return GestureDetector(
-      onTap: () =>
-          ref.read(activeAthleteProvider.notifier).state = athlete,
+      onTap: () => ref.read(activeAthleteProvider.notifier).state = athlete,
       onLongPress: () async {
         final deleted = await showDialog<bool>(
           context: context,
@@ -755,8 +834,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             padding: isSelected ? const EdgeInsets.all(2) : null,
             child: CircleAvatar(
               radius: 24,
-              backgroundColor:
-                  isSelected ? AppColors.card : AppColors.card.withAlpha(180),
+              backgroundColor: isSelected
+                  ? AppColors.card
+                  : AppColors.card.withAlpha(180),
               child: Text(
                 athlete.name[0],
                 style: TextStyle(
@@ -808,8 +888,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 strokeAlign: BorderSide.strokeAlignInside,
               ),
             ),
-            child:
-                const Icon(Icons.add, color: AppColors.textTertiary, size: 24),
+            child: const Icon(
+              Icons.add,
+              color: AppColors.textTertiary,
+              size: 24,
+            ),
           ),
           const SizedBox(height: 4),
           const Text(
@@ -832,9 +915,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: const BoxDecoration(
         color: AppColors.card,
-        border: Border(
-          top: BorderSide(color: AppColors.borderLight, width: 1),
-        ),
+        border: Border(top: BorderSide(color: AppColors.borderLight, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
