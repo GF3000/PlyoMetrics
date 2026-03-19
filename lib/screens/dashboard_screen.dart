@@ -12,6 +12,7 @@ import '../widgets/delete_athlete_dialog.dart';
 import '../widgets/edit_athlete_dialog.dart';
 import 'cmj_baseline_screen.dart';
 import 'athlete_history_screen.dart';
+import 'fatigue_test_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -23,6 +24,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int _selectedNavIndex = 0;
   bool _rosterExpanded = false;
+  List<Athlete>? _reorderedAthletes;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       title: 'Readiness / Fatigue Test',
                       subtitle: 'Daily CNS & recovery tracking',
                       icon: Icons.check_circle_outline,
+                      onTap: () {
+                        final athlete = ref.read(activeAthleteProvider);
+                        if (athlete == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Please select an athlete first'),
+                            ),
+                          );
+                          return;
+                        }
+                        if (athlete.baselineCmjHeight == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text('Complete a CMJ Baseline first'),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const FatigueTestScreen(),
+                          ),
+                        );
+                      },
                     ),
                     _buildActionCard(
                       tag: 'REACTIVE STRENGTH',
@@ -508,14 +536,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
+  bool _listOrderMatches(List<Athlete> a, List<Athlete> b) {
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].id != b[i].id) return false;
+    }
+    return true;
+  }
+
   Widget _buildExpandedRoster(
       List<Athlete> athletes, Athlete? activeAthlete, AthleteGroup? activeGroup) {
+    // Use optimistic local order if available, otherwise use stream data
+    final displayAthletes = _reorderedAthletes ?? athletes;
+    // Clear the override once the stream catches up with the same order
+    if (_reorderedAthletes != null &&
+        _reorderedAthletes!.length == athletes.length &&
+        _listOrderMatches(_reorderedAthletes!, athletes)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _reorderedAthletes = null);
+      });
+    }
     return ConstrainedBox(
       constraints: const BoxConstraints(maxHeight: 300),
       child: ReorderableListView.builder(
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: athletes.length,
+        itemCount: displayAthletes.length,
         proxyDecorator: (child, index, animation) {
           return Material(
             color: Colors.transparent,
@@ -527,14 +572,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
         onReorder: (oldIndex, newIndex) {
           if (newIndex > oldIndex) newIndex--;
-          final reordered = List<Athlete>.from(athletes);
+          final reordered = List<Athlete>.from(displayAthletes);
           final item = reordered.removeAt(oldIndex);
           reordered.insert(newIndex, item);
+          setState(() => _reorderedAthletes = reordered);
           IsarService.instance.reorderAthletes(reordered);
         },
         footer: _buildAddAthleteRow(activeGroup),
         itemBuilder: (context, index) {
-          final athlete = athletes[index];
+          final athlete = displayAthletes[index];
           final isSelected = athlete.id == activeAthlete?.id;
           return _buildAthleteRow(athlete, isSelected);
         },
