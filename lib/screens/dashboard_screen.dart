@@ -1082,7 +1082,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           Expanded(
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => _showNewTestMenu(context),
+              onTap: () {
+                if (_selectedNavIndex == 4) {
+                  _showAddAthleteToGroup();
+                } else {
+                  _showNewTestMenu(context);
+                }
+              },
               child: Container(
                 width: 48,
                 height: 48,
@@ -1103,11 +1109,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   shape: const CircleBorder(),
                   clipBehavior: Clip.antiAlias, // Ensures the ripple stays inside the circle
                   child: InkWell(
-                    onTap: () => _showNewTestMenu(context),
+                    onTap: () {
+                      if (_selectedNavIndex == 4) {
+                        _showAddAthleteToGroup();
+                      } else {
+                        _showNewTestMenu(context);
+                      }
+                    },
                     splashColor: Colors.black26, // A subtle dark ripple looks great on the bright brand color
                     highlightColor: Colors.black12,
-                    child: const Center(
-                      child: Icon(Icons.add, color: Colors.black, size: 28),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Icon(
+                        key: ValueKey(_selectedNavIndex == 4),
+                        _selectedNavIndex == 4 ? Icons.group_add : Icons.add,
+                        color: Colors.black,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),
@@ -1408,5 +1426,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  void _showAddAthleteToGroup() async {
+    final l = AppLocalizations.of(context)!;
+    final activeGroup = ref.read(activeGroupProvider);
+    if (activeGroup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a group first')),
+      );
+      return;
+    }
+    final athlete = await showDialog<Athlete>(
+      context: context,
+      builder: (_) => AddAthleteDialog(group: activeGroup),
+    );
+    if (athlete != null && mounted) {
+      ref.read(activeAthleteProvider.notifier).state = athlete;
+    }
   }
 }
