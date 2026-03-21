@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
@@ -78,6 +79,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider);
     final dropHeight = ref.watch(rsiSessionProvider).dropHeightCm;
     final hasResult = _result != null;
@@ -85,8 +87,8 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          'RSI Drop Jump',
+        title: Text(
+          l.rsiDropJump,
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -115,19 +117,19 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
               const SizedBox(height: 20),
 
               // Drop height selector
-              _buildDropHeightSelector(dropHeight),
+              _buildDropHeightSelector(l, dropHeight),
               const SizedBox(height: 28),
 
               // Metric cards
-              _buildMetricCards(),
+              _buildMetricCards(l),
               const SizedBox(height: 32),
 
               // RSI score display
-              _buildRsiScoreDisplay(),
+              _buildRsiScoreDisplay(l),
               const SizedBox(height: 32),
 
               // Action buttons
-              _buildActionButtons(hasResult),
+              _buildActionButtons(l, hasResult),
             ],
           ),
         ),
@@ -135,13 +137,13 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
     );
   }
 
-  Widget _buildDropHeightSelector(double current) {
+  Widget _buildDropHeightSelector(AppLocalizations l, double current) {
     const heights = [20.0, 30.0, 40.0, 50.0];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'DROP HEIGHT',
+        Text(
+          l.dropHeight,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -154,7 +156,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
           segments: heights
               .map((h) => ButtonSegment(
                     value: h,
-                    label: Text('${h.toInt()} cm'),
+                    label: Text(l.heightCm(h.toInt())),
                   ))
               .toList(),
           selected: {current},
@@ -177,13 +179,13 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
     );
   }
 
-  Widget _buildMetricCards() {
+  Widget _buildMetricCards(AppLocalizations l) {
     return Row(
       children: [
         Expanded(
           child: _buildMetricCard(
             icon: Icons.bolt,
-            label: 'CONTACT TIME',
+            label: l.contactTime,
             value: _result != null
                 ? '${_result!.contactTimeMs.toStringAsFixed(0)} ms'
                 : '--',
@@ -193,7 +195,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
         Expanded(
           child: _buildMetricCard(
             icon: Icons.expand_less,
-            label: 'FLIGHT TIME',
+            label: l.flightTimeCaps,
             value: _result != null
                 ? '${_result!.flightTimeMs.toStringAsFixed(0)} ms'
                 : '--',
@@ -251,14 +253,14 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
     );
   }
 
-  Widget _buildRsiScoreDisplay() {
+  Widget _buildRsiScoreDisplay(AppLocalizations l) {
     final score = _result?.rsiScore;
     final quality = score != null ? rsiQuality(score) : null;
 
     return Column(
       children: [
-        const Text(
-          'REACTIVE STRENGTH INDEX',
+        Text(
+          l.reactiveStrengthIndex,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -286,7 +288,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
         ),
         if (score != null)
           Text(
-            '\u00b1 ${_result!.deltaRsi.toStringAsFixed(2)} error',
+            l.rsiError(_result!.deltaRsi.toStringAsFixed(2)),
             style: const TextStyle(
               fontSize: 13,
               color: AppColors.textTertiary,
@@ -325,14 +327,14 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
     );
   }
 
-  Widget _buildActionButtons(bool hasResult) {
+  Widget _buildActionButtons(AppLocalizations l, bool hasResult) {
     if (!hasResult) {
       return SizedBox(
         width: double.infinity,
         child: FilledButton.icon(
           onPressed: _recordJump,
           icon: const Icon(Icons.videocam_rounded),
-          label: const Text('Record Drop Jump'),
+          label: Text(l.recordDropJump),
           style: FilledButton.styleFrom(
             backgroundColor: AppColors.brand,
             foregroundColor: Colors.black,
@@ -377,7 +379,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
                       color: Colors.black,
                     ),
                   )
-                : const Text('SAVE TEST RESULT'),
+                : Text(l.saveTestResult),
           ),
         ),
         const SizedBox(height: 12),
@@ -399,7 +401,7 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            child: const Text('Discard'),
+            child: Text(l.discard),
           ),
         ),
       ],

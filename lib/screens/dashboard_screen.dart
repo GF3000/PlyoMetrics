@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
@@ -17,6 +16,8 @@ import 'evolution_screen.dart';
 import 'fatigue_test_screen.dart';
 import 'rsi_test_screen.dart';
 import '../providers/rsi_session_provider.dart';
+import '../l10n/app_localizations.dart';
+import 'group_overview_screen.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -61,24 +62,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             _buildHeader(),
             Expanded(
               child: IndexedStack(
-                index: const [0, 1, 3, 2][_selectedNavIndex],
+                index: const [0, 1, -1, 2, 3][_selectedNavIndex],
                 children: [
                   _buildHomeTab(),
                   const EvolutionScreen(),
                   const AthleteHistoryScreen(),
-                  const Center(
-                    child: Text(
-                      'Profile',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+                  const GroupOverviewScreen(),
                 ],
               ),
             ),
-            _buildAthleteRoster(),
+            if (_selectedNavIndex != 4) _buildAthleteRoster(),
             _buildBottomNav(),
           ],
         ),
@@ -89,6 +82,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ── Header with title + group dropdown ──
 
   Widget _buildHeader() {
+    final l = AppLocalizations.of(context)!;
     final groupsAsync = ref.watch(groupsProvider);
     final activeGroup = ref.watch(activeGroupProvider);
 
@@ -108,7 +102,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                children: [
                  TextSpan(
                    text: 'Plyo',
-                   style: GoogleFonts.orbitron(
+                   style: const TextStyle(
+                     fontFamily: 'Orbitron',
                      fontSize: 22,
                      fontWeight: FontWeight.w800,
                      color: Colors.white,
@@ -117,7 +112,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                  ),
                  TextSpan(
                    text: 'Metrics',
-                   style: GoogleFonts.orbitron(
+                   style: const TextStyle(
+                     fontFamily: 'Orbitron',
                      fontSize: 22,
                      fontWeight: FontWeight.w800,
                      color: AppColors.brand,
@@ -134,7 +130,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
             error: (_, __) =>
-                const Text('Error', style: TextStyle(color: Colors.red)),
+                Text(l.error, style: const TextStyle(color: Colors.red)),
             data: (groups) {
               if (groups.isEmpty) {
                 return GestureDetector(
@@ -155,14 +151,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.brand.withAlpha(100)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add, color: AppColors.brand, size: 16),
-                        SizedBox(width: 6),
+                        const Icon(Icons.add, color: AppColors.brand, size: 16),
+                        const SizedBox(width: 6),
                         Text(
-                          'New Group',
-                          style: TextStyle(
+                          l.newGroup,
+                          style: const TextStyle(
                             color: AppColors.brand,
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -176,7 +172,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
               return PopupMenuButton<int>(
                 initialValue: activeGroup?.id,
-                tooltip: 'Select Group',
+                tooltip: l.selectGroup,
                 color: AppColors.card,
                 elevation: 8,
                 shape: RoundedRectangleBorder(
@@ -245,15 +241,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
                   // Append the Add Group button to the bottom of the list
                   items.add(
-                    const PopupMenuItem<int>(
+                    PopupMenuItem<int>(
                       value: -1,
                       child: Row(
                         children: [
-                          Icon(Icons.add, color: AppColors.brand, size: 18),
-                          SizedBox(width: 8),
+                          const Icon(Icons.add, color: AppColors.brand, size: 18),
+                          const SizedBox(width: 8),
                           Text(
-                            'New Group',
-                            style: TextStyle(
+                            l.newGroup,
+                            style: const TextStyle(
                               color: AppColors.brand,
                               fontWeight: FontWeight.w600,
                             ),
@@ -276,7 +272,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        activeGroup?.name ?? 'Select Group',
+                        activeGroup?.name ?? l.selectGroup,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -300,6 +296,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ── Home tab content ──
 
   Widget _buildHomeTab() {
+    final l = AppLocalizations.of(context)!;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -307,17 +304,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         children: [
           _buildAthleteCard(),
           _buildActionCard(
-            tag: 'PERFORMANCE',
-            title: 'CMJ Baseline Measurement',
-            subtitle: 'Vertical jump metrics & flight time',
+            tag: l.tagPerformance,
+            title: l.cmjBaselineMeasurement,
+            subtitle: l.verticalJumpMetricsFlightTime,
             icon: Icons.trending_up,
             hasGlow: true,
             onTap: () {
               final athlete = ref.read(activeAthleteProvider);
               if (athlete == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select an athlete first'),
+                  SnackBar(
+                    content: Text(l.pleaseSelectAthleteFirst),
                   ),
                 );
                 return;
@@ -329,24 +326,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
           ),
           _buildActionCard(
-            tag: 'MONITORING',
-            title: 'Readiness / Fatigue Test',
-            subtitle: 'Daily CNS & recovery tracking',
+            tag: l.tagMonitoring,
+            title: l.readinessFatigueTest,
+            subtitle: l.dailyCnsRecoveryTracking,
             icon: Icons.check_circle_outline,
             onTap: () {
               final athlete = ref.read(activeAthleteProvider);
               if (athlete == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please select an athlete first'),
+                  SnackBar(
+                    content: Text(l.pleaseSelectAthleteFirst),
                   ),
                 );
                 return;
               }
               if (athlete.baselineCmjHeight == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Complete a CMJ Baseline first'),
+                  SnackBar(
+                    content: Text(l.completeCmjBaselineFirst),
                   ),
                 );
                 return;
@@ -357,16 +354,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             },
           ),
           _buildActionCard(
-            tag: 'REACTIVE STRENGTH',
-            title: 'RSI Drop Jump Test',
-            subtitle: 'Ground contact & efficiency',
+            tag: l.tagReactiveStrength,
+            title: l.rsiDropJumpTest,
+            subtitle: l.groundContactEfficiency,
             icon: Icons.timer_outlined,
             onTap: () {
               final athlete = ref.read(activeAthleteProvider);
               if (athlete == null) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Select an athlete first'),
+                  SnackBar(
+                    content: Text(l.selectAnAthleteFirst),
                   ),
                 );
                 return;
@@ -596,6 +593,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ── Bottom athlete roster (horizontal scroll) ──
 
   Widget _buildAthleteRoster() {
+    final l = AppLocalizations.of(context)!;
     final athletesAsync = ref.watch(groupAthletesProvider);
     final activeAthlete = ref.watch(activeAthleteProvider);
     final activeGroup = ref.watch(activeGroupProvider);
@@ -615,9 +613,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'ATHLETE ROSTER',
-                  style: TextStyle(
+                Text(
+                  l.athleteRoster,
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textTertiary,
@@ -628,7 +626,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   onTap: () =>
                       setState(() => _rosterExpanded = !_rosterExpanded),
                   child: Text(
-                    _rosterExpanded ? 'Collapse' : 'View All',
+                    _rosterExpanded ? l.collapse : l.viewAll,
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
@@ -645,12 +643,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               height: 80,
               child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
             ),
-            error: (_, __) => const SizedBox(
+            error: (_, __) => SizedBox(
               height: 80,
               child: Center(
                 child: Text(
-                  'Error loading athletes',
-                  style: TextStyle(color: Colors.red),
+                  l.errorLoadingAthletes,
+                  style: const TextStyle(color: Colors.red),
                 ),
               ),
             ),
@@ -848,9 +846,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
       ),
-      title: const Text(
-        'Add Athlete',
-        style: TextStyle(
+      title: Text(
+        AppLocalizations.of(context)!.addAthlete,
+        style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: AppColors.textTertiary,
@@ -961,9 +959,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Add',
-            style: TextStyle(
+          Text(
+            AppLocalizations.of(context)!.add,
+            style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
               color: AppColors.textTertiary,
@@ -977,6 +975,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ── Bottom navigation bar ──
 
   Widget _buildBottomNav() {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       decoration: const BoxDecoration(
@@ -986,8 +985,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavItem(Icons.home_outlined, 'Home', 0),
-          _buildNavItem(Icons.bar_chart, 'Evolution', 1),
+          _buildNavItem(Icons.home_outlined, l.navHome, 0),
+          _buildNavItem(Icons.bar_chart, l.navEvolution, 1),
           // Center FAB-style button
           Expanded(
             child: GestureDetector(
@@ -1024,8 +1023,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
           ),
-          _buildNavItem(Icons.access_time, 'Log', 3),
-          _buildNavItem(Icons.person_outline, 'Profile', 4),
+          _buildNavItem(Icons.access_time, l.navLog, 3),
+          _buildNavItem(Icons.groups_outlined, l.navGroup, 4),
         ],
       ),
     );
@@ -1037,12 +1036,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () {
-          if (index == 4) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Profile coming soon!')),
-            );
-            return;
-          }
           setState(() => _selectedNavIndex = index);
         },
         child: Padding(
@@ -1071,6 +1064,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showGroupOptions(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) {
+    final l = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card,
@@ -1097,7 +1091,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const Divider(color: AppColors.borderLight, height: 1),
             ListTile(
               leading: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
-              title: const Text('Rename Group', style: TextStyle(color: AppColors.textPrimary)),
+              title: Text(l.renameGroup, style: const TextStyle(color: AppColors.textPrimary)),
               onTap: () {
                 Navigator.pop(ctx);
                 _renameGroup(context, group);
@@ -1105,7 +1099,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: const Text('Delete Group', style: TextStyle(color: Colors.redAccent)),
+              title: Text(l.deleteGroup, style: const TextStyle(color: Colors.redAccent)),
               onTap: () {
                 Navigator.pop(ctx);
                 _deleteGroup(context, group, allGroups);
@@ -1119,18 +1113,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _renameGroup(BuildContext context, AthleteGroup group) async {
+    final l = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: group.name);
     final newName = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Rename Group', style: TextStyle(color: Colors.white)),
+        title: Text(l.renameGroup, style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
           autofocus: true,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
-            labelText: 'Group Name',
+            labelText: l.groupName,
             labelStyle: const TextStyle(color: AppColors.textSecondary),
             enabledBorder: OutlineInputBorder(
               borderSide: const BorderSide(color: AppColors.borderLight),
@@ -1145,11 +1140,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save'),
+            child: Text(l.save),
           ),
         ],
       ),
@@ -1164,24 +1159,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Future<void> _deleteGroup(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) async {
+    final l = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.card,
-        title: const Text('Delete Group', style: TextStyle(color: Colors.white)),
+        title: Text(l.deleteGroup, style: const TextStyle(color: Colors.white)),
         content: Text(
-          'Are you sure you want to delete "${group.name}"?',
+          l.confirmDeleteGroup(group.name),
           style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l.cancel),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.redAccent),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(l.delete),
           ),
         ],
       ),
@@ -1198,6 +1194,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showNewTestMenu(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.card,
@@ -1220,9 +1217,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
             ),
-            const Text(
-              'New Measurement',
-              style: TextStyle(
+            Text(
+              l.newMeasurement,
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -1239,14 +1236,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: const Icon(Icons.trending_up, color: AppColors.brand),
               ),
-              title: const Text('CMJ Baseline', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Vertical jump metrics', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(l.cmjBaseline, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: Text(l.verticalJumpMetrics, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               onTap: () {
                 Navigator.pop(ctx); // Dismiss the sheet
                 final athlete = ref.read(activeAthleteProvider);
                 if (athlete == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select an athlete first')),
+                    SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
                   );
                   return;
                 }
@@ -1266,20 +1263,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: const Icon(Icons.check_circle_outline, color: AppColors.brand),
               ),
-              title: const Text('Fatigue Test', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Daily readiness tracking', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(l.fatigueTest, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: Text(l.dailyReadinessTracking, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               onTap: () {
                 Navigator.pop(ctx);
                 final athlete = ref.read(activeAthleteProvider);
                 if (athlete == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select an athlete first')),
+                    SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
                   );
                   return;
                 }
                 if (athlete.baselineCmjHeight == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Complete a CMJ Baseline first')),
+                    SnackBar(content: Text(l.completeCmjBaselineFirst)),
                   );
                   return;
                 }
@@ -1298,14 +1295,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: const Icon(Icons.timer_outlined, color: AppColors.brand),
               ),
-              title: const Text('RSI Drop Jump', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: const Text('Ground contact & efficiency', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(l.rsiDropJump, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              subtitle: Text(l.groundContactEfficiency, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
               onTap: () {
                 Navigator.pop(ctx);
                 final athlete = ref.read(activeAthleteProvider);
                 if (athlete == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select an athlete first')),
+                    SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
                   );
                   return;
                 }

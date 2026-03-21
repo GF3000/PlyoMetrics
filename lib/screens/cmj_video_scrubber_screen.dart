@@ -3,6 +3,7 @@ import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -189,9 +190,10 @@ class _CmjVideoScrubberScreenState
   void _confirmCmjSelection() {
     if (_takeoffFrame == null || _landingFrame == null) return;
     if (_landingFrame! <= _takeoffFrame!) {
+      final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Landing frame must be after takeoff frame'),
+        SnackBar(
+          content: Text(l.landingFrameAfterTakeoff),
           backgroundColor: Colors.red,
         ),
       );
@@ -226,10 +228,11 @@ class _CmjVideoScrubberScreenState
     }
     if (!(_landing1Frame! < _takeoffFrame! &&
         _takeoffFrame! < _landingFrame!)) {
+      final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content:
-              Text('Frames must be in order: Landing 1 < Takeoff < Landing 2'),
+              Text(l.framesInOrder),
           backgroundColor: Colors.red,
         ),
       );
@@ -250,12 +253,13 @@ class _CmjVideoScrubberScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          'Frame Analysis',
-          style: TextStyle(
+        title: Text(
+          l.frameAnalysis,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
@@ -275,6 +279,7 @@ class _CmjVideoScrubberScreenState
   }
 
   Widget _buildExtractionProgress() {
+    final l = AppLocalizations.of(context)!;
     final percent = (_extractionProgress * 100).toInt();
     return Center(
       child: Padding(
@@ -288,9 +293,9 @@ class _CmjVideoScrubberScreenState
               color: AppColors.brand,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Extracting Frames',
-              style: TextStyle(
+            Text(
+              l.extractingFrames,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -298,7 +303,7 @@ class _CmjVideoScrubberScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              'Processing video at ${_fps > 0 ? '${_fps.toStringAsFixed(0)} FPS' : '...'}',
+              _fps > 0 ? l.processingVideoAtFps(_fps.toStringAsFixed(0)) : l.processingVideo,
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -317,7 +322,7 @@ class _CmjVideoScrubberScreenState
             ),
             const SizedBox(height: 12),
             Text(
-              '$percent%',
+              l.percentValue(percent),
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
@@ -332,6 +337,7 @@ class _CmjVideoScrubberScreenState
   }
 
   Widget _buildError() {
+    final l = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -341,7 +347,7 @@ class _CmjVideoScrubberScreenState
             const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
-              'Extraction Failed',
+              l.extractionFailed,
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -360,7 +366,7 @@ class _CmjVideoScrubberScreenState
             const SizedBox(height: 24),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Go Back'),
+              child: Text(l.goBack),
             ),
           ],
         ),
@@ -369,11 +375,12 @@ class _CmjVideoScrubberScreenState
   }
 
   Widget _buildScrubber() {
+    final l = AppLocalizations.of(context)!;
     if (_framePaths.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'No frames extracted',
-          style: TextStyle(color: AppColors.textSecondary),
+          l.noFramesExtracted,
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
       );
     }
@@ -459,7 +466,7 @@ class _CmjVideoScrubberScreenState
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Frame ${_currentFrame + 1} / $frameCount',
+                l.frameCounter(_currentFrame + 1, frameCount),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -468,7 +475,7 @@ class _CmjVideoScrubberScreenState
                 ),
               ),
               Text(
-                '${_fps.toStringAsFixed(0)} FPS',
+                l.fpsDisplay(_fps.toStringAsFixed(0)),
                 style: const TextStyle(
                   fontSize: 13,
                   color: AppColors.brand,
@@ -476,7 +483,7 @@ class _CmjVideoScrubberScreenState
                 ),
               ),
               Text(
-                '$currentTimeMs ms',
+                l.msDisplay(currentTimeMs),
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textSecondary,
@@ -513,7 +520,7 @@ class _CmjVideoScrubberScreenState
                 ),
                 color: AppColors.brand,
                 disabledColor: AppColors.textTertiary,
-                tooltip: _isPlaying ? 'Pause' : 'Play',
+                tooltip: _isPlaying ? l.pause : l.play,
               ),
               const SizedBox(width: 24),
               _buildStepButton(
@@ -569,7 +576,7 @@ class _CmjVideoScrubberScreenState
                   children: [
                     Expanded(
                       child: _buildMarkButton(
-                        label: 'Landing 1',
+                        label: l.landing1,
                         icon: Icons.flight_land,
                         color: Colors.amber,
                         markedFrame: _landing1Frame,
@@ -581,7 +588,7 @@ class _CmjVideoScrubberScreenState
                     const SizedBox(width: 6),
                     Expanded(
                       child: _buildMarkButton(
-                        label: 'Takeoff',
+                        label: l.takeoff,
                         icon: Icons.flight_takeoff,
                         color: Colors.green,
                         markedFrame: _takeoffFrame,
@@ -593,7 +600,7 @@ class _CmjVideoScrubberScreenState
                     const SizedBox(width: 6),
                     Expanded(
                       child: _buildMarkButton(
-                        label: 'Landing 2',
+                        label: l.landing2,
                         icon: Icons.flight_land,
                         color: Colors.red,
                         markedFrame: _landingFrame,
@@ -609,7 +616,7 @@ class _CmjVideoScrubberScreenState
                   children: [
                     Expanded(
                       child: _buildMarkButton(
-                        label: 'Mark Takeoff',
+                        label: l.markTakeoff,
                         icon: Icons.flight_takeoff,
                         color: Colors.green,
                         markedFrame: _takeoffFrame,
@@ -620,7 +627,7 @@ class _CmjVideoScrubberScreenState
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildMarkButton(
-                        label: 'Mark Landing',
+                        label: l.markLanding,
                         icon: Icons.flight_land,
                         color: Colors.red,
                         markedFrame: _landingFrame,
@@ -646,7 +653,7 @@ class _CmjVideoScrubberScreenState
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildMetric(
-                              'Contact',
+                              l.contact,
                               '${contactTimeMs!.toStringAsFixed(1)} ms',
                             ),
                             Container(
@@ -654,7 +661,7 @@ class _CmjVideoScrubberScreenState
                                 height: 32,
                                 color: AppColors.borderLight),
                             _buildMetric(
-                              'Flight',
+                              l.flight,
                               '${flightTimeMs!.toStringAsFixed(1)} ms',
                             ),
                             Container(
@@ -662,7 +669,7 @@ class _CmjVideoScrubberScreenState
                                 height: 32,
                                 color: AppColors.borderLight),
                             _buildMetric(
-                              'Height',
+                              l.height,
                               '${heightCm!.toStringAsFixed(1)} cm',
                             ),
                             Container(
@@ -670,7 +677,7 @@ class _CmjVideoScrubberScreenState
                                 height: 32,
                                 color: AppColors.borderLight),
                             _buildMetric(
-                              'RSI',
+                              l.rsi,
                               rsiScore!.toStringAsFixed(2),
                             ),
                           ],
@@ -679,7 +686,7 @@ class _CmjVideoScrubberScreenState
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildMetric(
-                              'Flight Time',
+                              l.flightTime,
                               '${flightTimeMs!.toStringAsFixed(1)} ms',
                             ),
                             Container(
@@ -688,7 +695,7 @@ class _CmjVideoScrubberScreenState
                               color: AppColors.borderLight,
                             ),
                             _buildMetric(
-                              'Height',
+                              l.height,
                               '${heightCm!.toStringAsFixed(1)} cm',
                             ),
                             Container(
@@ -697,7 +704,7 @@ class _CmjVideoScrubberScreenState
                               color: AppColors.borderLight,
                             ),
                             _buildMetric(
-                              'Error',
+                              l.errorMarginLabel,
                               '\u00b1 ${deltaHCm!.toStringAsFixed(1)} cm',
                             ),
                           ],
@@ -712,7 +719,7 @@ class _CmjVideoScrubberScreenState
                   child: FilledButton.icon(
                     onPressed: _confirmSelection,
                     icon: const Icon(Icons.check_circle),
-                    label: const Text('Confirm Jump'),
+                    label: Text(l.confirmJump),
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.brand,
                       foregroundColor: Colors.black,
@@ -758,13 +765,14 @@ class _CmjVideoScrubberScreenState
     required VoidCallback onPressed,
     bool compact = false,
   }) {
+    final l = AppLocalizations.of(context)!;
     final isMarked = markedFrame != null;
     final fontSize = compact ? 11.0 : 13.0;
     final hPadding = compact ? 4.0 : 8.0;
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: compact ? 14 : 18),
-      label: Text(isMarked ? '$label (#${markedFrame + 1})' : label),
+      label: Text(isMarked ? l.markButtonLabeled(label, markedFrame + 1) : label),
       style: OutlinedButton.styleFrom(
         foregroundColor: isMarked ? Colors.black : color,
         backgroundColor: isMarked ? color : Colors.transparent,

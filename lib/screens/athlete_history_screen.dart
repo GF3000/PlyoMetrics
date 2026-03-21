@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../models/jump_test.dart';
 import '../providers/management_providers.dart';
-import '../widgets/neon_mode_toggle.dart';
 
 class AthleteHistoryScreen extends ConsumerWidget {
   const AthleteHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider);
     final historyAsync = ref.watch(athleteJumpHistoryProvider);
 
@@ -23,8 +24,8 @@ class AthleteHistoryScreen extends ConsumerWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Performance History',
+                  Text(
+                    l.performanceHistory,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -43,7 +44,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
         ),
         Expanded(child: historyAsync.when(
       loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
-      error: (err, stack) => Center(child: Text('Error: $err')),
+      error: (err, stack) => Center(child: Text(l.errorWithMessage(err.toString()))),
       data: (tests) {
         if (tests.isEmpty) {
           return Center(
@@ -52,8 +53,8 @@ class AthleteHistoryScreen extends ConsumerWidget {
             children: [
               Icon(Icons.history, size: 48, color: AppColors.textTertiary.withAlpha(100)),
               const SizedBox(height: 16),
-              const Text(
-                'No jump records yet',
+              Text(
+                l.noJumpRecordsYet,
                 style: TextStyle(color: AppColors.textSecondary),
               ),
             ],
@@ -67,7 +68,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final test = tests[index];
-            final dateStr = DateFormat('MMM dd, yyyy • HH:mm').format(test.timestamp);
+            final dateStr = DateFormat('MMM dd, yyyy • HH:mm', l.localeName).format(test.timestamp);
 
             // Calculate fatigue percentage for fatigue tests
             final bool isFatigueTest = test.testType == 'fatigue' && test.baselineAtTest != null;
@@ -93,20 +94,20 @@ class AthleteHistoryScreen extends ConsumerWidget {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: AppColors.card,
-                    title: const Text('Delete Jump',
-                        style: TextStyle(color: Colors.white)),
+                    title: Text(l.deleteJump,
+                        style: const TextStyle(color: Colors.white)),
                     content: Text(
-                      'Remove this ${test.testType.replaceAll('_', ' ')} record from $dateStr?',
+                      l.confirmDeleteRecord(_localizedTestTag(l, test.testType), dateStr),
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('Cancel'),
+                        child: Text(l.cancel),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(true),
-                        child: Text('Delete',
+                        child: Text(l.delete,
                             style: TextStyle(color: Colors.red.shade400)),
                       ),
                     ],
@@ -146,7 +147,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  test.testType.replaceAll('_', ' ').toUpperCase(),
+                                  _localizedTestTag(l, test.testType),
                                   style: const TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w800,
@@ -181,7 +182,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
                             ),
                             if (isFatigueTest && fatiguePercent != null)
                               Text(
-                                '${fatiguePercent >= 0 ? '-' : '+'}${fatiguePercent.abs().toStringAsFixed(1)}% Fatigue',
+                                l.fatiguePercent(fatiguePercent >= 0 ? '-' : '+', fatiguePercent.abs().toStringAsFixed(0)),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -220,6 +221,19 @@ class AthleteHistoryScreen extends ConsumerWidget {
     );
   }
 
+  String _localizedTestTag(AppLocalizations l, String testType) {
+    switch (testType) {
+      case 'cmj_baseline':
+        return l.testTagCmjBaseline;
+      case 'fatigue':
+        return l.testTagFatigue;
+      case 'rsi':
+        return l.testTagRsi;
+      default:
+        return testType.replaceAll('_', ' ').toUpperCase();
+    }
+  }
+
   Color _fatigueColor(double percent) {
     if (percent <= 5) return const Color(0xFF4ADE80); // green
     if (percent <= 10) return const Color(0xFFFACC15); // yellow
@@ -227,7 +241,9 @@ class AthleteHistoryScreen extends ConsumerWidget {
   }
 
   void _showJumpDetails(BuildContext context, JumpTest test, double? fatiguePercent) {
-    final dateStr = DateFormat('EEEE, MMM dd yyyy • HH:mm:ss').format(test.timestamp);
+    final l = AppLocalizations.of(context)!;
+    final rawDate = DateFormat('EEEE, MMM dd yyyy • HH:mm:ss', l.localeName).format(test.timestamp);
+    final dateStr = rawDate[0].toUpperCase() + rawDate.substring(1);
     final isFatigueTest = test.testType == 'fatigue' && test.baselineAtTest != null;
 
     showModalBottomSheet(
@@ -264,7 +280,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    test.testType.replaceAll('_', ' ').toUpperCase(),
+                    _localizedTestTag(l, test.testType),
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
@@ -276,7 +292,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
                 const Spacer(),
                 if (isFatigueTest && fatiguePercent != null)
                   Text(
-                    '${fatiguePercent >= 0 ? '-' : '+'}${fatiguePercent.abs().toStringAsFixed(1)}%',
+                    '${fatiguePercent >= 0 ? '-' : '+'}${fatiguePercent.abs().toStringAsFixed(0)}%',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -304,7 +320,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
             // Bar chart for fatigue tests
             if (isFatigueTest) ...[
               const SizedBox(height: 20),
-              _buildComparisonChart(test.baselineAtTest!, test.heightCm),
+              _buildComparisonChart(context, test.baselineAtTest!, test.heightCm),
             ],
           ],
         ),
@@ -313,21 +329,22 @@ class AthleteHistoryScreen extends ConsumerWidget {
   }
 
   Widget _buildDetailGrid(BuildContext context, JumpTest test) {
+    final l = AppLocalizations.of(context)!;
     final isRsi = test.testType == 'rsi';
     final items = <_DetailItem>[
-      _DetailItem('Height', '${test.heightCm.toStringAsFixed(1)} cm'),
-      _DetailItem('Flight Time', '${test.flightTimeMs.toStringAsFixed(1)} ms'),
-      _DetailItem('FPS', test.fps.toStringAsFixed(0)),
+      _DetailItem(l.detailHeight, '${test.heightCm.toStringAsFixed(1)} cm'),
+      _DetailItem(l.detailFlightTime, '${test.flightTimeMs.toStringAsFixed(1)} ms'),
+      _DetailItem(l.detailFps, test.fps.toStringAsFixed(0)),
       if (isRsi && test.deltaRsi != null)
-        _DetailItem('RSI Error', '\u00b1${test.deltaRsi!.toStringAsFixed(2)}')
+        _DetailItem(l.detailRsiError, '\u00b1${test.deltaRsi!.toStringAsFixed(2)}')
       else
-        _DetailItem('Error Margin', '\u00b1${test.deltaHCm.toStringAsFixed(1)} cm'),
+        _DetailItem(l.detailErrorMargin, '\u00b1${test.deltaHCm.toStringAsFixed(1)} cm'),
       if (isRsi && test.contactTimeMs != null)
-        _DetailItem('Contact Time', '${test.contactTimeMs!.toStringAsFixed(1)} ms'),
+        _DetailItem(l.detailContactTime, '${test.contactTimeMs!.toStringAsFixed(1)} ms'),
       if (isRsi && test.rsiScore != null)
-        _DetailItem('RSI Score', test.rsiScore!.toStringAsFixed(2)),
+        _DetailItem(l.detailRsiScore, test.rsiScore!.toStringAsFixed(2)),
       if (test.baselineAtTest != null)
-        _DetailItem('Baseline at Test', '${test.baselineAtTest!.toStringAsFixed(1)} cm'),
+        _DetailItem(l.detailBaselineAtTest, '${test.baselineAtTest!.toStringAsFixed(1)} cm'),
     ];
 
     return Wrap(
@@ -370,7 +387,8 @@ class AthleteHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildComparisonChart(double baseline, double current) {
+  Widget _buildComparisonChart(BuildContext context, double baseline, double current) {
+    final l = AppLocalizations.of(context)!;
     final maxVal = baseline > current ? baseline : current;
     final baselineRatio = maxVal > 0 ? baseline / maxVal : 0.0;
     final currentRatio = maxVal > 0 ? current / maxVal : 0.0;
@@ -388,7 +406,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
         children: [
           Expanded(
             child: _buildBar(
-              label: 'Baseline',
+              label: l.baseline,
               value: '${baseline.toStringAsFixed(1)} cm',
               ratio: baselineRatio,
               color: AppColors.brand.withAlpha(102),
@@ -398,7 +416,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
           const SizedBox(width: 24),
           Expanded(
             child: _buildBar(
-              label: 'Current',
+              label: l.current,
               value: '${current.toStringAsFixed(1)} cm',
               ratio: currentRatio,
               color: AppColors.brand,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
@@ -9,6 +10,7 @@ class NeonModeToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
     final mode = ref.watch(historyModeProvider);
 
     return Container(
@@ -21,14 +23,14 @@ class NeonModeToggle extends ConsumerWidget {
         children: [
           Expanded(
             child: _ToggleItem(
-              label: 'CMJ & Fatigue',
+              label: l.cmjAndFatigue,
               isActive: mode == 0,
               onTap: () => ref.read(historyModeProvider.notifier).state = 0,
             ),
           ),
           Expanded(
             child: _ToggleItem(
-              label: 'RSI',
+              label: l.rsi,
               isActive: mode == 1,
               onTap: () => ref.read(historyModeProvider.notifier).state = 1,
             ),

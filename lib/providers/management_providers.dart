@@ -202,3 +202,47 @@ final rsiHistoryProvider = Provider<List<JumpTest>>((ref) {
 
 /// The current mode for history/evolution screens: 0 = CMJ & Fatigue, 1 = RSI.
 final historyModeProvider = StateProvider<int>((ref) => 0);
+
+// ── Group Overview ──
+
+typedef GroupAthleteStats = ({
+  Athlete athlete,
+  double? latestRsiScore,
+  double? cmjImprovementPercent,
+});
+
+/// Aggregated stats for every athlete in the active group.
+final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((ref) async {
+  final athletesAsync = ref.watch(groupAthletesProvider);
+  final athletes = athletesAsync.whenOrNull(data: (l) => l) ?? [];
+  final service = ref.watch(isarServiceProvider);
+
+  final results = <GroupAthleteStats>[];
+  for (final athlete in athletes) {
+    // Latest RSI score
+    final rsiTests = await service.getJumpTestsForAthlete(athlete.id, 'rsi');
+    final latestRsi = rsiTests.isNotEmpty ? rsiTests.first.rsiScore : null;
+
+    // CMJ % improvement: earliest non-outlier baseline vs current
+    final baselineTests = await service.getJumpTestsForAthlete(athlete.id, 'cmj_baseline');
+    final nonOutlier = baselineTests.where((t) => !t.isOutlier).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    double? improvement;
+    if (nonOutlier.length >= 2 && athlete.baselineCmjHeight != null) {
+      final earliestHeight = nonOutlier.first.heightCm;
+      if (earliestHeight > 0) {
+        improvement = ((athlete.baselineCmjHeight! - earliestHeight) / earliestHeight) * 100;
+      }
+    }
+
+    results.add((
+      athlete: athlete,
+      latestRsiScore: latestRsi,
+      cmjImprovementPercent: improvement,
+    ));
+  }
+  return results;
+});
+
+/// Chart mode for group overview: 0 = CMJ Height, 1 = RSI Score.
+final groupChartModeProvider = StateProvider<int>((ref) => 0);

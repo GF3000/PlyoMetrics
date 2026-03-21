@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
@@ -86,15 +87,16 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final controller = _controller;
     final isReady = controller != null && controller.value.isInitialized;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
-        title: const Text(
-          'Select Jump Moment',
-          style: TextStyle(
+        title: Text(
+          l.selectJumpMoment,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
@@ -131,8 +133,8 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Pick a video to analyze',
-                                style: TextStyle(
+                                l.pickVideoToAnalyze,
+                                style: const TextStyle(
                                   fontSize: 16,
                                   color: AppColors.textSecondary,
                                 ),
@@ -222,7 +224,7 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                     child: FilledButton.icon(
                       onPressed: _analyzeFromHere,
                       icon: const Icon(Icons.precision_manufacturing),
-                      label: const Text('Analyze Jump from Here'),
+                      label: Text(l.analyzeJumpFromHere),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.black,
@@ -241,7 +243,7 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                     child: FilledButton.icon(
                       onPressed: _isInitializing ? null : _pickVideo,
                       icon: const Icon(Icons.video_library),
-                      label: const Text('Pick Video from Gallery'),
+                      label: Text(l.pickVideoFromGallery),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.black,

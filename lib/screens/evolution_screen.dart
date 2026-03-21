@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -21,11 +22,13 @@ class EvolutionScreen extends ConsumerWidget {
 
     final mode = ref.watch(historyModeProvider);
 
+    final l = AppLocalizations.of(context)!;
+
     if (athlete == null) {
-      return const Center(
+      return Center(
         child: Text(
-          'Select an athlete to view evolution',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          l.selectAthleteToViewEvolution,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
       );
     }
@@ -39,9 +42,9 @@ class EvolutionScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Evolution',
-                style: TextStyle(
+              Text(
+                l.evolution,
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 20,
                   fontWeight: FontWeight.w600,
@@ -70,7 +73,7 @@ class EvolutionScreen extends ConsumerWidget {
               child: CircularProgressIndicator(color: AppColors.brand),
             ),
             error: (err, _) => Center(
-              child: Text('Error: $err',
+              child: Text(l.errorWithMessage(err.toString()),
                   style: const TextStyle(color: AppColors.textSecondary)),
             ),
             data: (allTests) {
@@ -80,12 +83,12 @@ class EvolutionScreen extends ConsumerWidget {
                   child: CircularProgressIndicator(color: AppColors.brand),
                 ),
                 error: (err, _) => Center(
-                  child: Text('Error: $err',
+                  child: Text(l.errorWithMessage(err.toString()),
                       style: const TextStyle(color: AppColors.textSecondary)),
                 ),
                 data: (stats) {
                    if (mode == 1) {
-                     return _buildRsiTab(rsiTests, allTests, stats);
+                     return _buildRsiTab(l, rsiTests, allTests, stats);
                    }
                    return SingleChildScrollView(
                      padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -97,7 +100,7 @@ class EvolutionScreen extends ConsumerWidget {
                          const SizedBox(height: 20),
                          _buildChart(baselines, fatigueTests),
                          const SizedBox(height: 24),
-                         _buildRecentTests(allTests),
+                         _buildRecentTests(l, allTests),
                          const SizedBox(height: 16),
                        ],
                      ),
@@ -111,7 +114,7 @@ class EvolutionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRsiTab(List<JumpTest> rsiTests, List<JumpTest> allTests, ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
+  Widget _buildRsiTab(AppLocalizations l, List<JumpTest> rsiTests, List<JumpTest> allTests, ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -120,16 +123,16 @@ class EvolutionScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           _buildMetricCards(stats),
           const SizedBox(height: 20),
-          _buildRsiChart(rsiTests),
+          _buildRsiChart(l, rsiTests),
           const SizedBox(height: 24),
-          _buildRecentTests(allTests),
+          _buildRecentTests(l, allTests),
           const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  Widget _buildRsiChart(List<JumpTest> rsiTests) {
+  Widget _buildRsiChart(AppLocalizations l, List<JumpTest> rsiTests) {
     if (rsiTests.length < 2) {
       return Container(
         height: 250,
@@ -139,9 +142,9 @@ class EvolutionScreen extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderLight),
         ),
-        child: const Text(
-          'Need at least 2 RSI tests to chart',
-          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        child: Text(
+          l.needAtLeast2RsiTests,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
         ),
       );
     }
@@ -540,34 +543,34 @@ class EvolutionScreen extends ConsumerWidget {
     return points;
   }
 
-  Widget _buildRecentTests(List<JumpTest> allTests) {
+  Widget _buildRecentTests(AppLocalizations l, List<JumpTest> allTests) {
     final recent = allTests.take(5).toList();
     if (recent.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Recent Tests',
-          style: TextStyle(
+        Text(
+          l.recentTests,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 15,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 10),
-        ...recent.map(_buildTestRow),
+        ...recent.map((t) => _buildTestRow(l, t)),
       ],
     );
   }
 
-  Widget _buildTestRow(JumpTest test) {
+  Widget _buildTestRow(AppLocalizations l, JumpTest test) {
     final dateStr =
         DateFormat('MMM dd, yyyy \u2022 HH:mm').format(test.timestamp);
     final typeLabel = switch (test.testType) {
-      'cmj_baseline' => 'CMJ',
-      'fatigue' => 'Fatigue',
-      'rsi' => 'RSI',
+      'cmj_baseline' => l.typeCmj,
+      'fatigue' => l.typeFatigue,
+      'rsi' => l.typeRsi,
       _ => test.testType,
     };
     final typeColor = switch (test.testType) {

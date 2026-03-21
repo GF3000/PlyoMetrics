@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
@@ -16,6 +17,7 @@ class CmjBaselineScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider);
     final session = ref.watch(cmjSessionProvider);
 
@@ -25,9 +27,9 @@ class CmjBaselineScreen extends ConsumerWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'CMJ Baseline',
-              style: TextStyle(
+            Text(
+              l.cmjBaseline,
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textPrimary,
@@ -75,11 +77,10 @@ class CmjBaselineScreen extends ConsumerWidget {
                           color: AppColors.brand,
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          'Record at least 1 jump to establish a baseline.\n'
-                          'Maximum 3 jumps allowed.',
+                        Text(
+                          l.cmjBaselineInstructions,
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 14,
                             color: AppColors.textSecondary,
                             height: 1.5,
@@ -109,7 +110,7 @@ class CmjBaselineScreen extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => _recordJump(context, ref),
                     icon: const Icon(Icons.videocam),
-                    label: Text('Record Jump #${session.jumps.length + 1}'),
+                    label: Text(l.recordJumpNumber(session.jumps.length + 1)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.brand,
                       side: const BorderSide(color: AppColors.brand),
@@ -147,7 +148,7 @@ class CmjBaselineScreen extends ConsumerWidget {
               child: FilledButton.icon(
                 onPressed: () => _saveBaseline(context, ref, session),
                 icon: const Icon(Icons.save),
-                label: const Text('Save Measurement'),
+                label: Text(l.saveMeasurement),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.brand,
                   foregroundColor: Colors.black,
@@ -178,29 +179,30 @@ class CmjBaselineScreen extends ConsumerWidget {
     WidgetRef ref,
     CmjSessionState session,
   ) async {
+    final l = AppLocalizations.of(context)!;
     final jumpCount = session.jumps.length;
     if (jumpCount < 3) {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: const Text(
-            'Incomplete Baseline',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            l.incompleteBaseline,
+            style: const TextStyle(color: Colors.white),
           ),
-          content: const Text(
-            'It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?',
-            style: TextStyle(color: AppColors.textSecondary),
+          content: Text(
+            l.incompleteBaselineMessage,
+            style: const TextStyle(color: AppColors.textSecondary),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l.cancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
               style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
-              child: const Text('Save Anyway'),
+              child: Text(l.saveAnyway),
             ),
           ],
         ),
@@ -211,12 +213,22 @@ class CmjBaselineScreen extends ConsumerWidget {
     final athlete = ref.read(activeAthleteProvider);
     if (athlete == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No athlete selected')),
+        SnackBar(content: Text(l.noAthleteSelected)),
       );
       return;
     }
 
     final service = ref.read(isarServiceProvider);
+
+    // Compute average flight time from valid (non-outlier) jumps
+    final validJumps = [
+      for (int i = 0; i < session.jumps.length; i++)
+        if (!session.outlierFlags[i]) session.jumps[i],
+    ];
+    final avgFlightTimeMs = validJumps.isEmpty
+        ? 0.0
+        : validJumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
+            validJumps.length;
 
     // Create a single JumpTest record for the average
     final test = JumpTest()
@@ -226,7 +238,7 @@ class CmjBaselineScreen extends ConsumerWidget {
       ..takeoffFrame = 0
       ..landingFrame = 0
       ..fps = session.jumps.isNotEmpty ? session.jumps.first.fps : 0
-      ..flightTimeMs = 0
+      ..flightTimeMs = avgFlightTimeMs
       ..heightCm = session.averageHeightCm!
       ..deltaHCm = session.propagatedErrorCm!
       ..isOutlier = false;
@@ -268,6 +280,7 @@ class _JumpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -287,7 +300,7 @@ class _JumpCard extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Jump #${index + 1}',
+                    l.jumpNumber(index + 1),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -306,15 +319,15 @@ class _JumpCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(color: Colors.amber.withAlpha(80)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.warning_amber,
+                          const Icon(Icons.warning_amber,
                               size: 14, color: Colors.amber),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
-                            'Outlier',
-                            style: TextStyle(
+                            l.outlier,
+                            style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: Colors.amber,
@@ -369,7 +382,7 @@ class _JumpCard extends StatelessWidget {
 
           // Flight time
           Text(
-            'Flight time: ${jump.flightTimeMs.toStringAsFixed(1)} ms  |  ${jump.fps.toStringAsFixed(0)} FPS',
+            l.flightTimeInfo(jump.flightTimeMs.toStringAsFixed(1), jump.fps.toStringAsFixed(0)),
             style: const TextStyle(
               fontSize: 12,
               color: AppColors.textTertiary,
@@ -394,6 +407,7 @@ class _BaselineSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -410,9 +424,9 @@ class _BaselineSummary extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text(
-            'CALCULATED AVERAGE',
-            style: TextStyle(
+          Text(
+            l.calculatedAverage,
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.brand,
@@ -446,9 +460,9 @@ class _BaselineSummary extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Outliers excluded from average',
-            style: TextStyle(
+          Text(
+            l.outliersExcluded,
+            style: const TextStyle(
               fontSize: 12,
               color: AppColors.textTertiary,
             ),

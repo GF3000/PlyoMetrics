@@ -1,0 +1,264 @@
+{
+  "@@locale": "en",
+
+  "profile": "Profile",
+  "error": "Error",
+  "newGroup": "New Group",
+  "selectGroup": "Select Group",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "add": "Add",
+
+  "tagPerformance": "PERFORMANCE",
+  "cmjBaselineMeasurement": "CMJ Baseline Measurement",
+  "verticalJumpMetricsFlightTime": "Vertical jump metrics & flight time",
+  "pleaseSelectAthleteFirst": "Please select an athlete first",
+  "tagMonitoring": "MONITORING",
+  "readinessFatigueTest": "Readiness / Fatigue Test",
+  "dailyCnsRecoveryTracking": "Daily CNS & recovery tracking",
+  "completeCmjBaselineFirst": "Complete a CMJ Baseline first",
+  "tagReactiveStrength": "REACTIVE STRENGTH",
+  "rsiDropJumpTest": "RSI Drop Jump Test",
+  "groundContactEfficiency": "Ground contact & efficiency",
+  "selectAnAthleteFirst": "Select an athlete first",
+
+  "athleteRoster": "ATHLETE ROSTER",
+  "collapse": "Collapse",
+  "viewAll": "View All",
+  "errorLoadingAthletes": "Error loading athletes",
+  "addAthlete": "Add Athlete",
+
+  "navHome": "Home",
+  "navEvolution": "Evolution",
+  "navLog": "Log",
+  "navProfile": "Profile",
+  "profileComingSoon": "Profile coming soon!",
+
+  "renameGroup": "Rename Group",
+  "deleteGroup": "Delete Group",
+  "groupName": "Group Name",
+  "confirmDeleteGroup": "Are you sure you want to delete \"{groupName}\"?",
+  "@confirmDeleteGroup": {
+    "placeholders": {
+      "groupName": { "type": "String" }
+    }
+  },
+
+  "newMeasurement": "New Measurement",
+  "cmjBaseline": "CMJ Baseline",
+  "verticalJumpMetrics": "Vertical jump metrics",
+  "fatigueTest": "Fatigue Test",
+  "dailyReadinessTracking": "Daily readiness tracking",
+  "rsiDropJump": "RSI Drop Jump",
+
+  "cmjBaselineInstructions": "Record at least 1 jump to establish a baseline.\nMaximum 3 jumps allowed.",
+  "recordJumpNumber": "Record Jump #{number}",
+  "@recordJumpNumber": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "saveMeasurement": "Save Measurement",
+  "incompleteBaseline": "Incomplete Baseline",
+  "incompleteBaselineMessage": "It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?",
+  "saveAnyway": "Save Anyway",
+  "noAthleteSelected": "No athlete selected",
+  "jumpNumber": "Jump #{number}",
+  "@jumpNumber": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "outlier": "Outlier",
+  "flightTimeInfo": "Flight time: {flightTime} ms  |  {fps} FPS",
+  "@flightTimeInfo": {
+    "placeholders": {
+      "flightTime": { "type": "String" },
+      "fps": { "type": "String" }
+    }
+  },
+  "calculatedAverage": "CALCULATED AVERAGE",
+  "outliersExcluded": "Outliers excluded from average",
+
+  "selectJumpMoment": "Select Jump Moment",
+  "pickVideoToAnalyze": "Pick a video to analyze",
+  "analyzeJumpFromHere": "Analyze Jump from Here",
+  "pickVideoFromGallery": "Pick Video from Gallery",
+
+  "landingFrameAfterTakeoff": "Landing frame must be after takeoff frame",
+  "framesInOrder": "Frames must be in order: Landing 1 < Takeoff < Landing 2",
+  "frameAnalysis": "Frame Analysis",
+  "extractingFrames": "Extracting Frames",
+  "processingVideoAtFps": "Processing video at {fps} FPS",
+  "@processingVideoAtFps": {
+    "placeholders": {
+      "fps": { "type": "String" }
+    }
+  },
+  "processingVideo": "Processing video at ...",
+  "percentValue": "{percent}%",
+  "@percentValue": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
+  "extractionFailed": "Extraction Failed",
+  "goBack": "Go Back",
+  "noFramesExtracted": "No frames extracted",
+  "frameCounter": "Frame {current} / {total}",
+  "@frameCounter": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "fpsDisplay": "{fps} FPS",
+  "@fpsDisplay": {
+    "placeholders": {
+      "fps": { "type": "String" }
+    }
+  },
+  "msDisplay": "{time} ms",
+  "@msDisplay": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "pause": "Pause",
+  "play": "Play",
+  "landing1": "Landing 1",
+  "takeoff": "Takeoff",
+  "landing2": "Landing 2",
+  "markTakeoff": "Mark Takeoff",
+  "markLanding": "Mark Landing",
+  "contact": "Contact",
+  "flight": "Flight",
+  "height": "Height",
+  "rsi": "RSI",
+  "flightTime": "Flight Time",
+  "errorMarginLabel": "Error",
+  "confirmJump": "Confirm Jump",
+
+  "countermovementJumpCMJ": "Countermovement Jump (CMJ)",
+  "currentJump": "CURRENT JUMP",
+  "baselineMax": "BASELINE MAX",
+  "fatigueStatus": "Fatigue Status",
+  "optimal": "Optimal",
+  "moderateFatigue": "Moderate Fatigue",
+  "highFatigue": "High Fatigue",
+  "fatigueOptimalMessage": "Athlete is well recovered and ready for high-intensity training.",
+  "fatigueModerateMessage": "Some fatigue detected. Consider moderate training loads.",
+  "fatigueHighMessage": "Significant fatigue present. Recommend recovery or light activity.",
+  "baseline": "Baseline",
+  "current": "Current",
+  "recordDailyJump": "Record Daily Jump",
+  "saveTest": "Save Test",
+  "discardResult": "Discard Result",
+  "newPersonalBest": "New Personal Best!",
+  "pbDialogMessage": "Your jump of {height}cm exceeded the current baseline. Please redo the CMJ Baseline measurement to ensure accurate fatigue tracking.",
+  "@pbDialogMessage": {
+    "placeholders": {
+      "height": { "type": "String" }
+    }
+  },
+  "updateBaseline": "Update Baseline",
+  "dismiss": "Dismiss",
+
+  "dropHeight": "DROP HEIGHT",
+  "heightCm": "{height} cm",
+  "@heightCm": {
+    "placeholders": {
+      "height": { "type": "int" }
+    }
+  },
+  "contactTime": "CONTACT TIME",
+  "flightTimeCaps": "FLIGHT TIME",
+  "reactiveStrengthIndex": "REACTIVE STRENGTH INDEX",
+  "rsiError": "± {delta} error",
+  "@rsiError": {
+    "placeholders": {
+      "delta": { "type": "String" }
+    }
+  },
+  "recordDropJump": "Record Drop Jump",
+  "saveTestResult": "SAVE TEST RESULT",
+  "discard": "Discard",
+
+  "pickDropJumpVideo": "Pick a drop jump video to analyze",
+
+  "performanceHistory": "Performance History",
+  "errorWithMessage": "Error: {error}",
+  "@errorWithMessage": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "noJumpRecordsYet": "No jump records yet",
+  "deleteJump": "Delete Jump",
+  "confirmDeleteRecord": "Remove this {testType} record from {dateStr}?",
+  "@confirmDeleteRecord": {
+    "placeholders": {
+      "testType": { "type": "String" },
+      "dateStr": { "type": "String" }
+    }
+  },
+  "fatiguePercent": "{sign}{percent}% Fatigue",
+  "@fatiguePercent": {
+    "placeholders": {
+      "sign": { "type": "String" },
+      "percent": { "type": "String" }
+    }
+  },
+  "detailHeight": "Height",
+  "detailFlightTime": "Flight Time",
+  "detailFps": "FPS",
+  "detailRsiError": "RSI Error",
+  "detailErrorMargin": "Error Margin",
+  "detailContactTime": "Contact Time",
+  "detailRsiScore": "RSI Score",
+  "detailBaselineAtTest": "Baseline at Test",
+
+  "selectAthleteToViewEvolution": "Select an athlete to view evolution",
+  "evolution": "Evolution",
+  "needAtLeast2RsiTests": "Need at least 2 RSI tests to chart",
+  "recentTests": "Recent Tests",
+  "typeCmj": "CMJ",
+  "typeFatigue": "Fatigue",
+  "typeRsi": "RSI",
+
+  "addAthleteTitle": "Add Athlete",
+  "name": "Name",
+  "weightKg": "Weight (kg)",
+  "create": "Create",
+
+  "editAthlete": "Edit Athlete",
+  "deleteAthlete": "Delete Athlete",
+  "confirmDeleteAthlete": "Are you sure you want to delete {name}?",
+  "@confirmDeleteAthlete": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "testTagCmjBaseline": "CMJ BASELINE",
+  "testTagFatigue": "FATIGUE",
+  "testTagRsi": "RSI",
+
+  "cmjAndFatigue": "CMJ & Fatigue",
+  "markButtonLabeled": "{label} (#{frame})",
+  "@markButtonLabeled": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "frame": { "type": "int" }
+    }
+  },
+
+  "navGroup": "Group",
+  "groupOverview": "Group Overview",
+  "cmjHeightLabel": "CMJ Height",
+  "latestRsi": "RSI",
+  "cmjImprovement": "Improvement",
+  "noAthletesInGroup": "No athletes in this group",
+  "noDataAvailable": "No data available"
+}

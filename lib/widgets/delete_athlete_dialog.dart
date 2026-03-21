@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../services/isar_service.dart';
@@ -29,18 +30,19 @@ class _DeleteAthleteDialogState extends State<DeleteAthleteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.card,
       title:
-          const Text('Delete Athlete', style: TextStyle(color: Colors.white)),
+          Text(l.deleteAthlete, style: const TextStyle(color: Colors.white)),
       content: Text(
-        'Are you sure you want to delete ${widget.athlete.name}?',
+        l.confirmDeleteAthlete(widget.athlete.name),
         style: const TextStyle(color: AppColors.textSecondary),
       ),
       actions: [
         TextButton(
           onPressed: _deleting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _deleting ? null : _delete,
@@ -52,7 +54,7 @@ class _DeleteAthleteDialogState extends State<DeleteAthleteDialog> {
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white),
                 )
-              : const Text('Delete'),
+              : Text(l.delete),
         ),
       ],
     );

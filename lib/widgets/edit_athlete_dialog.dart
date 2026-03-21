@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../services/isar_service.dart';
@@ -57,25 +58,26 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.card,
       title:
-          const Text('Edit Athlete', style: TextStyle(color: Colors.white)),
+          Text(l.editAthlete, style: const TextStyle(color: Colors.white)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildField(_nameController, 'Name', TextInputType.text),
+            _buildField(_nameController, l.name, TextInputType.text),
             const SizedBox(height: 12),
             _buildField(
-                _weightController, 'Weight (kg)', TextInputType.number),
+                _weightController, l.weightKg, TextInputType.number),
           ],
         ),
       ),
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _save,
@@ -85,7 +87,7 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Save'),
+              : Text(l.save),
         ),
       ],
     );

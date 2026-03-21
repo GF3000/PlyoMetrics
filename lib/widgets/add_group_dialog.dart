@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../core/theme.dart';
 import '../models/athlete_group.dart';
 import '../services/isar_service.dart';
@@ -37,15 +38,16 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.card,
-      title: const Text('New Group', style: TextStyle(color: Colors.white)),
+      title: Text(l.newGroup, style: const TextStyle(color: Colors.white)),
       content: TextField(
         controller: _nameController,
         autofocus: true,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
-          labelText: 'Group Name',
+          labelText: l.groupName,
           labelStyle: const TextStyle(color: AppColors.textSecondary),
           enabledBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: AppColors.borderLight),
@@ -61,7 +63,7 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(l.cancel),
         ),
         FilledButton(
           onPressed: _saving ? null : _create,
@@ -71,7 +73,7 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Create'),
+              : Text(l.create),
         ),
       ],
     );

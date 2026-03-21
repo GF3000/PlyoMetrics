@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
@@ -60,6 +61,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
   }
 
   void _showPbDialog(double newHeight) {
+    final l = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -101,40 +103,42 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'New Personal Best!',
-                  style: TextStyle(
+                Text(
+                  l.newPersonalBest,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
-                    children: [
-                      const TextSpan(
-                        text: 'Your jump of ',
+                Builder(builder: (_) {
+                  final heightStr = '${newHeight.toStringAsFixed(1)}cm';
+                  final fullMsg = l.pbDialogMessage(newHeight.toStringAsFixed(1));
+                  final parts = fullMsg.split(heightStr);
+                  return RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
                       ),
-                      TextSpan(
-                        text: '${newHeight.toStringAsFixed(1)}cm',
-                        style: const TextStyle(
-                          color: AppColors.brand,
-                          fontWeight: FontWeight.bold,
+                      children: [
+                        TextSpan(text: parts[0]),
+                        TextSpan(
+                          text: heightStr,
+                          style: const TextStyle(
+                            color: AppColors.brand,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      const TextSpan(
-                        text:
-                            ' exceeded the current baseline. Please redo the CMJ Baseline measurement to ensure accurate fatigue tracking.',
-                      ),
-                    ],
-                  ),
-                ),
+                        TextSpan(
+                          text: parts.length > 1 ? parts[1] : '',
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -170,8 +174,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                         Navigator.of(ctx).pop();
                       }
                     },
-                    child: const Text(
-                      'Update Baseline',
+                    child: Text(
+                      l.updateBaseline,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
@@ -194,8 +198,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                       ),
                     ),
                     onPressed: () => Navigator.of(ctx).pop(),
-                    child: const Text(
-                      'Dismiss',
+                    child: Text(
+                      l.dismiss,
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
@@ -252,6 +256,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider)!;
     final baseline = athlete.baselineCmjHeight!;
     final hasResult = _jumpResult != null;
@@ -260,7 +265,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
-        title: const Text('Fatigue Test'),
+        title: Text(l.fatigueTest),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -268,18 +273,18 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildHeader(),
+              _buildHeader(l),
               const SizedBox(height: 20),
-              _buildStatsGrid(baseline),
+              _buildStatsGrid(l, baseline),
               if (hasResult) ...[
                 const SizedBox(height: 16),
-                _buildFatigueCard(),
+                _buildFatigueCard(l),
                 const SizedBox(height: 16),
-                _buildBarVisualization(baseline),
+                _buildBarVisualization(l, baseline),
               ],
               const SizedBox(height: 24),
-              if (!hasResult) _buildRecordButton(),
-              if (hasResult) _buildActionButtons(),
+              if (!hasResult) _buildRecordButton(l),
+              if (hasResult) _buildActionButtons(l),
             ],
           ),
         ),
@@ -287,16 +292,16 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppLocalizations l) {
     return Row(
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Fatigue Test',
-                style: TextStyle(
+              Text(
+                l.fatigueTest,
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -304,7 +309,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
               ),
               const SizedBox(height: 4),
               Text(
-                'Countermovement Jump (CMJ)',
+                l.countermovementJumpCMJ,
                 style: TextStyle(
                   color: AppColors.textSecondary,
                   fontSize: 14,
@@ -337,12 +342,12 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildStatsGrid(double baseline) {
+  Widget _buildStatsGrid(AppLocalizations l, double baseline) {
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
-            label: 'CURRENT JUMP',
+            label: l.currentJump,
             value: _jumpResult != null
                 ? _jumpResult!.heightCm.toStringAsFixed(1)
                 : '--',
@@ -353,7 +358,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
         const SizedBox(width: 12),
         Expanded(
           child: _buildStatCard(
-            label: 'BASELINE MAX',
+            label: l.baselineMax,
             value: baseline.toStringAsFixed(1),
             unit: 'cm',
             valueColor: AppColors.textPrimary,
@@ -416,10 +421,15 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildFatigueCard() {
+  Widget _buildFatigueCard(AppLocalizations l) {
     final status = _fatigueStatus;
     final percent = _fatiguePercent ?? 0;
-    final displayPercent = percent.abs().toStringAsFixed(1);
+    final displayPercent = percent.abs().toStringAsFixed(0);
+    final localizedLabel = percent <= 5
+        ? l.optimal
+        : percent <= 10
+            ? l.moderateFatigue
+            : l.highFatigue;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -433,9 +443,9 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       ),
       child: Column(
         children: [
-          const Text(
-            'Fatigue Status',
-            style: TextStyle(
+          Text(
+            l.fatigueStatus,
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
             ),
@@ -451,7 +461,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            status.label,
+            localizedLabel,
             style: TextStyle(
               color: status.color,
               fontSize: 18,
@@ -461,10 +471,10 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
           const SizedBox(height: 8),
           Text(
             percent <= 5
-                ? 'Athlete is well recovered and ready for high-intensity training.'
+                ? l.fatigueOptimalMessage
                 : percent <= 10
-                    ? 'Some fatigue detected. Consider moderate training loads.'
-                    : 'Significant fatigue present. Recommend recovery or light activity.',
+                    ? l.fatigueModerateMessage
+                    : l.fatigueHighMessage,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.textTertiary,
@@ -476,7 +486,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildBarVisualization(double baseline) {
+  Widget _buildBarVisualization(AppLocalizations l, double baseline) {
     final current = _jumpResult?.heightCm ?? 0;
     final maxVal = baseline > current ? baseline : current;
     final baselineRatio = maxVal > 0 ? baseline / maxVal : 0.0;
@@ -495,7 +505,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
         children: [
           Expanded(
             child: _buildBar(
-              label: 'Baseline',
+              label: l.baseline,
               ratio: baselineRatio,
               color: AppColors.brand.withValues(alpha: 0.4),
               borderColor: AppColors.brand,
@@ -504,7 +514,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
           const SizedBox(width: 24),
           Expanded(
             child: _buildBar(
-              label: 'Current',
+              label: l.current,
               ratio: currentRatio,
               color: AppColors.brand,
               borderColor: const Color(0xFF06B6D4),
@@ -564,7 +574,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildRecordButton() {
+  Widget _buildRecordButton(AppLocalizations l) {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.brand,
@@ -578,8 +588,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       ),
       onPressed: _recordJump,
       icon: const Icon(Icons.videocam_rounded),
-      label: const Text(
-        'Record Daily Jump',
+      label: Text(
+        l.recordDailyJump,
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 16,
@@ -588,7 +598,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(AppLocalizations l) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -613,8 +623,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                     color: Color(0xFF0F172A),
                   ),
                 )
-              : const Text(
-                  'Save Test',
+              : Text(
+                  l.saveTest,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -624,8 +634,8 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
         const SizedBox(height: 12),
         TextButton(
           onPressed: _isSaving ? null : _discard,
-          child: const Text(
-            'Discard Result',
+          child: Text(
+            l.discardResult,
             style: TextStyle(
               color: AppColors.textTertiary,
               fontSize: 14,

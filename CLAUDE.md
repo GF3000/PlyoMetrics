@@ -20,7 +20,7 @@ The app calculates metrics based on frames and video FPS (Frames Per Second).
 
 ## 4. Technical Architecture & Tech Stack
 * **Framework:** Flutter (Mobile strictly vertical orientation).
-* **UI Design Origin:** Google Stitch (HTML/CSS references). All web semantics must be translated strictly to native Flutter widgets (Material 3). No webviews.
+* **UI Design Origin:** Google Stitch (HTML/CSS references). All web semantics must be translated strictly to native Flutter widgets (Material 3). No webviews. Check `stictch.html`
 * **State Management:** `flutter_riverpod`.
 * **Data Persistence:** `shared_preferences` (or local SQLite/Hive if the data grows).
 * **Key Packages:** `camera`, `video_player` (for precise frame-by-frame scrubbing), `fl_chart`.
