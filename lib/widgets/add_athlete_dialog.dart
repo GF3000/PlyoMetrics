@@ -31,10 +31,13 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
   Future<void> _add() async {
     final name = _nameController.text.trim();
     final weightStr = _weightController.text.trim();
-    if (name.isEmpty ||  weightStr.isEmpty) return;
+    if (name.isEmpty) return;
 
-    final weight = double.tryParse(weightStr);
-    if (weight == null || weight <= 0) return;
+    double? weight;
+    if (weightStr.isNotEmpty) {
+      weight = double.tryParse(weightStr);
+      if (weight == null || weight <= 0) return;
+    }
 
     setState(() => _saving = true);
     try {

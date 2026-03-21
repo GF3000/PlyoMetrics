@@ -112,7 +112,7 @@ Athlete _athleteDeserialize(
   object.id = id;
   object.name = reader.readString(offsets[4]);
   object.sortOrder = reader.readLong(offsets[5]);
-  object.weightKg = reader.readDouble(offsets[6]);
+  object.weightKg = reader.readDoubleOrNull(offsets[6]);
   return object;
 }
 
@@ -136,7 +136,7 @@ P _athleteDeserializeProp<P>(
     case 5:
       return (reader.readLong(offset)) as P;
     case 6:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -844,8 +844,24 @@ extension AthleteQueryFilter
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'weightKg',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'weightKg',
+      ));
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgEqualTo(
-    double value, {
+    double? value, {
     double epsilon = Query.epsilon,
   }) {
     return QueryBuilder.apply(this, (query) {
@@ -858,7 +874,7 @@ extension AthleteQueryFilter
   }
 
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgGreaterThan(
-    double value, {
+    double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
@@ -873,7 +889,7 @@ extension AthleteQueryFilter
   }
 
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgLessThan(
-    double value, {
+    double? value, {
     bool include = false,
     double epsilon = Query.epsilon,
   }) {
@@ -888,8 +904,8 @@ extension AthleteQueryFilter
   }
 
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> weightKgBetween(
-    double lower,
-    double upper, {
+    double? lower,
+    double? upper, {
     bool includeLower = true,
     bool includeUpper = true,
     double epsilon = Query.epsilon,
@@ -1189,7 +1205,7 @@ extension AthleteQueryProperty
     });
   }
 
-  QueryBuilder<Athlete, double, QQueryOperations> weightKgProperty() {
+  QueryBuilder<Athlete, double?, QQueryOperations> weightKgProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'weightKg');
     });

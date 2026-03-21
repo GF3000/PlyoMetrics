@@ -347,7 +347,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                 ),
               ),
               Text(
-                '${athlete.weightKg.toStringAsFixed(0)} kg',
+                athlete.weightKg != null ? '${athlete.weightKg!.toStringAsFixed(0)} kg' : '— kg',
                 style: const TextStyle(
                   color: AppColors.textTertiary,
                   fontSize: 12,

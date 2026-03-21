@@ -25,7 +25,7 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
     super.initState();
     _nameController = TextEditingController(text: widget.athlete.name);
     _weightController =
-        TextEditingController(text: widget.athlete.weightKg.toString());
+        TextEditingController(text: widget.athlete.weightKg?.toString() ?? '');
   }
 
   @override
@@ -38,10 +38,13 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
   Future<void> _save() async {
     final name = _nameController.text.trim();
     final weightStr = _weightController.text.trim();
-    if (name.isEmpty || weightStr.isEmpty) return;
+    if (name.isEmpty) return;
 
-    final weight = double.tryParse(weightStr);
-    if (weight == null || weight <= 0) return;
+    double? weight;
+    if (weightStr.isNotEmpty) {
+      weight = double.tryParse(weightStr);
+      if (weight == null || weight <= 0) return;
+    }
 
     setState(() => _saving = true);
     try {

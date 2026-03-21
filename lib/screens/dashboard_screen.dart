@@ -410,7 +410,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${athlete.weightKg.toInt()}kg',
+                        athlete.weightKg != null ? '${athlete.weightKg!.toInt()}kg' : '—kg',
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -877,7 +877,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
         subtitle: Text(
-          '${athlete.weightKg.toInt()} kg',
+          athlete.weightKg != null ? '${athlete.weightKg!.toInt()} kg' : '— kg',
           style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
         trailing: Row(

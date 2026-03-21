@@ -61,7 +61,7 @@ class IsarService {
 
   Future<Athlete> addAthlete({
     required String name,
-    required double weightKg,
+    double? weightKg,
     required AthleteGroup group,
   }) async {
     final athlete = Athlete()

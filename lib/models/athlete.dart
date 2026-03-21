@@ -7,7 +7,7 @@ class Athlete {
   Id id = Isar.autoIncrement;
 
   late String name;
-  late double weightKg;
+  double? weightKg;
   String? avatarUrl;
   double? baselineCmjHeight; // in cm, null until first baseline is set
   DateTime? baselineDate; // when CMJ baseline was last set
