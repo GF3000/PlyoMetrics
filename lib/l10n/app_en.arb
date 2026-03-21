@@ -260,5 +260,37 @@
   "latestRsi": "RSI",
   "cmjImprovement": "Improvement",
   "noAthletesInGroup": "No athletes in this group",
-  "noDataAvailable": "No data available"
+  "noDataAvailable": "No data available",
+
+  "noBaselineSet": "No baseline set",
+  "baselineOutdated": "Update required ({days}d ago)",
+  "@baselineOutdated": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "baselineWithDate": "Baseline: {height} cm · {date}",
+  "@baselineWithDate": {
+    "placeholders": {
+      "height": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "pendingDailyTest": "Pending Daily Test",
+  "todayFatigueLoss": "Today: {loss}% · {status}",
+  "@todayFatigueLoss": {
+    "placeholders": {
+      "loss": { "type": "String" },
+      "status": { "type": "String" }
+    }
+  },
+  "fatigueOptimal": "Optimal",
+  "fatigueModerate": "Moderate",
+  "fatigueHigh": "High Fatigue",
+  "rsiBaselineValue": "RSI: {score}",
+  "@rsiBaselineValue": {
+    "placeholders": {
+      "score": { "type": "String" }
+    }
+  }
 }

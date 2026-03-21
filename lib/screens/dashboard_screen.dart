@@ -303,77 +303,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         spacing: 16,
         children: [
           _buildAthleteCard(),
-          _buildActionCard(
-            tag: l.tagPerformance,
-            title: l.cmjBaselineMeasurement,
-            subtitle: l.verticalJumpMetricsFlightTime,
-            icon: Icons.trending_up,
-            hasGlow: true,
-            onTap: () {
-              final athlete = ref.read(activeAthleteProvider);
-              if (athlete == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.pleaseSelectAthleteFirst),
-                  ),
-                );
-                return;
-              }
-              ref.read(cmjSessionProvider.notifier).reset();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
-              );
-            },
-          ),
-          _buildActionCard(
-            tag: l.tagMonitoring,
-            title: l.readinessFatigueTest,
-            subtitle: l.dailyCnsRecoveryTracking,
-            icon: Icons.check_circle_outline,
-            onTap: () {
-              final athlete = ref.read(activeAthleteProvider);
-              if (athlete == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.pleaseSelectAthleteFirst),
-                  ),
-                );
-                return;
-              }
-              if (athlete.baselineCmjHeight == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.completeCmjBaselineFirst),
-                  ),
-                );
-                return;
-              }
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FatigueTestScreen()),
-              );
-            },
-          ),
-          _buildActionCard(
-            tag: l.tagReactiveStrength,
-            title: l.rsiDropJumpTest,
-            subtitle: l.groundContactEfficiency,
-            icon: Icons.timer_outlined,
-            onTap: () {
-              final athlete = ref.read(activeAthleteProvider);
-              if (athlete == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(l.selectAnAthleteFirst),
-                  ),
-                );
-                return;
-              }
-              ref.read(rsiSessionProvider.notifier).reset();
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const RsiTestScreen()),
-              );
-            },
-          ),
+          _buildCmjCard(l),
+          _buildFatigueCard(l),
+          _buildRsiCard(l),
         ],
       ),
     );
@@ -510,6 +442,164 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
+  // ── Dynamic action cards ──
+
+  static const _warningAmber = Color(0xFFFBBF24);
+
+  Widget _buildCmjCard(AppLocalizations l) {
+    final athlete = ref.watch(activeAthleteProvider);
+
+    String subtitle = l.verticalJumpMetricsFlightTime;
+    Color? subtitleColor;
+    bool needsAttention = false;
+
+    if (athlete != null) {
+      if (athlete.baselineDate == null) {
+        subtitle = l.noBaselineSet;
+        subtitleColor = _warningAmber;
+        needsAttention = true;
+      } else {
+        final daysSince =
+            DateTime.now().difference(athlete.baselineDate!).inDays;
+        if (daysSince >= 28) {
+          subtitle = l.baselineOutdated(daysSince);
+          subtitleColor = _warningAmber;
+          needsAttention = true;
+        } else {
+          subtitle = l.baselineWithDate(
+            athlete.baselineCmjHeight?.toStringAsFixed(1) ?? '-',
+            '${athlete.baselineDate!.day}/${athlete.baselineDate!.month}/${athlete.baselineDate!.year}',
+          );
+        }
+      }
+    }
+
+    return _buildActionCard(
+      tag: l.tagPerformance,
+      title: l.cmjBaselineMeasurement,
+      subtitle: subtitle,
+      subtitleColor: subtitleColor,
+      icon: Icons.trending_up,
+      hasGlow: needsAttention,
+      onTap: () {
+        final athlete = ref.read(activeAthleteProvider);
+        if (athlete == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
+          );
+          return;
+        }
+        ref.read(cmjSessionProvider.notifier).reset();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
+        );
+      },
+    );
+  }
+
+  Widget _buildFatigueCard(AppLocalizations l) {
+    final athlete = ref.watch(activeAthleteProvider);
+
+    String subtitle = l.dailyCnsRecoveryTracking;
+    Color? subtitleColor;
+    bool hasRecentFatigue = false;
+
+    // Only show dynamic data if athlete has a recent CMJ baseline
+    final hasRecentBaseline = athlete != null &&
+        athlete.baselineDate != null &&
+        DateTime.now().difference(athlete.baselineDate!).inDays < 28;
+
+    if (athlete != null && athlete.baselineCmjHeight != null) {
+      final latestFatigueAsync = ref.watch(latestFatigueTestProvider);
+      subtitle = latestFatigueAsync.when(
+        data: (test) {
+          if (test != null &&
+              DateTime.now().difference(test.timestamp).inHours <= 12) {
+            hasRecentFatigue = true;
+            final lossPercent =
+                ((test.baselineAtTest! - test.heightCm) /
+                    test.baselineAtTest! *
+                    100);
+            String status;
+            if (lossPercent <= 5) {
+              status = l.fatigueOptimal;
+              subtitleColor = Colors.green;
+            } else if (lossPercent <= 10) {
+              status = l.fatigueModerate;
+              subtitleColor = _warningAmber;
+            } else {
+              status = l.fatigueHigh;
+              subtitleColor = const Color(0xFFEF4444);
+            }
+            return l.todayFatigueLoss(
+              lossPercent.toStringAsFixed(1),
+              status,
+            );
+          }
+          return l.pendingDailyTest;
+        },
+        loading: () => l.dailyCnsRecoveryTracking,
+        error: (_, __) => l.dailyCnsRecoveryTracking,
+      );
+    }
+
+    return _buildActionCard(
+      tag: l.tagMonitoring,
+      title: l.readinessFatigueTest,
+      subtitle: subtitle,
+      subtitleColor: subtitleColor,
+      icon: Icons.check_circle_outline,
+      hasGlow: hasRecentBaseline && !hasRecentFatigue,
+      onTap: () {
+        final athlete = ref.read(activeAthleteProvider);
+        if (athlete == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
+          );
+          return;
+        }
+        if (athlete.baselineCmjHeight == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.completeCmjBaselineFirst)),
+          );
+          return;
+        }
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const FatigueTestScreen()),
+        );
+      },
+    );
+  }
+
+  Widget _buildRsiCard(AppLocalizations l) {
+    final athlete = ref.watch(activeAthleteProvider);
+
+    String subtitle = l.groundContactEfficiency;
+    if (athlete != null && athlete.baselineRsi != null) {
+      subtitle = l.rsiBaselineValue(athlete.baselineRsi!.toStringAsFixed(2));
+    }
+
+    return _buildActionCard(
+      tag: l.tagReactiveStrength,
+      title: l.rsiDropJumpTest,
+      subtitle: subtitle,
+      icon: Icons.timer_outlined,
+      onTap: () {
+        final athlete = ref.read(activeAthleteProvider);
+        if (athlete == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l.selectAnAthleteFirst)),
+          );
+          return;
+        }
+        ref.read(rsiSessionProvider.notifier).reset();
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const RsiTestScreen()),
+        );
+      },
+    );
+  }
+
   // ── Action card (CMJ, Fatigue, RSI) ──
 
   Widget _buildActionCard({
@@ -518,6 +608,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String subtitle,
     required IconData icon,
     bool hasGlow = false,
+    Color? subtitleColor,
     VoidCallback? onTap,
   }) {
     return Material(
@@ -567,9 +658,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13,
-                        color: AppColors.textSecondary,
+                        color: subtitleColor ?? AppColors.textSecondary,
                       ),
                     ),
                   ],

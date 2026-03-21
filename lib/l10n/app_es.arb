@@ -170,5 +170,15 @@
   "latestRsi": "RSI",
   "cmjImprovement": "Mejora",
   "noAthletesInGroup": "No hay atletas en este grupo",
-  "noDataAvailable": "Sin datos disponibles"
+  "noDataAvailable": "Sin datos disponibles",
+
+  "noBaselineSet": "Sin línea base",
+  "baselineOutdated": "Actualización requerida (hace {days}d)",
+  "baselineWithDate": "Línea base: {height} cm · {date}",
+  "pendingDailyTest": "Test diario pendiente",
+  "todayFatigueLoss": "Hoy: {loss}% · {status}",
+  "fatigueOptimal": "Óptimo",
+  "fatigueModerate": "Moderado",
+  "fatigueHigh": "Fatiga alta",
+  "rsiBaselineValue": "RSI: {score}"
 }

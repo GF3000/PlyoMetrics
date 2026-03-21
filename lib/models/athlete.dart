@@ -10,5 +10,7 @@ class Athlete {
   late double weightKg;
   String? avatarUrl;
   double? baselineCmjHeight; // in cm, null until first baseline is set
+  DateTime? baselineDate; // when CMJ baseline was last set
+  double? baselineRsi; // latest RSI score
   int sortOrder = 0;
 }

@@ -1009,6 +1009,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No data available'**
   String get noDataAvailable;
+
+  /// No description provided for @noBaselineSet.
+  ///
+  /// In en, this message translates to:
+  /// **'No baseline set'**
+  String get noBaselineSet;
+
+  /// No description provided for @baselineOutdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required ({days}d ago)'**
+  String baselineOutdated(int days);
+
+  /// No description provided for @baselineWithDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Baseline: {height} cm · {date}'**
+  String baselineWithDate(String height, String date);
+
+  /// No description provided for @pendingDailyTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending Daily Test'**
+  String get pendingDailyTest;
+
+  /// No description provided for @todayFatigueLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Today: {loss}% · {status}'**
+  String todayFatigueLoss(String loss, String status);
+
+  /// No description provided for @fatigueOptimal.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimal'**
+  String get fatigueOptimal;
+
+  /// No description provided for @fatigueModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get fatigueModerate;
+
+  /// No description provided for @fatigueHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High Fatigue'**
+  String get fatigueHigh;
+
+  /// No description provided for @rsiBaselineValue.
+  ///
+  /// In en, this message translates to:
+  /// **'RSI: {score}'**
+  String rsiBaselineValue(String score);
 }
 
 class _AppLocalizationsDelegate

@@ -247,6 +247,7 @@ class CmjBaselineScreen extends ConsumerWidget {
     await service.updateAthleteBaseline(
       athlete.id,
       session.averageHeightCm!,
+      baselineDate: DateTime.now(),
     );
 
     ref.read(cmjSessionProvider.notifier).reset();

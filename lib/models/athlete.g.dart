@@ -27,18 +27,28 @@ const AthleteSchema = CollectionSchema(
       name: r'baselineCmjHeight',
       type: IsarType.double,
     ),
-    r'name': PropertySchema(
+    r'baselineDate': PropertySchema(
       id: 2,
+      name: r'baselineDate',
+      type: IsarType.dateTime,
+    ),
+    r'baselineRsi': PropertySchema(
+      id: 3,
+      name: r'baselineRsi',
+      type: IsarType.double,
+    ),
+    r'name': PropertySchema(
+      id: 4,
       name: r'name',
       type: IsarType.string,
     ),
     r'sortOrder': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'sortOrder',
       type: IsarType.long,
     ),
     r'weightKg': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'weightKg',
       type: IsarType.double,
     )
@@ -81,9 +91,11 @@ void _athleteSerialize(
 ) {
   writer.writeString(offsets[0], object.avatarUrl);
   writer.writeDouble(offsets[1], object.baselineCmjHeight);
-  writer.writeString(offsets[2], object.name);
-  writer.writeLong(offsets[3], object.sortOrder);
-  writer.writeDouble(offsets[4], object.weightKg);
+  writer.writeDateTime(offsets[2], object.baselineDate);
+  writer.writeDouble(offsets[3], object.baselineRsi);
+  writer.writeString(offsets[4], object.name);
+  writer.writeLong(offsets[5], object.sortOrder);
+  writer.writeDouble(offsets[6], object.weightKg);
 }
 
 Athlete _athleteDeserialize(
@@ -95,10 +107,12 @@ Athlete _athleteDeserialize(
   final object = Athlete();
   object.avatarUrl = reader.readStringOrNull(offsets[0]);
   object.baselineCmjHeight = reader.readDoubleOrNull(offsets[1]);
+  object.baselineDate = reader.readDateTimeOrNull(offsets[2]);
+  object.baselineRsi = reader.readDoubleOrNull(offsets[3]);
   object.id = id;
-  object.name = reader.readString(offsets[2]);
-  object.sortOrder = reader.readLong(offsets[3]);
-  object.weightKg = reader.readDouble(offsets[4]);
+  object.name = reader.readString(offsets[4]);
+  object.sortOrder = reader.readLong(offsets[5]);
+  object.weightKg = reader.readDouble(offsets[6]);
   return object;
 }
 
@@ -114,10 +128,14 @@ P _athleteDeserializeProp<P>(
     case 1:
       return (reader.readDoubleOrNull(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 3:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
+      return (reader.readLong(offset)) as P;
+    case 6:
       return (reader.readDouble(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -434,6 +452,154 @@ extension AthleteQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'baselineCmjHeight',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'baselineDate',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      baselineDateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'baselineDate',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineDateEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'baselineDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineDateGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'baselineDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineDateLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'baselineDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineDateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'baselineDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'baselineRsi',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'baselineRsi',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'baselineRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'baselineRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'baselineRsi',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> baselineRsiBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'baselineRsi',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -772,6 +938,30 @@ extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineRsi', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByBaselineRsiDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineRsi', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -832,6 +1022,30 @@ extension AthleteQuerySortThenBy
   QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineCmjHeightDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'baselineCmjHeight', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineRsi', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByBaselineRsiDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'baselineRsi', Sort.desc);
     });
   }
 
@@ -899,6 +1113,18 @@ extension AthleteQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByBaselineDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'baselineDate');
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByBaselineRsi() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'baselineRsi');
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -936,6 +1162,18 @@ extension AthleteQueryProperty
   QueryBuilder<Athlete, double?, QQueryOperations> baselineCmjHeightProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'baselineCmjHeight');
+    });
+  }
+
+  QueryBuilder<Athlete, DateTime?, QQueryOperations> baselineDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'baselineDate');
+    });
+  }
+
+  QueryBuilder<Athlete, double?, QQueryOperations> baselineRsiProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'baselineRsi');
     });
   }
 

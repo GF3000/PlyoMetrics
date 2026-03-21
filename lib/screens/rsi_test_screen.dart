@@ -3,6 +3,7 @@ import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
+import '../models/athlete.dart';
 import '../models/jump_test.dart';
 import '../providers/management_providers.dart';
 import '../providers/rsi_session_provider.dart';
@@ -66,7 +67,15 @@ class _RsiTestScreenState extends ConsumerState<RsiTestScreen> {
       ..deltaRsi = r.deltaRsi
       ..dropHeightCm = r.dropHeightCm;
 
-    await ref.read(isarServiceProvider).saveJumpTests([test]);
+    final service = ref.read(isarServiceProvider);
+    await service.saveJumpTests([test]);
+    await service.updateAthleteRsi(athlete.id, r.rsiScore);
+
+    // Refresh the active athlete to reflect the new RSI baseline
+    final updatedAthlete = await service.db.athletes.get(athlete.id);
+    if (updatedAthlete != null) {
+      ref.read(activeAthleteProvider.notifier).state = updatedAthlete;
+    }
 
     if (mounted) {
       Navigator.of(context).pop();

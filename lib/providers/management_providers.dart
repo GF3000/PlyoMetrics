@@ -55,6 +55,17 @@ final athleteJumpHistoryProvider = StreamProvider<List<JumpTest>>((ref) {
       .watch(fireImmediately: true);
 });
 
+// ── Dashboard Providers ──
+
+/// Latest fatigue test for the active athlete.
+/// Invalidates when jump history changes (new test saved/deleted).
+final latestFatigueTestProvider = FutureProvider<JumpTest?>((ref) {
+  final athlete = ref.watch(activeAthleteProvider);
+  if (athlete == null) return null;
+  ref.watch(athleteJumpHistoryProvider); // invalidate on new tests
+  return ref.watch(isarServiceProvider).getLatestJumpTest(athlete.id, 'fatigue');
+});
+
 // ── Evolution Providers ──
 
 /// Baseline (CMJ) tests for the active athlete, sorted ascending by date.

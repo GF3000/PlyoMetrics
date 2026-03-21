@@ -506,4 +506,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noDataAvailable => 'No data available';
+
+  @override
+  String get noBaselineSet => 'No baseline set';
+
+  @override
+  String baselineOutdated(int days) {
+    return 'Update required (${days}d ago)';
+  }
+
+  @override
+  String baselineWithDate(String height, String date) {
+    return 'Baseline: $height cm · $date';
+  }
+
+  @override
+  String get pendingDailyTest => 'Pending Daily Test';
+
+  @override
+  String todayFatigueLoss(String loss, String status) {
+    return 'Today: $loss% · $status';
+  }
+
+  @override
+  String get fatigueOptimal => 'Optimal';
+
+  @override
+  String get fatigueModerate => 'Moderate';
+
+  @override
+  String get fatigueHigh => 'High Fatigue';
+
+  @override
+  String rsiBaselineValue(String score) {
+    return 'RSI: $score';
+  }
 }

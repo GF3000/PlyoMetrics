@@ -115,11 +115,28 @@ class IsarService {
     });
   }
 
-  Future<void> updateAthleteBaseline(int athleteId, double heightCm) async {
+  Future<void> updateAthleteBaseline(
+    int athleteId,
+    double heightCm, {
+    DateTime? baselineDate,
+  }) async {
     await _db.writeTxn(() async {
       final athlete = await _db.athletes.get(athleteId);
       if (athlete != null) {
         athlete.baselineCmjHeight = heightCm;
+        if (baselineDate != null) {
+          athlete.baselineDate = baselineDate;
+        }
+        await _db.athletes.put(athlete);
+      }
+    });
+  }
+
+  Future<void> updateAthleteRsi(int athleteId, double rsiScore) async {
+    await _db.writeTxn(() async {
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete != null) {
+        athlete.baselineRsi = rsiScore;
         await _db.athletes.put(athlete);
       }
     });
@@ -142,13 +159,32 @@ class IsarService {
 
       final athlete = await _db.athletes.get(athleteId);
       if (athlete != null) {
-        if (remaining.isEmpty) {
+        // Recalculate CMJ baseline height and date
+        final cmjTests = remaining
+            .where((t) => t.testType == 'cmj_baseline')
+            .toList();
+        if (cmjTests.isEmpty) {
           athlete.baselineCmjHeight = null;
+          athlete.baselineDate = null;
         } else {
-          athlete.baselineCmjHeight = remaining
+          athlete.baselineCmjHeight = cmjTests
               .map((t) => t.heightCm)
               .reduce((a, b) => a > b ? a : b);
+          cmjTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          athlete.baselineDate = cmjTests.first.timestamp;
         }
+
+        // Recalculate RSI baseline
+        final rsiTests = remaining
+            .where((t) => t.testType == 'rsi')
+            .toList();
+        if (rsiTests.isEmpty) {
+          athlete.baselineRsi = null;
+        } else {
+          rsiTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          athlete.baselineRsi = rsiTests.first.rsiScore;
+        }
+
         await _db.athletes.put(athlete);
         updatedAthlete = athlete;
       }
@@ -166,5 +202,14 @@ class IsarService {
         .testTypeEqualTo(testType)
         .sortByTimestampDesc()
         .findAll();
+  }
+
+  Future<JumpTest?> getLatestJumpTest(int athleteId, String testType) {
+    return _db.jumpTests
+        .filter()
+        .athleteIdEqualTo(athleteId)
+        .testTypeEqualTo(testType)
+        .sortByTimestampDesc()
+        .findFirst();
   }
 }
