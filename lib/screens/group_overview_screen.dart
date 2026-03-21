@@ -392,15 +392,13 @@ class GroupOverviewScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: _metricCell(
-                  label: l.cmjImprovement,
-                  value: stats.cmjImprovementPercent != null
-                      ? '${stats.cmjImprovementPercent! >= 0 ? '+' : ''}${stats.cmjImprovementPercent!.toStringAsFixed(1)}%'
+                  label: l.relativePower,
+                  value: athlete.baselineCmjHeight != null
+                      ? (athlete.getRelativePower(athlete.baselineCmjHeight!) != null
+                          ? '${athlete.getRelativePower(athlete.baselineCmjHeight!)!.toStringAsFixed(1)} W/kg'
+                          : '— W/kg')
                       : '-',
-                  valueColor: stats.cmjImprovementPercent == null
-                      ? AppColors.textSecondary
-                      : (stats.cmjImprovementPercent! >= 0
-                          ? const Color(0xFF34D399)
-                          : const Color(0xFFEF4444)),
+                  valueColor: AppColors.textPrimary,
                 ),
               ),
             ],

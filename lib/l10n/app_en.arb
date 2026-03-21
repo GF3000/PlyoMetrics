@@ -260,6 +260,10 @@
   "cmjHeightLabel": "CMJ Height",
   "latestRsi": "RSI",
   "cmjImprovement": "Improvement",
+  "relativePower": "Rel. Power",
+  "peakPower": "Peak Power",
+  "relativePowerLabel": "Relative Power",
+  "bestRelativePower": "Best Rel. Power",
   "noAthletesInGroup": "No athletes in this group",
   "noDataAvailable": "No data available",
 

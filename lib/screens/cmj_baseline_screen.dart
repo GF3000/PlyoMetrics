@@ -128,6 +128,7 @@ class CmjBaselineScreen extends ConsumerWidget {
                   _BaselineSummary(
                     averageHeight: session.averageHeightCm!,
                     propagatedError: session.propagatedErrorCm!,
+                    athlete: athlete,
                   ),
                 ],
               ],
@@ -400,10 +401,12 @@ class _JumpCard extends StatelessWidget {
 class _BaselineSummary extends StatelessWidget {
   final double averageHeight;
   final double propagatedError;
+  final Athlete? athlete;
 
   const _BaselineSummary({
     required this.averageHeight,
     required this.propagatedError,
+    this.athlete,
   });
 
   @override
@@ -460,6 +463,30 @@ class _BaselineSummary extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          if (athlete != null && athlete!.getPeakPower(averageHeight) != null)
+            Center(
+              child: Text(
+                '${l.peakPower}: ${athlete!.getPeakPower(averageHeight)!.toStringAsFixed(1)} W',
+                style: TextStyle(
+                  color: AppColors.brand,
+                  fontSize: 14,
+                  shadows: [Shadow(color: AppColors.brand.withValues(alpha: 0.5), blurRadius: 10)],
+                ),
+              ),
+            ),
+          const SizedBox(height: 4),
+          if (athlete != null && athlete!.getRelativePower(averageHeight) != null)
+            Center(
+              child: Text(
+                '${l.relativePowerLabel}: ${athlete!.getRelativePower(averageHeight)!.toStringAsFixed(1)} W/kg',
+                style: TextStyle(
+                  color: AppColors.brand,
+                  fontSize: 14,
+                  shadows: [Shadow(color: AppColors.brand.withValues(alpha: 0.5), blurRadius: 10)],
+                ),
+              ),
+            ),
           const SizedBox(height: 4),
           Text(
             l.outliersExcluded,

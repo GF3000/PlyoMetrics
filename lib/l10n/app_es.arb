@@ -170,6 +170,10 @@
   "cmjHeightLabel": "Altura CMJ",
   "latestRsi": "RSI",
   "cmjImprovement": "Mejora",
+  "relativePower": "Pot. Rel.",
+  "peakPower": "Potencia Pico",
+  "relativePowerLabel": "Potencia Relativa",
+  "bestRelativePower": "Mejor Pot. Rel.",
   "noAthletesInGroup": "No hay atletas en este grupo",
   "noDataAvailable": "Sin datos disponibles",
 

@@ -1004,6 +1004,30 @@ abstract class AppLocalizations {
   /// **'Improvement'**
   String get cmjImprovement;
 
+  /// No description provided for @relativePower.
+  ///
+  /// In en, this message translates to:
+  /// **'Rel. Power'**
+  String get relativePower;
+
+  /// No description provided for @peakPower.
+  ///
+  /// In en, this message translates to:
+  /// **'Peak Power'**
+  String get peakPower;
+
+  /// No description provided for @relativePowerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Relative Power'**
+  String get relativePowerLabel;
+
+  /// No description provided for @bestRelativePower.
+  ///
+  /// In en, this message translates to:
+  /// **'Best Rel. Power'**
+  String get bestRelativePower;
+
   /// No description provided for @noAthletesInGroup.
   ///
   /// In en, this message translates to:

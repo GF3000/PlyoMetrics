@@ -505,6 +505,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cmjImprovement => 'Improvement';
 
   @override
+  String get relativePower => 'Rel. Power';
+
+  @override
+  String get peakPower => 'Peak Power';
+
+  @override
+  String get relativePowerLabel => 'Relative Power';
+
+  @override
+  String get bestRelativePower => 'Best Rel. Power';
+
+  @override
   String get noAthletesInGroup => 'No athletes in this group';
 
   @override
