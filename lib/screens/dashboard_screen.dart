@@ -403,35 +403,39 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
+                      // CMJ Baseline
                       const Icon(
-                        Icons.fitness_center,
+                        Icons.trending_up,
                         size: 14,
-                        color: AppColors.textSecondary,
+                        color: AppColors.brand,
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        athlete.weightKg != null ? '${athlete.weightKg!.toInt()}kg' : '—kg',
+                        athlete.baselineCmjHeight != null
+                            ? '${athlete.baselineCmjHeight!.toStringAsFixed(1)} cm'
+                            : 'No data',
                         style: const TextStyle(
                           fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      if (athlete.baselineCmjHeight != null) ...[
-                        const SizedBox(width: 12),
-                        const Icon(
-                          Icons.height,
-                          size: 14,
                           color: AppColors.brand,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${athlete.baselineCmjHeight!.toStringAsFixed(1)}cm',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.brand,
-                          ),
+                      ),
+                      const SizedBox(width: 16),
+                      // RSI Score
+                      const Icon(
+                        Icons.speed,
+                        size: 14,
+                        color: AppColors.brand,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        athlete.baselineRsi != null
+                            ? '${athlete.baselineRsi!.toStringAsFixed(2)} RSI'
+                            : 'No data',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.brand,
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ],
@@ -877,7 +881,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
         subtitle: Text(
-          athlete.weightKg != null ? '${athlete.weightKg!.toInt()} kg' : '— kg',
+          '${athlete.heightCm != null ? '${athlete.heightCm!.toInt()} cm' : '— cm'} | ${athlete.weightKg != null ? '${athlete.weightKg!.toInt()} kg' : '— kg'}',
           style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
         ),
         trailing: Row(
