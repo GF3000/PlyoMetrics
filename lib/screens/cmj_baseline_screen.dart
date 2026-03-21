@@ -178,6 +178,36 @@ class CmjBaselineScreen extends ConsumerWidget {
     WidgetRef ref,
     CmjSessionState session,
   ) async {
+    final jumpCount = session.jumps.length;
+    if (jumpCount < 3) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: AppColors.card,
+          title: const Text(
+            'Incomplete Baseline',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
+              child: const Text('Save Anyway'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) return;
+    }
+
     final athlete = ref.read(activeAthleteProvider);
     if (athlete == null) {
       ScaffoldMessenger.of(context).showSnackBar(
