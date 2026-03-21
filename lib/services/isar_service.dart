@@ -62,11 +62,13 @@ class IsarService {
   Future<Athlete> addAthlete({
     required String name,
     double? weightKg,
+    double? heightCm,
     required AthleteGroup group,
   }) async {
     final athlete = Athlete()
       ..name = name
-      ..weightKg = weightKg;
+      ..weightKg = weightKg
+      ..heightCm = heightCm;
 
     await _db.writeTxn(() async {
       await _db.athletes.put(athlete);
@@ -82,10 +84,11 @@ class IsarService {
     });
   }
 
-  Future<Athlete> updateAthlete(Athlete athlete, {String? name, double? weightKg}) async {
+  Future<Athlete> updateAthlete(Athlete athlete, {String? name, double? weightKg, double? heightCm}) async {
     await _db.writeTxn(() async {
       if (name != null) athlete.name = name;
       if (weightKg != null) athlete.weightKg = weightKg;
+      if (heightCm != null) athlete.heightCm = heightCm;
       await _db.athletes.put(athlete);
     });
     return athlete;

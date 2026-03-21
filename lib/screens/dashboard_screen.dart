@@ -1122,7 +1122,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       duration: const Duration(milliseconds: 300),
                       child: Icon(
                         key: ValueKey(_selectedNavIndex == 4),
-                        _selectedNavIndex == 4 ? Icons.group_add : Icons.add,
+                        _selectedNavIndex == 4 ? Icons.person_add : Icons.add,
                         color: Colors.black,
                         size: 28,
                       ),

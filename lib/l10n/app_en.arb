@@ -230,6 +230,7 @@
   "addAthleteTitle": "Add Athlete",
   "name": "Name",
   "weightKg": "Weight (kg)",
+  "heightLabel": "Height (cm)",
   "create": "Create",
 
   "editAthlete": "Edit Athlete",

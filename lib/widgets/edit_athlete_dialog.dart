@@ -4,7 +4,7 @@ import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../services/isar_service.dart';
 
-/// Dialog to edit an existing [Athlete]'s name and weight.
+/// Dialog to edit an existing [Athlete]'s name, weight, and height.
 /// Returns the updated [Athlete] via Navigator.pop, or null if cancelled.
 class EditAthleteDialog extends StatefulWidget {
   final Athlete athlete;
@@ -18,6 +18,7 @@ class EditAthleteDialog extends StatefulWidget {
 class _EditAthleteDialogState extends State<EditAthleteDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _weightController;
+  late final TextEditingController _heightController;
   bool _saving = false;
 
   @override
@@ -26,18 +27,22 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
     _nameController = TextEditingController(text: widget.athlete.name);
     _weightController =
         TextEditingController(text: widget.athlete.weightKg?.toString() ?? '');
+    _heightController =
+        TextEditingController(text: widget.athlete.heightCm?.toString() ?? '');
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _weightController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     final name = _nameController.text.trim();
     final weightStr = _weightController.text.trim();
+    final heightStr = _heightController.text.trim();
     if (name.isEmpty) return;
 
     double? weight;
@@ -46,12 +51,19 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
       if (weight == null || weight <= 0) return;
     }
 
+    double? height;
+    if (heightStr.isNotEmpty) {
+      height = double.tryParse(heightStr);
+      if (height == null || height <= 0) return;
+    }
+
     setState(() => _saving = true);
     try {
       final updated = await IsarService.instance.updateAthlete(
         widget.athlete,
         name: name,
         weightKg: weight,
+        heightCm: height,
       );
       if (mounted) Navigator.of(context).pop(updated);
     } catch (_) {
@@ -74,6 +86,9 @@ class _EditAthleteDialogState extends State<EditAthleteDialog> {
             const SizedBox(height: 12),
             _buildField(
                 _weightController, l.weightKg, TextInputType.number),
+            const SizedBox(height: 12),
+            _buildField(
+                _heightController, l.heightLabel, TextInputType.number),
           ],
         ),
       ),

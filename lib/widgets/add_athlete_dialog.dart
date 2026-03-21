@@ -19,18 +19,21 @@ class AddAthleteDialog extends StatefulWidget {
 class _AddAthleteDialogState extends State<AddAthleteDialog> {
   final _nameController = TextEditingController();
   final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _weightController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
   Future<void> _add() async {
     final name = _nameController.text.trim();
     final weightStr = _weightController.text.trim();
+    final heightStr = _heightController.text.trim();
     if (name.isEmpty) return;
 
     double? weight;
@@ -39,11 +42,18 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
       if (weight == null || weight <= 0) return;
     }
 
+    double? height;
+    if (heightStr.isNotEmpty) {
+      height = double.tryParse(heightStr);
+      if (height == null || height <= 0) return;
+    }
+
     setState(() => _saving = true);
     try {
       final athlete = await IsarService.instance.addAthlete(
         name: name,
         weightKg: weight,
+        heightCm: height,
         group: widget.group,
       );
       if (mounted) Navigator.of(context).pop(athlete);
@@ -66,6 +76,9 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
             const SizedBox(height: 12),
             _buildField(
                 _weightController, l.weightKg, TextInputType.number),
+            const SizedBox(height: 12),
+            _buildField(
+                _heightController, l.heightLabel, TextInputType.number),
           ],
         ),
       ),

@@ -8,6 +8,7 @@ class Athlete {
 
   late String name;
   double? weightKg;
+  double? heightCm;
   String? avatarUrl;
   double? baselineCmjHeight; // in cm, null until first baseline is set
   DateTime? baselineDate; // when CMJ baseline was last set

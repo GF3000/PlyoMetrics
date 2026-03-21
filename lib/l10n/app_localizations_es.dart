@@ -460,6 +460,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weightKg => 'Peso (kg)';
 
   @override
+  String get heightLabel => 'Altura (cm)';
+
+  @override
   String get create => 'Crear';
 
   @override

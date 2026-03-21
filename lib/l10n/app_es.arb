@@ -151,6 +151,7 @@
   "addAthleteTitle": "Agregar Atleta",
   "name": "Nombre",
   "weightKg": "Peso (kg)",
+  "heightLabel": "Altura (cm)",
   "create": "Crear",
 
   "editAthlete": "Editar Atleta",

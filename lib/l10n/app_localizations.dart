@@ -914,6 +914,12 @@ abstract class AppLocalizations {
   /// **'Weight (kg)'**
   String get weightKg;
 
+  /// No description provided for @heightLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Height (cm)'**
+  String get heightLabel;
+
   /// No description provided for @create.
   ///
   /// In en, this message translates to:
