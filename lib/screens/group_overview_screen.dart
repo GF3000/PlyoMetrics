@@ -1,10 +1,27 @@
+import 'dart:math';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/management_providers.dart';
+
+// Deterministic color palette for athlete markers
+const _athletePalette = [
+  Color(0xFF25C0F4), // brand cyan
+  Color(0xFF34D399), // green
+  Color(0xFFF59E0B), // amber
+  Color(0xFFEF4444), // red
+  Color(0xFF8B5CF6), // purple
+  Color(0xFFEC4899), // pink
+  Color(0xFF06B6D4), // teal
+  Color(0xFFF97316), // orange
+];
+
+Color _colorForAthleteId(int id) => _athletePalette[id % _athletePalette.length];
 
 class GroupOverviewScreen extends ConsumerWidget {
   const GroupOverviewScreen({super.key});
@@ -82,7 +99,7 @@ class GroupOverviewScreen extends ConsumerWidget {
             // Chart
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _buildChart(stats, chartMode, l),
+              child: _buildChart(context, stats, chartMode, l),
             ),
             const SizedBox(height: 16),
             // Athlete stats list
@@ -101,37 +118,23 @@ class GroupOverviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildChart(
-      List<GroupAthleteStats> stats, int chartMode, AppLocalizations l) {
-    final hasData = stats.any((s) => chartMode == 0
-        ? s.athlete.baselineCmjHeight != null
-        : s.latestRsiScore != null);
+  Widget _buildChart(BuildContext context, List<GroupAthleteStats> stats,
+      int chartMode, AppLocalizations l) {
+    if (chartMode == 1) {
+      return _buildRsiScatterChart(context, stats, l);
+    }
+    return _buildCmjBarChart(stats, l);
+  }
+
+  Widget _buildCmjBarChart(List<GroupAthleteStats> stats, AppLocalizations l) {
+    final hasData = stats.any((s) => s.athlete.baselineCmjHeight != null);
 
     if (!hasData) {
-      return Container(
-        height: 200,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.card,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderLight),
-        ),
-        child: Text(
-          l.noDataAvailable,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-        ),
-      );
+      return _emptyChartContainer(l);
     }
 
-    final barColor =
-        chartMode == 0 ? AppColors.brand : const Color(0xFFF59E0B);
-
-    final values = stats
-        .map((s) => chartMode == 0
-            ? (s.athlete.baselineCmjHeight ?? 0)
-            : (s.latestRsiScore ?? 0))
-        .toList();
-
+    final values =
+        stats.map((s) => s.athlete.baselineCmjHeight ?? 0).toList();
     final maxVal = values.reduce((a, b) => a > b ? a : b);
     final yMax = maxVal > 0 ? maxVal * 1.2 : 1.0;
 
@@ -151,11 +154,8 @@ class GroupOverviewScreen extends ConsumerWidget {
               getTooltipColor: (_) => AppColors.card,
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final athlete = stats[group.x].athlete;
-                final value = chartMode == 0
-                    ? '${rod.toY.toStringAsFixed(1)} cm'
-                    : rod.toY.toStringAsFixed(2);
                 return BarTooltipItem(
-                  '${athlete.name}\n$value',
+                  '${athlete.name}\n${rod.toY.toStringAsFixed(1)} cm',
                   const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 12,
@@ -207,9 +207,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                 showTitles: true,
                 reservedSize: 40,
                 getTitlesWidget: (value, _) => Text(
-                  chartMode == 0
-                      ? value.toStringAsFixed(0)
-                      : value.toStringAsFixed(1),
+                  value.toStringAsFixed(0),
                   style: const TextStyle(
                       color: AppColors.textTertiary, fontSize: 10),
                 ),
@@ -222,7 +220,7 @@ class GroupOverviewScreen extends ConsumerWidget {
               barRods: [
                 BarChartRodData(
                   toY: values[i],
-                  color: barColor,
+                  color: AppColors.brand,
                   width: stats.length <= 4 ? 28 : 16,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(4),
@@ -233,6 +231,64 @@ class GroupOverviewScreen extends ConsumerWidget {
             );
           }),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRsiScatterChart(
+      BuildContext context, List<GroupAthleteStats> stats, AppLocalizations l) {
+    final scatterData = _filterScatterData(stats);
+    if (scatterData.isEmpty) return _emptyChartContainer(l);
+
+    return Stack(
+      children: [
+        Container(
+          height: 200,
+          padding: const EdgeInsets.fromLTRB(0, 16, 8, 8),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: _buildScatterChartCore(scatterData, l),
+        ),
+        Positioned(
+          top: 8,
+          right: 12,
+          child: InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => _FullscreenRsiChart(stats: stats, l: l),
+              ),
+            ),
+            borderRadius: BorderRadius.circular(4),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(
+                Icons.fullscreen,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _emptyChartContainer(AppLocalizations l) {
+    return Container(
+      height: 200,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: Text(
+        l.noDataAvailable,
+        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
       ),
     );
   }
@@ -265,8 +321,8 @@ class GroupOverviewScreen extends ConsumerWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.brand.withOpacity(0.15),
-                  border: Border.all(color: AppColors.brand.withOpacity(0.3)),
+                  color: AppColors.brand.withValues(alpha: 0.15),
+                  border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -384,6 +440,349 @@ class GroupOverviewScreen extends ConsumerWidget {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Shared scatter chart helpers
+// ---------------------------------------------------------------------------
+
+typedef _ScatterEntry = ({GroupAthleteStats stat, double contact, double flight});
+
+List<_ScatterEntry> _filterScatterData(List<GroupAthleteStats> stats) {
+  final result = <_ScatterEntry>[];
+  for (final s in stats) {
+    if (s.latestContactTimeMs != null && s.latestFlightTimeMs != null) {
+      result.add((
+        stat: s,
+        contact: s.latestContactTimeMs!,
+        flight: s.latestFlightTimeMs!,
+      ));
+    }
+  }
+  return result;
+}
+
+Widget _buildScatterChartCore(
+  List<_ScatterEntry> scatterData,
+  AppLocalizations l, {
+  double markerRadius = 13,
+  double axisFontSize = 10,
+}) {
+  final contacts = scatterData.map((d) => d.contact).toList();
+  final flights = scatterData.map((d) => d.flight).toList();
+
+  final dataMinX = contacts.reduce((a, b) => a < b ? a : b);
+  final dataMaxX = contacts.reduce((a, b) => a > b ? a : b);
+  final dataMinY = flights.reduce((a, b) => a < b ? a : b);
+  final dataMaxY = flights.reduce((a, b) => a > b ? a : b);
+
+  // Averages for crosshair lines
+  final avgX = contacts.reduce((a, b) => a + b) / contacts.length;
+  final avgY = flights.reduce((a, b) => a + b) / flights.length;
+
+  // Dynamic padding: at least 40ms or 15% of range to prevent marker clipping
+  const kMinPadMs = 40.0;
+  final xRange = dataMaxX - dataMinX;
+  final yRange = dataMaxY - dataMinY;
+  final xPad = xRange > 0 ? max(xRange * 0.15, kMinPadMs) : kMinPadMs;
+  final yPad = yRange > 0 ? max(yRange * 0.15, kMinPadMs) : kMinPadMs;
+
+  var chartMinX = ((dataMinX - xPad) / 50).floor() * 50.0;
+  if (chartMinX > dataMinX - 50.0) chartMinX -= 50.0;
+  var chartMaxX = ((dataMaxX + xPad) / 50).ceil() * 50.0;
+  if (chartMaxX < dataMaxX + 50.0) chartMaxX += 50.0;
+  var chartMinY = ((dataMinY - yPad) / 50).floor() * 50.0;
+  if (chartMinY > dataMinY - 50.0) chartMinY -= 50.0;
+  var chartMaxY = ((dataMaxY + yPad) / 50).ceil() * 50.0;
+  if (chartMaxY < dataMaxY + 50.0) chartMaxY += 50.0;
+
+  // Shared titles config for both layers
+  final titlesData = FlTitlesData(
+    topTitles:
+        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    rightTitles:
+        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+  bottomTitles: AxisTitles(
+    axisNameWidget: Text(
+      l.contactTimeAxisMs,
+      style: TextStyle(
+          color: AppColors.textTertiary, fontSize: axisFontSize),
+    ),
+    axisNameSize: 24,
+    sideTitles: SideTitles(
+      showTitles: true,
+      reservedSize: 32,
+      interval: 50.0,
+      getTitlesWidget: (value, _) => Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(
+          value.toStringAsFixed(0),
+          style: TextStyle(
+              color: AppColors.textTertiary, fontSize: axisFontSize),
+        ),
+      ),
+    ),
+  ),
+  leftTitles: AxisTitles(
+    axisNameWidget: Text(
+      l.flightTimeAxisMs,
+      style: TextStyle(
+          color: AppColors.textTertiary, fontSize: axisFontSize),
+    ),
+    axisNameSize: 24,
+    sideTitles: SideTitles(
+      showTitles: true,
+      reservedSize: 48,
+      interval: 50.0,
+      getTitlesWidget: (value, _) => Text(
+        value.toStringAsFixed(0),
+        style: TextStyle(
+            color: AppColors.textTertiary, fontSize: axisFontSize),
+      ),
+    ),
+  ),
+  );
+
+  return Stack(
+    children: [
+      // Background layer: avg crosshair lines via LineChart
+      LineChart(
+        LineChartData(
+          minX: chartMinX,
+          maxX: chartMaxX,
+          minY: chartMinY,
+          maxY: chartMaxY,
+          lineBarsData: [
+            // Horizontal avg line
+            LineChartBarData(
+              spots: [
+                FlSpot(chartMinX, avgY),
+                FlSpot(chartMaxX, avgY),
+              ],
+              color: AppColors.textTertiary,
+              barWidth: 0.8,
+              dotData: const FlDotData(show: false),
+              dashArray: [4, 4],
+            ),
+            // Vertical avg line
+            LineChartBarData(
+              spots: [
+                FlSpot(avgX, chartMinY),
+                FlSpot(avgX, chartMaxY),
+              ],
+              color: AppColors.textTertiary,
+              barWidth: 0.8,
+              dotData: const FlDotData(show: false),
+              dashArray: [4, 4],
+            ),
+          ],
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: titlesData,
+          lineTouchData: const LineTouchData(enabled: false),
+        ),
+      ),
+      // Foreground layer: scatter dots with avatar initials
+      ScatterChart(
+        ScatterChartData(
+          minX: chartMinX,
+          maxX: chartMaxX,
+          minY: chartMinY,
+          maxY: chartMaxY,
+          scatterSpots: scatterData.map((d) {
+            final athlete = d.stat.athlete;
+            final initial = athlete.name.isNotEmpty
+                ? athlete.name[0].toUpperCase()
+                : '?';
+            return ScatterSpot(
+              d.contact,
+              d.flight,
+              dotPainter: _InitialDotPainter(
+                initial: initial,
+                backgroundColor: _colorForAthleteId(athlete.id),
+                radius: markerRadius,
+              ),
+            );
+          }).toList(),
+          scatterTouchData: ScatterTouchData(
+            touchTooltipData: ScatterTouchTooltipData(
+              getTooltipColor: (_) => AppColors.card,
+              getTooltipItems: (touchedSpot) {
+                final idx = scatterData.indexWhere(
+                    (d) => d.contact == touchedSpot.x && d.flight == touchedSpot.y);
+                if (idx < 0) return null;
+                final name = scatterData[idx].stat.athlete.name;
+                return ScatterTooltipItem(
+                  '$name\n${touchedSpot.x.toStringAsFixed(0)} / ${touchedSpot.y.toStringAsFixed(0)} ms',
+                  textStyle: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              },
+            ),
+          ),
+          gridData: const FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: const FlTitlesData(
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Custom FlDotPainter: circle with athlete initial
+// ---------------------------------------------------------------------------
+
+class _InitialDotPainter extends FlDotPainter {
+  final String initial;
+  final Color backgroundColor;
+  final double radius;
+
+  _InitialDotPainter({
+    required this.initial,
+    required this.backgroundColor,
+    this.radius = 13,
+  });
+
+  @override
+  void draw(Canvas canvas, FlSpot spot, Offset offsetInCanvas) {
+    // Filled circle
+    canvas.drawCircle(
+      offsetInCanvas,
+      radius,
+      Paint()..color = backgroundColor,
+    );
+
+    // Subtle border
+    canvas.drawCircle(
+      offsetInCanvas,
+      radius,
+      Paint()
+        ..color = backgroundColor.withValues(alpha: 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // Initial text centered in circle
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: initial,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: radius * 0.9,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    textPainter.paint(
+      canvas,
+      Offset(
+        offsetInCanvas.dx - textPainter.width / 2,
+        offsetInCanvas.dy - textPainter.height / 2,
+      ),
+    );
+  }
+
+  @override
+  Size getSize(FlSpot spot) => Size.fromRadius(radius);
+
+  @override
+  Color get mainColor => backgroundColor;
+
+  @override
+  FlDotPainter lerp(FlDotPainter a, FlDotPainter b, double t) => b;
+
+  @override
+  List<Object?> get props => [initial, backgroundColor, radius];
+}
+
+// ---------------------------------------------------------------------------
+// Fullscreen RSI Scatter Chart (landscape)
+// ---------------------------------------------------------------------------
+
+class _FullscreenRsiChart extends StatefulWidget {
+  final List<GroupAthleteStats> stats;
+  final AppLocalizations l;
+
+  const _FullscreenRsiChart({required this.stats, required this.l});
+
+  @override
+  State<_FullscreenRsiChart> createState() => _FullscreenRsiChartState();
+}
+
+class _FullscreenRsiChartState extends State<_FullscreenRsiChart> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scatterData = _filterScatterData(widget.stats);
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          widget.l.rsiScatterTitle,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: scatterData.isEmpty
+          ? Center(
+              child: Text(
+                widget.l.noDataAvailable,
+                style: const TextStyle(
+                    color: AppColors.textSecondary, fontSize: 14),
+              ),
+            )
+          : Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              child: _buildScatterChartCore(
+                scatterData,
+                widget.l,
+                markerRadius: 16,
+                axisFontSize: 12,
+              ),
+            ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Chart Mode Toggle
+// ---------------------------------------------------------------------------
+
 class _ChartModeToggle extends ConsumerWidget {
   final AppLocalizations l;
 
@@ -396,7 +795,7 @@ class _ChartModeToggle extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -445,7 +844,7 @@ class _ToggleItem extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color:
-              isActive ? AppColors.brand.withOpacity(0.15) : Colors.transparent,
+              isActive ? AppColors.brand.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

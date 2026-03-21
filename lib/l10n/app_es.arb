@@ -180,5 +180,11 @@
   "fatigueOptimal": "Óptimo",
   "fatigueModerate": "Moderado",
   "fatigueHigh": "Fatiga alta",
-  "rsiBaselineValue": "RSI: {score}"
+  "rsiBaselineValue": "RSI: {score}",
+
+  "contactTimeAxisMs": "Contacto (ms)",
+  "flightTimeAxisMs": "T. Vuelo (ms)",
+
+  "rsiScatterTitle": "Dispersión RSI",
+  "fullscreenChart": "Pantalla completa"
 }

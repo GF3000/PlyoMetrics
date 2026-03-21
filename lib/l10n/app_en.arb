@@ -292,5 +292,11 @@
     "placeholders": {
       "score": { "type": "String" }
     }
-  }
+  },
+
+  "contactTimeAxisMs": "Contact (ms)",
+  "flightTimeAxisMs": "Air Time (ms)",
+
+  "rsiScatterTitle": "RSI Scatter",
+  "fullscreenChart": "Fullscreen"
 }

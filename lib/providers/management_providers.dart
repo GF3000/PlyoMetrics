@@ -219,6 +219,8 @@ final historyModeProvider = StateProvider<int>((ref) => 0);
 typedef GroupAthleteStats = ({
   Athlete athlete,
   double? latestRsiScore,
+  double? latestContactTimeMs,
+  double? latestFlightTimeMs,
   double? cmjImprovementPercent,
 });
 
@@ -230,9 +232,11 @@ final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((ref) asyn
 
   final results = <GroupAthleteStats>[];
   for (final athlete in athletes) {
-    // Latest RSI score
+    // Latest RSI test data
     final rsiTests = await service.getJumpTestsForAthlete(athlete.id, 'rsi');
     final latestRsi = rsiTests.isNotEmpty ? rsiTests.first.rsiScore : null;
+    final latestContact = rsiTests.isNotEmpty ? rsiTests.first.contactTimeMs : null;
+    final latestFlight = rsiTests.isNotEmpty ? rsiTests.first.flightTimeMs : null;
 
     // CMJ % improvement: earliest non-outlier baseline vs current
     final baselineTests = await service.getJumpTestsForAthlete(athlete.id, 'cmj_baseline');
@@ -249,6 +253,8 @@ final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((ref) asyn
     results.add((
       athlete: athlete,
       latestRsiScore: latestRsi,
+      latestContactTimeMs: latestContact,
+      latestFlightTimeMs: latestFlight,
       cmjImprovementPercent: improvement,
     ));
   }

@@ -1063,6 +1063,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RSI: {score}'**
   String rsiBaselineValue(String score);
+
+  /// No description provided for @contactTimeAxisMs.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact (ms)'**
+  String get contactTimeAxisMs;
+
+  /// No description provided for @flightTimeAxisMs.
+  ///
+  /// In en, this message translates to:
+  /// **'Air Time (ms)'**
+  String get flightTimeAxisMs;
+
+  /// No description provided for @rsiScatterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'RSI Scatter'**
+  String get rsiScatterTitle;
+
+  /// No description provided for @fullscreenChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Fullscreen'**
+  String get fullscreenChart;
 }
 
 class _AppLocalizationsDelegate

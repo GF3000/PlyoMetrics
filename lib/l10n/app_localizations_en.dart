@@ -541,4 +541,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String rsiBaselineValue(String score) {
     return 'RSI: $score';
   }
+
+  @override
+  String get contactTimeAxisMs => 'Contact (ms)';
+
+  @override
+  String get flightTimeAxisMs => 'Air Time (ms)';
+
+  @override
+  String get rsiScatterTitle => 'RSI Scatter';
+
+  @override
+  String get fullscreenChart => 'Fullscreen';
 }
