@@ -225,5 +225,50 @@
   },
   "allRsiTestsSaved": "Todos los tests RSI guardados",
   "rsiTestInstructions": "Graba hasta 3 saltos de caída para medir el RSI.\nMáximo 3 saltos permitidos.",
-  "averageRsiScore": "PUNTUACIÓN RSI MEDIA"
+  "averageRsiScore": "PUNTUACIÓN RSI MEDIA",
+
+  "tagAsymmetry": "ASIMETRÍA",
+  "asymmetricTest": "Test Asimétrico",
+  "singleLegCmj": "CMJ unilateral · Izquierda vs Derecha",
+  "leftLeg": "Pierna Izquierda",
+  "rightLeg": "Pierna Derecha",
+  "recordLegJumpNumber": "Grabar salto {leg} #{number}",
+  "@recordLegJumpNumber": {
+    "placeholders": {
+      "leg": { "type": "String" },
+      "number": { "type": "int" }
+    }
+  },
+  "asymmetryTestInstructions": "Graba hasta 3 saltos CMJ por pierna.\nAlterna entre Izquierda y Derecha con el selector de arriba.",
+  "asymmetryPct": "Asimetría",
+  "asymmetryPerfect": "Perfecto",
+  "asymmetryGood": "Bueno",
+  "asymmetryCaution": "Precaución",
+  "asymmetryRisk": "Riesgo",
+  "strongerLeg": "Pierna más fuerte",
+  "leftStronger": "Izquierda",
+  "rightStronger": "Derecha",
+  "saveAthleteAsymmetry": "Guardar asimetría de {name}",
+  "@saveAthleteAsymmetry": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "allAsymmetryTestsSaved": "Todos los tests de asimetría guardados",
+  "asymmetryChartTitle": "Gráfico Asimetría",
+  "asymmetryEvolution": "Evolución de Asimetría",
+  "noAsymmetryData": "Sin datos de asimetría",
+  "asymmetryAthleteProgress": "{name} (I:{left}/3 D:{right}/3)",
+  "@asymmetryAthleteProgress": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "left": { "type": "int" },
+      "right": { "type": "int" }
+    }
+  },
+  "rightStrongerLabel": "Derecha",
+  "leftStrongerLabel": "Izquierda",
+  "leftAvg": "Media Izq",
+  "rightAvg": "Media Der",
+  "asymmetryPositiveNote": "Positivo = Derecha más fuerte · Negativo = Izquierda más fuerte"
 }

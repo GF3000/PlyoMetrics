@@ -17,43 +17,58 @@ const AthleteSchema = CollectionSchema(
   name: r'Athlete',
   id: 6386904496293942511,
   properties: {
-    r'avatarUrl': PropertySchema(
+    r'asymmetryDate': PropertySchema(
       id: 0,
+      name: r'asymmetryDate',
+      type: IsarType.dateTime,
+    ),
+    r'asymmetryStrongerLeg': PropertySchema(
+      id: 1,
+      name: r'asymmetryStrongerLeg',
+      type: IsarType.string,
+    ),
+    r'avatarUrl': PropertySchema(
+      id: 2,
       name: r'avatarUrl',
       type: IsarType.string,
     ),
     r'baselineCmjHeight': PropertySchema(
-      id: 1,
+      id: 3,
       name: r'baselineCmjHeight',
       type: IsarType.double,
     ),
     r'baselineDate': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'baselineDate',
       type: IsarType.dateTime,
     ),
     r'baselineRsi': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'baselineRsi',
       type: IsarType.double,
     ),
     r'heightCm': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'heightCm',
       type: IsarType.double,
     ),
+    r'latestAsymmetryPct': PropertySchema(
+      id: 7,
+      name: r'latestAsymmetryPct',
+      type: IsarType.double,
+    ),
     r'name': PropertySchema(
-      id: 5,
+      id: 8,
       name: r'name',
       type: IsarType.string,
     ),
     r'sortOrder': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'sortOrder',
       type: IsarType.long,
     ),
     r'weightKg': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'weightKg',
       type: IsarType.double,
     )
@@ -79,6 +94,12 @@ int _athleteEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
+    final value = object.asymmetryStrongerLeg;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.avatarUrl;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -94,14 +115,17 @@ void _athleteSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.avatarUrl);
-  writer.writeDouble(offsets[1], object.baselineCmjHeight);
-  writer.writeDateTime(offsets[2], object.baselineDate);
-  writer.writeDouble(offsets[3], object.baselineRsi);
-  writer.writeDouble(offsets[4], object.heightCm);
-  writer.writeString(offsets[5], object.name);
-  writer.writeLong(offsets[6], object.sortOrder);
-  writer.writeDouble(offsets[7], object.weightKg);
+  writer.writeDateTime(offsets[0], object.asymmetryDate);
+  writer.writeString(offsets[1], object.asymmetryStrongerLeg);
+  writer.writeString(offsets[2], object.avatarUrl);
+  writer.writeDouble(offsets[3], object.baselineCmjHeight);
+  writer.writeDateTime(offsets[4], object.baselineDate);
+  writer.writeDouble(offsets[5], object.baselineRsi);
+  writer.writeDouble(offsets[6], object.heightCm);
+  writer.writeDouble(offsets[7], object.latestAsymmetryPct);
+  writer.writeString(offsets[8], object.name);
+  writer.writeLong(offsets[9], object.sortOrder);
+  writer.writeDouble(offsets[10], object.weightKg);
 }
 
 Athlete _athleteDeserialize(
@@ -111,15 +135,18 @@ Athlete _athleteDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Athlete();
-  object.avatarUrl = reader.readStringOrNull(offsets[0]);
-  object.baselineCmjHeight = reader.readDoubleOrNull(offsets[1]);
-  object.baselineDate = reader.readDateTimeOrNull(offsets[2]);
-  object.baselineRsi = reader.readDoubleOrNull(offsets[3]);
-  object.heightCm = reader.readDoubleOrNull(offsets[4]);
+  object.asymmetryDate = reader.readDateTimeOrNull(offsets[0]);
+  object.asymmetryStrongerLeg = reader.readStringOrNull(offsets[1]);
+  object.avatarUrl = reader.readStringOrNull(offsets[2]);
+  object.baselineCmjHeight = reader.readDoubleOrNull(offsets[3]);
+  object.baselineDate = reader.readDateTimeOrNull(offsets[4]);
+  object.baselineRsi = reader.readDoubleOrNull(offsets[5]);
+  object.heightCm = reader.readDoubleOrNull(offsets[6]);
   object.id = id;
-  object.name = reader.readString(offsets[5]);
-  object.sortOrder = reader.readLong(offsets[6]);
-  object.weightKg = reader.readDoubleOrNull(offsets[7]);
+  object.latestAsymmetryPct = reader.readDoubleOrNull(offsets[7]);
+  object.name = reader.readString(offsets[8]);
+  object.sortOrder = reader.readLong(offsets[9]);
+  object.weightKg = reader.readDoubleOrNull(offsets[10]);
   return object;
 }
 
@@ -131,20 +158,26 @@ P _athleteDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readStringOrNull(offset)) as P;
-    case 1:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 2:
       return (reader.readDateTimeOrNull(offset)) as P;
+    case 1:
+      return (reader.readStringOrNull(offset)) as P;
+    case 2:
+      return (reader.readStringOrNull(offset)) as P;
     case 3:
       return (reader.readDoubleOrNull(offset)) as P;
     case 4:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 5:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 6:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 7:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 8:
+      return (reader.readString(offset)) as P;
+    case 9:
+      return (reader.readLong(offset)) as P;
+    case 10:
       return (reader.readDoubleOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -240,6 +273,231 @@ extension AthleteQueryWhere on QueryBuilder<Athlete, Athlete, QWhereClause> {
 
 extension AthleteQueryFilter
     on QueryBuilder<Athlete, Athlete, QFilterCondition> {
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> asymmetryDateIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'asymmetryDate',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryDateIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'asymmetryDate',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> asymmetryDateEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'asymmetryDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryDateGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'asymmetryDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> asymmetryDateLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'asymmetryDate',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition> asymmetryDateBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'asymmetryDate',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'asymmetryStrongerLeg',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'asymmetryStrongerLeg',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'asymmetryStrongerLeg',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'asymmetryStrongerLeg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'asymmetryStrongerLeg',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'asymmetryStrongerLeg',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      asymmetryStrongerLegIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'asymmetryStrongerLeg',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> avatarUrlIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -748,6 +1006,90 @@ extension AthleteQueryFilter
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'latestAsymmetryPct',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'latestAsymmetryPct',
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'latestAsymmetryPct',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'latestAsymmetryPct',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'latestAsymmetryPct',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterFilterCondition>
+      latestAsymmetryPctBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'latestAsymmetryPct',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterFilterCondition> nameEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1017,6 +1359,31 @@ extension AthleteQueryLinks
     on QueryBuilder<Athlete, Athlete, QFilterCondition> {}
 
 extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByAsymmetryDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByAsymmetryDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByAsymmetryStrongerLeg() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryStrongerLeg', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy>
+      sortByAsymmetryStrongerLegDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryStrongerLeg', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByAvatarUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'avatarUrl', Sort.asc);
@@ -1077,6 +1444,18 @@ extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByLatestAsymmetryPct() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latestAsymmetryPct', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByLatestAsymmetryPctDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latestAsymmetryPct', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1116,6 +1495,31 @@ extension AthleteQuerySortBy on QueryBuilder<Athlete, Athlete, QSortBy> {
 
 extension AthleteQuerySortThenBy
     on QueryBuilder<Athlete, Athlete, QSortThenBy> {
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByAsymmetryDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryDate', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByAsymmetryDateDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByAsymmetryStrongerLeg() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryStrongerLeg', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy>
+      thenByAsymmetryStrongerLegDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetryStrongerLeg', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByAvatarUrl() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'avatarUrl', Sort.asc);
@@ -1188,6 +1592,18 @@ extension AthleteQuerySortThenBy
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByLatestAsymmetryPct() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latestAsymmetryPct', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByLatestAsymmetryPctDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'latestAsymmetryPct', Sort.desc);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1227,6 +1643,20 @@ extension AthleteQuerySortThenBy
 
 extension AthleteQueryWhereDistinct
     on QueryBuilder<Athlete, Athlete, QDistinct> {
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByAsymmetryDate() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'asymmetryDate');
+    });
+  }
+
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByAsymmetryStrongerLeg(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'asymmetryStrongerLeg',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QDistinct> distinctByAvatarUrl(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1258,6 +1688,12 @@ extension AthleteQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Athlete, Athlete, QDistinct> distinctByLatestAsymmetryPct() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'latestAsymmetryPct');
+    });
+  }
+
   QueryBuilder<Athlete, Athlete, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1283,6 +1719,19 @@ extension AthleteQueryProperty
   QueryBuilder<Athlete, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<Athlete, DateTime?, QQueryOperations> asymmetryDateProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'asymmetryDate');
+    });
+  }
+
+  QueryBuilder<Athlete, String?, QQueryOperations>
+      asymmetryStrongerLegProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'asymmetryStrongerLeg');
     });
   }
 
@@ -1313,6 +1762,13 @@ extension AthleteQueryProperty
   QueryBuilder<Athlete, double?, QQueryOperations> heightCmProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'heightCm');
+    });
+  }
+
+  QueryBuilder<Athlete, double?, QQueryOperations>
+      latestAsymmetryPctProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'latestAsymmetryPct');
     });
   }
 

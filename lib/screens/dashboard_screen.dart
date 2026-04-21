@@ -10,11 +10,13 @@ import '../widgets/add_athlete_dialog.dart';
 import '../widgets/add_group_dialog.dart';
 import '../widgets/delete_athlete_dialog.dart';
 import '../widgets/edit_athlete_dialog.dart';
+import 'asymmetry_test_screen.dart';
 import 'cmj_baseline_screen.dart';
 import 'athlete_history_screen.dart';
 import 'evolution_screen.dart';
 import 'fatigue_test_screen.dart';
 import 'rsi_test_screen.dart';
+import '../providers/asymmetry_session_provider.dart';
 import '../providers/rsi_session_provider.dart';
 import '../l10n/app_localizations.dart';
 import 'group_overview_screen.dart';
@@ -337,6 +339,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _buildCmjCard(l),
           _buildFatigueCard(l),
           _buildRsiCard(l),
+          _buildAsymmetryCard(l),
         ],
       ),
     );
@@ -640,6 +643,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       subtitle: subtitle,
       icon: Icons.timer_outlined,
       onTap: () => _launchRsiTest(context, l),
+    );
+  }
+
+  Widget _buildAsymmetryCard(AppLocalizations l) {
+    final athlete = ref.watch(activeAthleteProvider);
+    String subtitle = l.singleLegCmj;
+    bool hasGlow = false;
+
+    if (athlete != null && athlete.latestAsymmetryPct != null) {
+      final pct = athlete.latestAsymmetryPct!;
+      final legLabel = athlete.asymmetryStrongerLeg == 'right'
+          ? l.rightStrongerLabel
+          : l.leftStrongerLabel;
+      subtitle = '${pct >= 0 ? '+' : ''}${pct.round()}% ($legLabel)';
+      hasGlow = pct.abs() >= 15;
+    }
+
+    return _buildActionCard(
+      tag: l.tagAsymmetry,
+      title: l.asymmetricTest,
+      subtitle: subtitle,
+      icon: Icons.compare_arrows,
+      hasGlow: hasGlow,
+      onTap: () => _launchAsymmetryTest(context, l),
+    );
+  }
+
+  Future<void> _launchAsymmetryTest(
+    BuildContext ctx,
+    AppLocalizations l,
+  ) async {
+    final athletesAsync = ref.read(groupAthletesProvider);
+    final athletes = athletesAsync.whenOrNull(data: (l) => l) ?? [];
+    if (athletes.isEmpty) {
+      ScaffoldMessenger.of(
+        ctx,
+      ).showSnackBar(SnackBar(content: Text(l.pleaseSelectGroupFirst)));
+      return;
+    }
+    final active = ref.read(activeAthleteProvider);
+    ref
+        .read(asymmetrySessionProvider.notifier)
+        .initWithAthletes(athletes, defaultAthleteId: active?.id);
+    Navigator.of(ctx).push(
+      MaterialPageRoute(
+        builder: (_) => AsymmetryTestScreen(athletes: athletes),
+      ),
     );
   }
 
@@ -1511,6 +1561,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               onTap: () {
                 Navigator.pop(ctx);
                 _launchRsiTest(context, l);
+              },
+            ),
+            // Asymmetry Test Option
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.brand.withAlpha(25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.compare_arrows, color: AppColors.brand),
+              ),
+              title: Text(
+                l.asymmetricTest,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l.singleLegCmj,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _launchAsymmetryTest(context, l);
               },
             ),
             const SizedBox(height: 16),

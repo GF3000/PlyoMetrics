@@ -34,4 +34,7 @@ class JumpTest {
 
   double? dropHeightCm; // RSI: drop height in cm
   int? landing1Frame; // RSI: first ground contact frame
+
+  String? leg; // asymmetry: 'left' | 'right'
+  int? asymmetrySessionId; // links the left+right pair for one asymmetry session
 }

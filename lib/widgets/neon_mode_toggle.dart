@@ -35,6 +35,13 @@ class NeonModeToggle extends ConsumerWidget {
               onTap: () => ref.read(historyModeProvider.notifier).state = 1,
             ),
           ),
+          Expanded(
+            child: _ToggleItem(
+              label: l.asymmetryPct,
+              isActive: mode == 2,
+              onTap: () => ref.read(historyModeProvider.notifier).state = 2,
+            ),
+          ),
         ],
       ),
     );

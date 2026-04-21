@@ -1183,6 +1183,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AVERAGE RSI SCORE'**
   String get averageRsiScore;
+
+  /// No description provided for @tagAsymmetry.
+  ///
+  /// In en, this message translates to:
+  /// **'ASYMMETRY'**
+  String get tagAsymmetry;
+
+  /// No description provided for @asymmetricTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Asymmetric Test'**
+  String get asymmetricTest;
+
+  /// No description provided for @singleLegCmj.
+  ///
+  /// In en, this message translates to:
+  /// **'Single-leg CMJ · Left vs Right'**
+  String get singleLegCmj;
+
+  /// No description provided for @leftLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Left Leg'**
+  String get leftLeg;
+
+  /// No description provided for @rightLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Right Leg'**
+  String get rightLeg;
+
+  /// No description provided for @recordLegJumpNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Record {leg} Jump #{number}'**
+  String recordLegJumpNumber(String leg, int number);
+
+  /// No description provided for @asymmetryTestInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Record up to 3 single-leg CMJ jumps per leg.\nAlternate between Left and Right using the toggle above.'**
+  String get asymmetryTestInstructions;
+
+  /// No description provided for @asymmetryPct.
+  ///
+  /// In en, this message translates to:
+  /// **'Asymmetry'**
+  String get asymmetryPct;
+
+  /// No description provided for @asymmetryPerfect.
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect'**
+  String get asymmetryPerfect;
+
+  /// No description provided for @asymmetryGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get asymmetryGood;
+
+  /// No description provided for @asymmetryCaution.
+  ///
+  /// In en, this message translates to:
+  /// **'Caution'**
+  String get asymmetryCaution;
+
+  /// No description provided for @asymmetryRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk'**
+  String get asymmetryRisk;
+
+  /// No description provided for @strongerLeg.
+  ///
+  /// In en, this message translates to:
+  /// **'Stronger Leg'**
+  String get strongerLeg;
+
+  /// No description provided for @leftStronger.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get leftStronger;
+
+  /// No description provided for @rightStronger.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get rightStronger;
+
+  /// No description provided for @saveAthleteAsymmetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {name}\'s Asymmetry'**
+  String saveAthleteAsymmetry(String name);
+
+  /// No description provided for @allAsymmetryTestsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'All asymmetry tests saved'**
+  String get allAsymmetryTestsSaved;
+
+  /// No description provided for @asymmetryChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Asymmetry Chart'**
+  String get asymmetryChartTitle;
+
+  /// No description provided for @asymmetryEvolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Asymmetry Evolution'**
+  String get asymmetryEvolution;
+
+  /// No description provided for @noAsymmetryData.
+  ///
+  /// In en, this message translates to:
+  /// **'No asymmetry data'**
+  String get noAsymmetryData;
+
+  /// No description provided for @asymmetryAthleteProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (L:{left}/3 R:{right}/3)'**
+  String asymmetryAthleteProgress(String name, int left, int right);
+
+  /// No description provided for @rightStrongerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get rightStrongerLabel;
+
+  /// No description provided for @leftStrongerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get leftStrongerLabel;
+
+  /// No description provided for @leftAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Left Avg'**
+  String get leftAvg;
+
+  /// No description provided for @rightAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Right Avg'**
+  String get rightAvg;
+
+  /// No description provided for @asymmetryPositiveNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Positive = Right stronger · Negative = Left stronger'**
+  String get asymmetryPositiveNote;
 }
 
 class _AppLocalizationsDelegate

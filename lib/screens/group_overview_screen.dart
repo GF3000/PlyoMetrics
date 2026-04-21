@@ -21,7 +21,8 @@ const _athletePalette = [
   Color(0xFFF97316), // orange
 ];
 
-Color _colorForAthleteId(int id) => _athletePalette[id % _athletePalette.length];
+Color _colorForAthleteId(int id) =>
+    _athletePalette[id % _athletePalette.length];
 
 class GroupOverviewScreen extends ConsumerWidget {
   const GroupOverviewScreen({super.key});
@@ -58,7 +59,9 @@ class GroupOverviewScreen extends ConsumerWidget {
             child: Text(
               l.noAthletesInGroup,
               style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 14),
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
             ),
           );
         }
@@ -118,23 +121,229 @@ class GroupOverviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildChart(BuildContext context, List<GroupAthleteStats> stats,
-      int chartMode, AppLocalizations l) {
+  Widget _buildChart(
+    BuildContext context,
+    List<GroupAthleteStats> stats,
+    int chartMode,
+    AppLocalizations l,
+  ) {
+    if (chartMode == 2) {
+      return _buildAsymmetryGroupChart(context, stats, l);
+    }
     if (chartMode == 1) {
       return _buildRsiScatterChart(context, stats, l);
     }
     return _buildCmjBarChart(context, stats, l);
   }
 
-  Widget _buildCmjBarChart(BuildContext context, List<GroupAthleteStats> stats, AppLocalizations l) {
+  Widget _buildAsymmetryGroupChart(
+    BuildContext context,
+    List<GroupAthleteStats> stats,
+    AppLocalizations l,
+  ) {
+    final withData = stats.where((s) => s.latestAsymmetryPct != null).toList();
+    if (withData.isEmpty) {
+      return _emptyChartContainer(l);
+    }
+
+    final allPcts = withData.map((s) => s.latestAsymmetryPct!.abs()).toList();
+    final maxAbs = allPcts
+        .reduce((a, b) => a > b ? a : b)
+        .clamp(15.0, double.infinity);
+
+    Color barColor(double pct) {
+      final abs = pct.abs();
+      if (abs < 5) return Colors.green;
+      if (abs < 10) return Colors.amber;
+      if (abs < 15) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Stack(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const SizedBox(width: 72),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'L',
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 10,
+                          ),
+                        ),
+                        Text(
+                          '0',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 10,
+                          ),
+                        ),
+                        Text(
+                          'R',
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              ...stats.where((s) => s.latestAsymmetryPct != null).map((s) {
+                final pct = s.latestAsymmetryPct!;
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          s.athlete.name.length > 8
+                              ? '${s.athlete.name.substring(0, 8)}.'
+                              : s.athlete.name,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (ctx, constraints) {
+                            final totalWidth = constraints.maxWidth;
+                            final halfWidth = totalWidth / 2;
+                            final barWidth = (pct.abs() / maxAbs * halfWidth)
+                                .clamp(2.0, halfWidth);
+                            final color = barColor(pct);
+                            final isRight = pct >= 0;
+                            return Row(
+                              children: [
+                                SizedBox(
+                                  width: halfWidth,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      if (!isRight)
+                                        Container(
+                                          width: barWidth,
+                                          height: 14,
+                                          decoration: BoxDecoration(
+                                            color: color,
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                  topLeft: Radius.circular(3),
+                                                  bottomLeft: Radius.circular(
+                                                    3,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: 1.5,
+                                  height: 18,
+                                  color: AppColors.textSecondary,
+                                ),
+                                SizedBox(
+                                  width: halfWidth,
+                                  child: Row(
+                                    children: [
+                                      if (isRight)
+                                        Container(
+                                          width: barWidth,
+                                          height: 14,
+                                          decoration: BoxDecoration(
+                                            color: color,
+                                            borderRadius:
+                                                const BorderRadius.only(
+                                                  topRight: Radius.circular(3),
+                                                  bottomRight: Radius.circular(
+                                                    3,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      if (isRight) ...[
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${pct.round()}%',
+                                          style: TextStyle(
+                                            color: color,
+                                            fontSize: 10,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 8,
+          right: 12,
+          child: InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => _FullscreenAsymmetryChart(stats: stats, l: l),
+              ),
+            ),
+            borderRadius: BorderRadius.circular(4),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(
+                Icons.fullscreen,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCmjBarChart(
+    BuildContext context,
+    List<GroupAthleteStats> stats,
+    AppLocalizations l,
+  ) {
     final hasData = stats.any((s) => s.athlete.baselineCmjHeight != null);
 
     if (!hasData) {
       return _emptyChartContainer(l);
     }
 
-    final values =
-        stats.map((s) => s.athlete.baselineCmjHeight ?? 0).toList();
+    final values = stats.map((s) => s.athlete.baselineCmjHeight ?? 0).toList();
     final maxVal = values.reduce((a, b) => a > b ? a : b);
     final yMax = maxVal > 0 ? maxVal * 1.2 : 1.0;
 
@@ -149,92 +358,97 @@ class GroupOverviewScreen extends ConsumerWidget {
             border: Border.all(color: AppColors.borderLight),
           ),
           child: BarChart(
-        BarChartData(
-          maxY: yMax,
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => AppColors.card,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final athlete = stats[group.x].athlete;
-                return BarTooltipItem(
-                  '${athlete.name}\n${rod.toY.toStringAsFixed(1)} cm',
-                  const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            BarChartData(
+              maxY: yMax,
+              barTouchData: BarTouchData(
+                touchTooltipData: BarTouchTooltipData(
+                  getTooltipColor: (_) => AppColors.card,
+                  getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                    final athlete = stats[group.x].athlete;
+                    return BarTooltipItem(
+                      '${athlete.name}\n${rod.toY.toStringAsFixed(1)} cm',
+                      const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (_) =>
+                    FlLine(color: AppColors.borderSubtle, strokeWidth: 0.5),
+              ),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 32,
+                    getTitlesWidget: (value, _) {
+                      final idx = value.toInt();
+                      if (idx < 0 || idx >= stats.length) {
+                        return const SizedBox.shrink();
+                      }
+                      final name = stats[idx].athlete.name;
+                      final label = name.length > 6
+                          ? '${name.substring(0, 6)}.'
+                          : name;
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 6),
+                        child: Text(
+                          label,
+                          style: const TextStyle(
+                            color: AppColors.textTertiary,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: AppColors.borderSubtle,
-              strokeWidth: 0.5,
-            ),
-          ),
-          borderData: FlBorderData(show: false),
-          titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                getTitlesWidget: (value, _) {
-                  final idx = value.toInt();
-                  if (idx < 0 || idx >= stats.length) {
-                    return const SizedBox.shrink();
-                  }
-                  final name = stats[idx].athlete.name;
-                  final label =
-                      name.length > 6 ? '${name.substring(0, 6)}.' : name;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      label,
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, _) => Text(
+                      value.toStringAsFixed(0),
                       style: const TextStyle(
-                          color: AppColors.textTertiary, fontSize: 10),
+                        color: AppColors.textTertiary,
+                        fontSize: 10,
+                      ),
                     ),
-                  );
-                },
-              ),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 40,
-                getTitlesWidget: (value, _) => Text(
-                  value.toStringAsFixed(0),
-                  style: const TextStyle(
-                      color: AppColors.textTertiary, fontSize: 10),
-                ),
-              ),
-            ),
-          ),
-          barGroups: List.generate(stats.length, (i) {
-            return BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: values[i],
-                  color: AppColors.brand,
-                  width: stats.length <= 4 ? 28 : 16,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(4),
-                    topRight: Radius.circular(4),
                   ),
                 ),
-              ],
-            );
-          }),
+              ),
+              barGroups: List.generate(stats.length, (i) {
+                return BarChartGroupData(
+                  x: i,
+                  barRods: [
+                    BarChartRodData(
+                      toY: values[i],
+                      color: AppColors.brand,
+                      width: stats.length <= 4 ? 28 : 16,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(4),
+                        topRight: Radius.circular(4),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
         ),
-      ),
-    ),
         Positioned(
           top: 8,
           right: 12,
@@ -261,7 +475,10 @@ class GroupOverviewScreen extends ConsumerWidget {
   }
 
   Widget _buildRsiScatterChart(
-      BuildContext context, List<GroupAthleteStats> stats, AppLocalizations l) {
+    BuildContext context,
+    List<GroupAthleteStats> stats,
+    AppLocalizations l,
+  ) {
     final scatterData = _filterScatterData(stats);
     if (scatterData.isEmpty) return _emptyChartContainer(l);
 
@@ -322,11 +539,11 @@ class GroupOverviewScreen extends ConsumerWidget {
     final athlete = stats.athlete;
     final initials = athlete.name.isNotEmpty
         ? athlete.name
-            .split(' ')
-            .where((w) => w.isNotEmpty)
-            .take(2)
-            .map((w) => w[0].toUpperCase())
-            .join()
+              .split(' ')
+              .where((w) => w.isNotEmpty)
+              .take(2)
+              .map((w) => w[0].toUpperCase())
+              .join()
         : '?';
 
     return Container(
@@ -347,7 +564,9 @@ class GroupOverviewScreen extends ConsumerWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.brand.withValues(alpha: 0.15),
-                  border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.brand.withValues(alpha: 0.3),
+                  ),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -396,11 +615,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                   valueColor: AppColors.textPrimary,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 32,
-                color: AppColors.borderSubtle,
-              ),
+              Container(width: 1, height: 32, color: AppColors.borderSubtle),
               Expanded(
                 child: _metricCell(
                   label: l.latestRsi,
@@ -410,18 +625,15 @@ class GroupOverviewScreen extends ConsumerWidget {
                   valueColor: AppColors.textPrimary,
                 ),
               ),
-              Container(
-                width: 1,
-                height: 32,
-                color: AppColors.borderSubtle,
-              ),
+              Container(width: 1, height: 32, color: AppColors.borderSubtle),
               Expanded(
                 child: _metricCell(
                   label: l.relativePower,
                   value: athlete.baselineCmjHeight != null
-                      ? (athlete.getRelativePower(athlete.baselineCmjHeight!) != null
-                          ? '${athlete.getRelativePower(athlete.baselineCmjHeight!)!.toStringAsFixed(1)} W/kg'
-                          : '— W/kg')
+                      ? (athlete.getRelativePower(athlete.baselineCmjHeight!) !=
+                                null
+                            ? '${athlete.getRelativePower(athlete.baselineCmjHeight!)!.toStringAsFixed(1)} W/kg'
+                            : '— W/kg')
                       : '-',
                   valueColor: AppColors.textPrimary,
                 ),
@@ -467,7 +679,11 @@ class GroupOverviewScreen extends ConsumerWidget {
 // Shared scatter chart helpers
 // ---------------------------------------------------------------------------
 
-typedef _ScatterEntry = ({GroupAthleteStats stat, double contact, double flight});
+typedef _ScatterEntry = ({
+  GroupAthleteStats stat,
+  double contact,
+  double flight,
+});
 
 List<_ScatterEntry> _filterScatterData(List<GroupAthleteStats> stats) {
   final result = <_ScatterEntry>[];
@@ -497,9 +713,19 @@ Widget _buildScatterChartCore(
   final dataMinY = flights.reduce((a, b) => a < b ? a : b);
   final dataMaxY = flights.reduce((a, b) => a > b ? a : b);
 
-  // Averages for crosshair lines
-  final avgX = contacts.reduce((a, b) => a + b) / contacts.length;
-  final avgY = flights.reduce((a, b) => a + b) / flights.length;
+  // Median values for crosshair lines (more robust to outliers)
+  final sortedContacts = [...contacts]..sort();
+  final medianX = sortedContacts.length.isOdd
+      ? sortedContacts[sortedContacts.length ~/ 2]
+      : (sortedContacts[sortedContacts.length ~/ 2 - 1] +
+                sortedContacts[sortedContacts.length ~/ 2]) /
+            2;
+  final sortedFlights = [...flights]..sort();
+  final medianY = sortedFlights.length.isOdd
+      ? sortedFlights[sortedFlights.length ~/ 2]
+      : (sortedFlights[sortedFlights.length ~/ 2 - 1] +
+                sortedFlights[sortedFlights.length ~/ 2]) /
+            2;
 
   // Dynamic padding: at least 40ms or 15% of range to prevent marker clipping
   const kMinPadMs = 40.0;
@@ -519,54 +745,54 @@ Widget _buildScatterChartCore(
 
   // Shared titles config for both layers
   final titlesData = FlTitlesData(
-    topTitles:
-        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-    rightTitles:
-        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-  bottomTitles: AxisTitles(
-    axisNameWidget: Text(
-      l.contactTimeAxisMs,
-      style: TextStyle(
-          color: AppColors.textTertiary, fontSize: axisFontSize),
-    ),
-    axisNameSize: 24,
-    sideTitles: SideTitles(
-      showTitles: true,
-      reservedSize: 32,
-      interval: 50.0,
-      getTitlesWidget: (value, _) => Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(
-          value.toStringAsFixed(0),
-          style: TextStyle(
-              color: AppColors.textTertiary, fontSize: axisFontSize),
+    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+    bottomTitles: AxisTitles(
+      axisNameWidget: Text(
+        l.contactTimeAxisMs,
+        style: TextStyle(color: AppColors.textTertiary, fontSize: axisFontSize),
+      ),
+      axisNameSize: 24,
+      sideTitles: SideTitles(
+        showTitles: true,
+        reservedSize: 32,
+        interval: 50.0,
+        getTitlesWidget: (value, _) => Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            value.toStringAsFixed(0),
+            style: TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: axisFontSize,
+            ),
+          ),
         ),
       ),
     ),
-  ),
-  leftTitles: AxisTitles(
-    axisNameWidget: Text(
-      l.flightTimeAxisMs,
-      style: TextStyle(
-          color: AppColors.textTertiary, fontSize: axisFontSize),
-    ),
-    axisNameSize: 24,
-    sideTitles: SideTitles(
-      showTitles: true,
-      reservedSize: 48,
-      interval: 50.0,
-      getTitlesWidget: (value, _) => Text(
-        value.toStringAsFixed(0),
-        style: TextStyle(
-            color: AppColors.textTertiary, fontSize: axisFontSize),
+    leftTitles: AxisTitles(
+      axisNameWidget: Text(
+        l.flightTimeAxisMs,
+        style: TextStyle(color: AppColors.textTertiary, fontSize: axisFontSize),
+      ),
+      axisNameSize: 24,
+      sideTitles: SideTitles(
+        showTitles: true,
+        reservedSize: 48,
+        interval: 50.0,
+        getTitlesWidget: (value, _) => Text(
+          value.toStringAsFixed(0),
+          style: TextStyle(
+            color: AppColors.textTertiary,
+            fontSize: axisFontSize,
+          ),
+        ),
       ),
     ),
-  ),
   );
 
   return Stack(
     children: [
-      // Background layer: avg crosshair lines via LineChart
+      // Background layer: median crosshair lines via LineChart
       LineChart(
         LineChartData(
           minX: chartMinX,
@@ -574,23 +800,17 @@ Widget _buildScatterChartCore(
           minY: chartMinY,
           maxY: chartMaxY,
           lineBarsData: [
-            // Horizontal avg line
+            // Horizontal median line
             LineChartBarData(
-              spots: [
-                FlSpot(chartMinX, avgY),
-                FlSpot(chartMaxX, avgY),
-              ],
+              spots: [FlSpot(chartMinX, medianY), FlSpot(chartMaxX, medianY)],
               color: AppColors.textTertiary,
               barWidth: 0.8,
               dotData: const FlDotData(show: false),
               dashArray: [4, 4],
             ),
-            // Vertical avg line
+            // Vertical median line
             LineChartBarData(
-              spots: [
-                FlSpot(avgX, chartMinY),
-                FlSpot(avgX, chartMaxY),
-              ],
+              spots: [FlSpot(medianX, chartMinY), FlSpot(medianX, chartMaxY)],
               color: AppColors.textTertiary,
               barWidth: 0.8,
               dotData: const FlDotData(show: false),
@@ -630,7 +850,9 @@ Widget _buildScatterChartCore(
               getTooltipColor: (_) => AppColors.card,
               getTooltipItems: (touchedSpot) {
                 final idx = scatterData.indexWhere(
-                    (d) => d.contact == touchedSpot.x && d.flight == touchedSpot.y);
+                  (d) =>
+                      d.contact == touchedSpot.x && d.flight == touchedSpot.y,
+                );
                 if (idx < 0) return null;
                 final name = scatterData[idx].stat.athlete.name;
                 return ScatterTooltipItem(
@@ -676,11 +898,7 @@ class _InitialDotPainter extends FlDotPainter {
   @override
   void draw(Canvas canvas, FlSpot spot, Offset offsetInCanvas) {
     // Filled circle
-    canvas.drawCircle(
-      offsetInCanvas,
-      radius,
-      Paint()..color = backgroundColor,
-    );
+    canvas.drawCircle(offsetInCanvas, radius, Paint()..color = backgroundColor);
 
     // Subtle border
     canvas.drawCircle(
@@ -762,7 +980,9 @@ class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
 
   @override
   Widget build(BuildContext context) {
-    final hasData = widget.stats.any((s) => s.athlete.baselineCmjHeight != null);
+    final hasData = widget.stats.any(
+      (s) => s.athlete.baselineCmjHeight != null,
+    );
 
     if (!hasData) {
       return Scaffold(
@@ -785,14 +1005,18 @@ class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
         body: Center(
           child: Text(
             widget.l.noDataAvailable,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
           ),
         ),
       );
     }
 
-    final values =
-        widget.stats.map((s) => s.athlete.baselineCmjHeight ?? 0).toList();
+    final values = widget.stats
+        .map((s) => s.athlete.baselineCmjHeight ?? 0)
+        .toList();
     final maxVal = values.reduce((a, b) => a > b ? a : b);
     final yMax = maxVal > 0 ? maxVal * 1.2 : 1.0;
 
@@ -837,17 +1061,17 @@ class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
             gridData: FlGridData(
               show: true,
               drawVerticalLine: false,
-              getDrawingHorizontalLine: (_) => FlLine(
-                color: AppColors.borderSubtle,
-                strokeWidth: 0.5,
-              ),
+              getDrawingHorizontalLine: (_) =>
+                  FlLine(color: AppColors.borderSubtle, strokeWidth: 0.5),
             ),
             borderData: FlBorderData(show: false),
             titlesData: FlTitlesData(
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
@@ -858,14 +1082,17 @@ class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
                       return const SizedBox.shrink();
                     }
                     final name = widget.stats[idx].athlete.name;
-                    final label =
-                        name.length > 8 ? '${name.substring(0, 8)}.' : name;
+                    final label = name.length > 8
+                        ? '${name.substring(0, 8)}.'
+                        : name;
                     return Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Text(
                         label,
                         style: const TextStyle(
-                            color: AppColors.textTertiary, fontSize: 11),
+                          color: AppColors.textTertiary,
+                          fontSize: 11,
+                        ),
                       ),
                     );
                   },
@@ -878,7 +1105,9 @@ class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
                   getTitlesWidget: (value, _) => Text(
                     value.toStringAsFixed(0),
                     style: const TextStyle(
-                        color: AppColors.textTertiary, fontSize: 11),
+                      color: AppColors.textTertiary,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ),
@@ -965,7 +1194,9 @@ class _FullscreenRsiChartState extends State<_FullscreenRsiChart> {
               child: Text(
                 widget.l.noDataAvailable,
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 14),
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                ),
               ),
             )
           : Padding(
@@ -977,6 +1208,280 @@ class _FullscreenRsiChartState extends State<_FullscreenRsiChart> {
                 axisFontSize: 12,
               ),
             ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Fullscreen Asymmetry Chart (landscape)
+// ---------------------------------------------------------------------------
+
+class _FullscreenAsymmetryChart extends StatefulWidget {
+  final List<GroupAthleteStats> stats;
+  final AppLocalizations l;
+
+  const _FullscreenAsymmetryChart({required this.stats, required this.l});
+
+  @override
+  State<_FullscreenAsymmetryChart> createState() =>
+      _FullscreenAsymmetryChartState();
+}
+
+class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final withData = widget.stats
+        .where((s) => s.latestAsymmetryPct != null)
+        .toList();
+
+    if (withData.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: AppColors.textPrimary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            widget.l.asymmetryChartTitle,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            widget.l.noDataAvailable,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final allPcts = withData.map((s) => s.latestAsymmetryPct!.abs()).toList();
+    final maxAbs = allPcts
+        .reduce((a, b) => a > b ? a : b)
+        .clamp(15.0, double.infinity);
+
+    Color barColor(double pct) {
+      final abs = pct.abs();
+      if (abs < 5) return Colors.green;
+      if (abs < 10) return Colors.amber;
+      if (abs < 15) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          widget.l.asymmetryChartTitle,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const SizedBox(width: 72),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'L',
+                        style: const TextStyle(
+                          color: AppColors.textTertiary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        '0',
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      Text(
+                        'R',
+                        style: const TextStyle(
+                          color: AppColors.textTertiary,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: widget.stats.length,
+                itemBuilder: (context, index) {
+                  final s = widget.stats[index];
+                  final pct = s.latestAsymmetryPct;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 72,
+                          child: Text(
+                            s.athlete.name.length > 10
+                                ? '${s.athlete.name.substring(0, 10)}.'
+                                : s.athlete.name,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Expanded(
+                          child: pct == null
+                              ? Center(
+                                  child: Text(
+                                    '—',
+                                    style: const TextStyle(
+                                      color: AppColors.textTertiary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                )
+                              : LayoutBuilder(
+                                  builder: (ctx, constraints) {
+                                    final totalWidth = constraints.maxWidth;
+                                    final halfWidth = totalWidth / 2;
+                                    final barWidth =
+                                        (pct.abs() / maxAbs * halfWidth).clamp(
+                                          2.0,
+                                          halfWidth,
+                                        );
+                                    final color = barColor(pct);
+                                    final isRight = pct >= 0;
+                                    return Row(
+                                      children: [
+                                        SizedBox(
+                                          width: halfWidth,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            children: [
+                                              if (!isRight)
+                                                Container(
+                                                  width: barWidth,
+                                                  height: 18,
+                                                  decoration: BoxDecoration(
+                                                    color: color,
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                4,
+                                                              ),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                4,
+                                                              ),
+                                                        ),
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                        ),
+                                        Container(
+                                          width: 2,
+                                          height: 22,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        SizedBox(
+                                          width: halfWidth,
+                                          child: Row(
+                                            children: [
+                                              if (isRight)
+                                                Container(
+                                                  width: barWidth,
+                                                  height: 18,
+                                                  decoration: BoxDecoration(
+                                                    color: color,
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                          topRight:
+                                                              Radius.circular(
+                                                                4,
+                                                              ),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                4,
+                                                              ),
+                                                        ),
+                                                  ),
+                                                ),
+                                              if (isRight) ...[
+                                                const SizedBox(width: 6),
+                                                Text(
+                                                  '${pct.round()}%',
+                                                  style: TextStyle(
+                                                    color: color,
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1006,16 +1511,21 @@ class _ChartModeToggle extends ConsumerWidget {
             child: _ToggleItem(
               label: l.cmjHeightLabel,
               isActive: mode == 0,
-              onTap: () =>
-                  ref.read(groupChartModeProvider.notifier).state = 0,
+              onTap: () => ref.read(groupChartModeProvider.notifier).state = 0,
             ),
           ),
           Expanded(
             child: _ToggleItem(
               label: l.latestRsi,
               isActive: mode == 1,
-              onTap: () =>
-                  ref.read(groupChartModeProvider.notifier).state = 1,
+              onTap: () => ref.read(groupChartModeProvider.notifier).state = 1,
+            ),
+          ),
+          Expanded(
+            child: _ToggleItem(
+              label: l.asymmetryPct,
+              isActive: mode == 2,
+              onTap: () => ref.read(groupChartModeProvider.notifier).state = 2,
             ),
           ),
         ],
@@ -1045,8 +1555,9 @@ class _ToggleItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color:
-              isActive ? AppColors.brand.withValues(alpha: 0.15) : Colors.transparent,
+          color: isActive
+              ? AppColors.brand.withValues(alpha: 0.15)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

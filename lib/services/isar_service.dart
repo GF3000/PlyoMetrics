@@ -145,6 +145,31 @@ class IsarService {
     });
   }
 
+  Future<void> updateAthleteAsymmetry(
+    int athleteId,
+    double asymmetryPct,
+    String strongerLeg,
+  ) async {
+    await _db.writeTxn(() async {
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete != null) {
+        athlete.latestAsymmetryPct = asymmetryPct;
+        athlete.asymmetryStrongerLeg = strongerLeg;
+        athlete.asymmetryDate = DateTime.now();
+        await _db.athletes.put(athlete);
+      }
+    });
+  }
+
+  Future<List<JumpTest>> getAsymmetryTestsForAthlete(int athleteId) {
+    return _db.jumpTests
+        .filter()
+        .athleteIdEqualTo(athleteId)
+        .testTypeEqualTo('asymmetry')
+        .sortByTimestampDesc()
+        .findAll();
+  }
+
   Future<Athlete?> deleteJumpTest(int testId) async {
     Athlete? updatedAthlete;
     await _db.writeTxn(() async {
@@ -186,6 +211,32 @@ class IsarService {
         } else {
           rsiTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
           athlete.baselineRsi = rsiTests.first.rsiScore;
+        }
+
+        // Recalculate asymmetry from remaining paired tests
+        final asymmetryTests = remaining
+            .where((t) => t.testType == 'asymmetry')
+            .toList();
+        if (asymmetryTests.isEmpty) {
+          athlete.latestAsymmetryPct = null;
+          athlete.asymmetryStrongerLeg = null;
+          athlete.asymmetryDate = null;
+        } else {
+          asymmetryTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+          final latestSessionId = asymmetryTests.first.asymmetrySessionId;
+          final pair = asymmetryTests
+              .where((t) => t.asymmetrySessionId == latestSessionId)
+              .toList();
+          final left = pair.where((t) => t.leg == 'left').toList();
+          final right = pair.where((t) => t.leg == 'right').toList();
+          if (left.isNotEmpty && right.isNotEmpty) {
+            final leftH = left.first.heightCm;
+            final rightH = right.first.heightCm;
+            final maxH = leftH > rightH ? leftH : rightH;
+            athlete.latestAsymmetryPct = (rightH - leftH) / maxH * 100;
+            athlete.asymmetryStrongerLeg = rightH >= leftH ? 'right' : 'left';
+            athlete.asymmetryDate = asymmetryTests.first.timestamp;
+          }
         }
 
         await _db.athletes.put(athlete);

@@ -19,6 +19,7 @@ class EvolutionScreen extends ConsumerWidget {
     final baselines = ref.watch(baselineHistoryProvider);
     final fatigueTests = ref.watch(fatigueHistoryProvider);
     final rsiTests = ref.watch(rsiHistoryProvider);
+    final asymmetrySessions = ref.watch(asymmetrySessionHistoryProvider);
 
     final mode = ref.watch(historyModeProvider);
 
@@ -73,8 +74,10 @@ class EvolutionScreen extends ConsumerWidget {
               child: CircularProgressIndicator(color: AppColors.brand),
             ),
             error: (err, _) => Center(
-              child: Text(l.errorWithMessage(err.toString()),
-                  style: const TextStyle(color: AppColors.textSecondary)),
+              child: Text(
+                l.errorWithMessage(err.toString()),
+                style: const TextStyle(color: AppColors.textSecondary),
+              ),
             ),
             data: (allTests) {
               final statsAsync = ref.watch(athleteEvolutionStatsProvider);
@@ -83,29 +86,39 @@ class EvolutionScreen extends ConsumerWidget {
                   child: CircularProgressIndicator(color: AppColors.brand),
                 ),
                 error: (err, _) => Center(
-                  child: Text(l.errorWithMessage(err.toString()),
-                      style: const TextStyle(color: AppColors.textSecondary)),
+                  child: Text(
+                    l.errorWithMessage(err.toString()),
+                    style: const TextStyle(color: AppColors.textSecondary),
+                  ),
                 ),
                 data: (stats) {
-                   if (mode == 1) {
-                     return _buildRsiTab(l, rsiTests, allTests, stats);
-                   }
-                   return SingleChildScrollView(
-                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                     child: Column(
-                       crossAxisAlignment: CrossAxisAlignment.start,
-                       children: [
-                         const SizedBox(height: 12),
-                         _buildMetricCards(stats),
-                         const SizedBox(height: 20),
-                         _buildChart(baselines, fatigueTests),
-                         const SizedBox(height: 24),
-                         _buildRecentTests(l, allTests),
-                         const SizedBox(height: 16),
-                       ],
-                     ),
-                   );
-                 },
+                  if (mode == 2) {
+                    return _buildAsymmetryTab(
+                      l,
+                      asymmetrySessions,
+                      allTests,
+                      stats,
+                    );
+                  }
+                  if (mode == 1) {
+                    return _buildRsiTab(l, rsiTests, allTests, stats);
+                  }
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 12),
+                        _buildMetricCards(stats),
+                        const SizedBox(height: 20),
+                        _buildChart(baselines, fatigueTests),
+                        const SizedBox(height: 24),
+                        _buildRecentTests(l, allTests),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -114,7 +127,228 @@ class EvolutionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRsiTab(AppLocalizations l, List<JumpTest> rsiTests, List<JumpTest> allTests, ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
+  Widget _buildAsymmetryTab(
+    AppLocalizations l,
+    List<AsymmetrySessionPoint> sessions,
+    List<JumpTest> allTests,
+    ({
+      String title1,
+      String val1,
+      String title2,
+      String val2,
+      bool isPositive1,
+      bool isPositive2,
+    })
+    stats,
+  ) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+          _buildMetricCards(stats),
+          const SizedBox(height: 20),
+          _buildAsymmetryChart(l, sessions),
+          const SizedBox(height: 24),
+          _buildRecentTests(l, allTests),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAsymmetryChart(
+    AppLocalizations l,
+    List<AsymmetrySessionPoint> sessions,
+  ) {
+    if (sessions.isEmpty) {
+      return Container(
+        height: 250,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Text(
+          l.noAsymmetryData,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+        ),
+      );
+    }
+
+    final spots = <FlSpot>[];
+    final xLabels = <int, String>{};
+    for (var i = 0; i < sessions.length; i++) {
+      spots.add(FlSpot(i.toDouble(), sessions[i].asymmetryPct));
+      xLabels[i] = DateFormat('MM/dd').format(sessions[i].timestamp);
+    }
+
+    final allY = spots.map((s) => s.y).toList();
+    final minY = allY.reduce((a, b) => a < b ? a : b);
+    final maxY = allY.reduce((a, b) => a > b ? a : b);
+    // Always include 0 and ensure ±15% bands are visible
+    final chartMinY = [minY - 5, -20.0].reduce((a, b) => a < b ? a : b);
+    final chartMaxY = [maxY + 5, 20.0].reduce((a, b) => a > b ? a : b);
+    final yInterval = ((chartMaxY - chartMinY) / 6).clamp(2.0, double.infinity);
+
+    final maxXVal = (sessions.length - 1).toDouble().clamp(
+      1.0,
+      double.infinity,
+    );
+    final xInterval = (maxXVal / 4).ceilToDouble().clamp(1.0, double.infinity);
+
+    Color dotColor(double pct) {
+      final abs = pct.abs();
+      if (abs < 5) return Colors.green;
+      if (abs < 10) return Colors.amber;
+      if (abs < 15) return Colors.orange;
+      return Colors.red;
+    }
+
+    return Container(
+      height: 280,
+      padding: const EdgeInsets.fromLTRB(0, 16, 8, 8),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderLight),
+      ),
+      child: LineChart(
+        LineChartData(
+          minX: 0,
+          maxX: maxXVal,
+          minY: chartMinY,
+          maxY: chartMaxY,
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: yInterval,
+            getDrawingHorizontalLine: (value) {
+              if (value == 0) {
+                return const FlLine(
+                  color: AppColors.textSecondary,
+                  strokeWidth: 1.2,
+                );
+              }
+              if (value.abs() == 5 || value.abs() == 10 || value.abs() == 15) {
+                return FlLine(
+                  color: AppColors.borderLight.withAlpha(120),
+                  strokeWidth: 0.8,
+                  dashArray: [4, 4],
+                );
+              }
+              return FlLine(color: AppColors.borderSubtle, strokeWidth: 0.5);
+            },
+          ),
+          titlesData: FlTitlesData(
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 32,
+                interval: xInterval,
+                getTitlesWidget: (value, _) {
+                  final label = xLabels[value.toInt()];
+                  if (label == null) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        color: AppColors.textTertiary,
+                        fontSize: 10,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 44,
+                interval: yInterval,
+                getTitlesWidget: (value, _) => Text(
+                  '${value >= 0 ? '+' : ''}${value.round()}%',
+                  style: const TextStyle(
+                    color: AppColors.textTertiary,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          borderData: FlBorderData(show: false),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => AppColors.card,
+              getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
+                final idx = spot.x.toInt();
+                final session = idx >= 0 && idx < sessions.length
+                    ? sessions[idx]
+                    : null;
+                final dateStr = session != null
+                    ? DateFormat('MMM dd, HH:mm').format(session.timestamp)
+                    : '';
+                final stronger = session?.strongerLeg == 'right'
+                    ? l.rightStronger
+                    : l.leftStronger;
+                return LineTooltipItem(
+                  '${spot.y >= 0 ? '+' : ''}${spot.y.round()}%\n$stronger stronger\n$dateStr',
+                  TextStyle(
+                    color: dotColor(spot.y),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              preventCurveOverShooting: true,
+              color: const Color(0xFFA78BFA),
+              barWidth: 2.5,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, _, __, ___) => FlDotCirclePainter(
+                  radius: 5,
+                  color: dotColor(spot.y),
+                  strokeWidth: 1.5,
+                  strokeColor: AppColors.surface,
+                ),
+              ),
+              belowBarData: BarAreaData(show: false),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRsiTab(
+    AppLocalizations l,
+    List<JumpTest> rsiTests,
+    List<JumpTest> allTests,
+    ({
+      String title1,
+      String val1,
+      String title2,
+      String val2,
+      bool isPositive1,
+      bool isPositive2,
+    })
+    stats,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -165,8 +399,9 @@ class EvolutionScreen extends ConsumerWidget {
     final yInterval = (yRange / 5).clamp(0.1, double.infinity);
 
     final maxXVal = (rsiTests.length - 1).toDouble();
-    final xInterval =
-        maxXVal > 0 ? (maxXVal / 4).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+    final xInterval = maxXVal > 0
+        ? (maxXVal / 4).ceilToDouble().clamp(1.0, double.infinity)
+        : 1.0;
 
     return Container(
       height: 250,
@@ -186,16 +421,16 @@ class EvolutionScreen extends ConsumerWidget {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: yInterval,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: AppColors.borderSubtle,
-              strokeWidth: 0.5,
-            ),
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: AppColors.borderSubtle, strokeWidth: 0.5),
           ),
           titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -209,7 +444,9 @@ class EvolutionScreen extends ConsumerWidget {
                     child: Text(
                       label,
                       style: const TextStyle(
-                          color: AppColors.textTertiary, fontSize: 10),
+                        color: AppColors.textTertiary,
+                        fontSize: 10,
+                      ),
                     ),
                   );
                 },
@@ -223,7 +460,9 @@ class EvolutionScreen extends ConsumerWidget {
                 getTitlesWidget: (value, _) => Text(
                   value.toStringAsFixed(1),
                   style: const TextStyle(
-                      color: AppColors.textTertiary, fontSize: 10),
+                    color: AppColors.textTertiary,
+                    fontSize: 10,
+                  ),
                 ),
               ),
             ),
@@ -235,8 +474,9 @@ class EvolutionScreen extends ConsumerWidget {
               getTooltipItems: (touchedSpots) => touchedSpots.map((spot) {
                 final idx = spot.x.toInt();
                 final label = idx >= 0 && idx < rsiTests.length
-                    ? DateFormat('MMM dd, HH:mm')
-                        .format(rsiTests[idx].timestamp)
+                    ? DateFormat(
+                        'MMM dd, HH:mm',
+                      ).format(rsiTests[idx].timestamp)
                     : '';
                 return LineTooltipItem(
                   '${spot.y.toStringAsFixed(2)} RSI\n$label',
@@ -268,9 +508,17 @@ class EvolutionScreen extends ConsumerWidget {
     );
   }
 
-
   Widget _buildMetricCards(
-      ({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2}) stats) {
+    ({
+      String title1,
+      String val1,
+      String title2,
+      String val2,
+      bool isPositive1,
+      bool isPositive2,
+    })
+    stats,
+  ) {
     return Row(
       children: [
         Expanded(
@@ -301,7 +549,9 @@ class EvolutionScreen extends ConsumerWidget {
     if (value == '-') {
       valueColor = AppColors.textSecondary;
     } else {
-      valueColor = isPositive ? const Color(0xFF4ADE80) : const Color(0xFFF87171);
+      valueColor = isPositive
+          ? const Color(0xFF4ADE80)
+          : const Color(0xFFF87171);
     }
 
     return Container(
@@ -314,9 +564,13 @@ class EvolutionScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12)),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             value,
@@ -388,8 +642,9 @@ class EvolutionScreen extends ConsumerWidget {
 
     // 5. X-axis: show ~4-5 evenly spaced labels
     final maxXVal = (chartPoints.length - 1).toDouble();
-    final xInterval =
-        maxXVal > 0 ? (maxXVal / 4).ceilToDouble().clamp(1.0, double.infinity) : 1.0;
+    final xInterval = maxXVal > 0
+        ? (maxXVal / 4).ceilToDouble().clamp(1.0, double.infinity)
+        : 1.0;
 
     return Container(
       height: 250,
@@ -409,16 +664,16 @@ class EvolutionScreen extends ConsumerWidget {
             show: true,
             drawVerticalLine: false,
             horizontalInterval: yInterval,
-            getDrawingHorizontalLine: (_) => FlLine(
-              color: AppColors.borderSubtle,
-              strokeWidth: 0.5,
-            ),
+            getDrawingHorizontalLine: (_) =>
+                FlLine(color: AppColors.borderSubtle, strokeWidth: 0.5),
           ),
           titlesData: FlTitlesData(
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
+            ),
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
@@ -433,7 +688,9 @@ class EvolutionScreen extends ConsumerWidget {
                     child: Text(
                       label,
                       style: const TextStyle(
-                          color: AppColors.textTertiary, fontSize: 10),
+                        color: AppColors.textTertiary,
+                        fontSize: 10,
+                      ),
                     ),
                   );
                 },
@@ -451,7 +708,9 @@ class EvolutionScreen extends ConsumerWidget {
                   return Text(
                     value.toStringAsFixed(0),
                     style: const TextStyle(
-                        color: AppColors.textTertiary, fontSize: 10),
+                      color: AppColors.textTertiary,
+                      fontSize: 10,
+                    ),
                   );
                 },
               ),
@@ -464,8 +723,9 @@ class EvolutionScreen extends ConsumerWidget {
               getTooltipItems: (spots) => spots.map((spot) {
                 final idx = spot.x.toInt();
                 final label = idx >= 0 && idx < chartPoints.length
-                    ? DateFormat('MMM dd, HH:mm')
-                        .format(chartPoints[idx].timestamp)
+                    ? DateFormat(
+                        'MMM dd, HH:mm',
+                      ).format(chartPoints[idx].timestamp)
                     : '';
                 return LineTooltipItem(
                   '${spot.y.toStringAsFixed(1)} cm\n$label',
@@ -510,7 +770,9 @@ class EvolutionScreen extends ConsumerWidget {
 
   /// Build a sorted list of chart points from baseline sessions and fatigue tests.
   List<_ChartPoint> _buildChartPoints(
-      List<JumpTest> baselines, List<JumpTest> fatigueTests) {
+    List<JumpTest> baselines,
+    List<JumpTest> fatigueTests,
+  ) {
     final points = <_ChartPoint>[];
 
     // Baseline: group by session, take max height per session
@@ -523,20 +785,24 @@ class EvolutionScreen extends ConsumerWidget {
       }
     }
     for (final t in bestPerSession.values) {
-      points.add(_ChartPoint(
-        timestamp: t.timestamp,
-        heightCm: t.heightCm,
-        isBaseline: true,
-      ));
+      points.add(
+        _ChartPoint(
+          timestamp: t.timestamp,
+          heightCm: t.heightCm,
+          isBaseline: true,
+        ),
+      );
     }
 
     // Fatigue tests: one point per test
     for (final t in fatigueTests) {
-      points.add(_ChartPoint(
-        timestamp: t.timestamp,
-        heightCm: t.heightCm,
-        isBaseline: false,
-      ));
+      points.add(
+        _ChartPoint(
+          timestamp: t.timestamp,
+          heightCm: t.heightCm,
+          isBaseline: false,
+        ),
+      );
     }
 
     points.sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -544,8 +810,8 @@ class EvolutionScreen extends ConsumerWidget {
   }
 
   Widget _buildRecentTests(AppLocalizations l, List<JumpTest> allTests) {
-    final recent = allTests.take(5).toList();
-    if (recent.isEmpty) return const SizedBox.shrink();
+    final processed = _processRecentTests(allTests);
+    if (processed.isEmpty) return const SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,26 +825,89 @@ class EvolutionScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 10),
-        ...recent.map((t) => _buildTestRow(l, t)),
+        ...processed.take(5).map((t) => _buildTestRow(l, t)),
       ],
     );
   }
 
-  Widget _buildTestRow(AppLocalizations l, JumpTest test) {
-    final dateStr =
-        DateFormat('MMM dd, yyyy \u2022 HH:mm').format(test.timestamp);
+  List<_ProcessedTest> _processRecentTests(List<JumpTest> allTests) {
+    final processed = <_ProcessedTest>[];
+    final seenAsymmetrySessions = <int>{};
+
+    for (final test in allTests) {
+      if (test.testType == 'asymmetry') {
+        final sid = test.asymmetrySessionId ?? test.id;
+        if (seenAsymmetrySessions.contains(sid)) continue;
+        seenAsymmetrySessions.add(sid);
+
+        final pair = allTests
+            .where(
+              (t) =>
+                  t.testType == 'asymmetry' &&
+                  (t.asymmetrySessionId ?? t.id) == sid,
+            )
+            .toList();
+        final leftList = pair.where((t) => t.leg == 'left').toList();
+        final rightList = pair.where((t) => t.leg == 'right').toList();
+
+        if (leftList.isNotEmpty && rightList.isNotEmpty) {
+          final leftH = leftList.first.heightCm;
+          final rightH = rightList.first.heightCm;
+          final maxH = leftH > rightH ? leftH : rightH;
+          final pct = maxH > 0 ? (rightH - leftH) / maxH * 100 : 0.0;
+
+          processed.add(
+            _ProcessedTest(
+              testType: 'asymmetry',
+              timestamp:
+                  leftList.first.timestamp.isBefore(rightList.first.timestamp)
+                  ? leftList.first.timestamp
+                  : rightList.first.timestamp,
+              asymmetryPct: pct,
+              heightCm: maxH,
+            ),
+          );
+        }
+      } else {
+        processed.add(
+          _ProcessedTest(
+            testType: test.testType,
+            timestamp: test.timestamp,
+            heightCm: test.heightCm,
+            rsiScore: test.rsiScore,
+          ),
+        );
+      }
+    }
+
+    processed.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return processed;
+  }
+
+  Widget _buildTestRow(AppLocalizations l, _ProcessedTest test) {
+    final dateStr = DateFormat(
+      'MMM dd, yyyy \u2022 HH:mm',
+    ).format(test.timestamp);
     final typeLabel = switch (test.testType) {
       'cmj_baseline' => l.typeCmj,
       'fatigue' => l.typeFatigue,
       'rsi' => l.typeRsi,
+      'asymmetry' => l.asymmetricTest,
       _ => test.testType,
     };
     final typeColor = switch (test.testType) {
       'cmj_baseline' => AppColors.brand,
       'fatigue' => const Color(0xFFFBBF24),
       'rsi' => const Color(0xFFA78BFA),
+      'asymmetry' => const Color(0xFF8B5CF6),
       _ => AppColors.textSecondary,
     };
+
+    final displayValue = test.testType == 'asymmetry'
+        ? '${test.asymmetryPct! >= 0 ? '+' : ''}${test.asymmetryPct!.round()}%'
+        : test.testType == 'rsi' && test.rsiScore != null
+        ? test.rsiScore!.toStringAsFixed(2)
+        : '${test.heightCm!.toStringAsFixed(1)} cm';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -599,7 +928,10 @@ class EvolutionScreen extends ConsumerWidget {
             child: Text(
               typeLabel,
               style: TextStyle(
-                  color: typeColor, fontSize: 11, fontWeight: FontWeight.w600),
+                color: typeColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -607,13 +939,13 @@ class EvolutionScreen extends ConsumerWidget {
             child: Text(
               dateStr,
               style: const TextStyle(
-                  color: AppColors.textSecondary, fontSize: 12),
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
             ),
           ),
           Text(
-            test.testType == 'rsi' && test.rsiScore != null
-                ? test.rsiScore!.toStringAsFixed(2)
-                : '${test.heightCm.toStringAsFixed(1)} cm',
+            displayValue,
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontSize: 14,
@@ -635,5 +967,21 @@ class _ChartPoint {
     required this.timestamp,
     required this.heightCm,
     required this.isBaseline,
+  });
+}
+
+class _ProcessedTest {
+  final String testType;
+  final DateTime timestamp;
+  final double? heightCm;
+  final double? rsiScore;
+  final double? asymmetryPct;
+
+  const _ProcessedTest({
+    required this.testType,
+    required this.timestamp,
+    this.heightCm,
+    this.rsiScore,
+    this.asymmetryPct,
   });
 }

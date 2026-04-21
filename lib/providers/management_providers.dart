@@ -100,7 +100,41 @@ final athleteEvolutionStatsProvider =
   final groupAthletesAsync = ref.watch(groupAthletesProvider);
   final service = ref.watch(isarServiceProvider);
 
-  if (mode == 0) {
+  if (mode == 2) {
+    // Asymmetry mode
+    final sessions = ref.watch(asymmetrySessionHistoryProvider);
+
+    String latestStr;
+    String changeStr;
+    bool isPositiveLatest = false;
+    bool isPositiveChange = false;
+
+    if (sessions.isEmpty) {
+      latestStr = '-';
+      changeStr = '-';
+    } else {
+      final latest = sessions.last.asymmetryPct;
+      latestStr = '${latest >= 0 ? '+' : ''}${latest.round()}%';
+      isPositiveLatest = latest.abs() < 10;
+
+      if (sessions.length >= 2) {
+        final change = sessions.last.asymmetryPct - sessions.first.asymmetryPct;
+        changeStr = '${change >= 0 ? '+' : ''}${change.round()}%';
+        isPositiveChange = change.abs() < sessions.first.asymmetryPct.abs();
+      } else {
+        changeStr = '-';
+      }
+    }
+
+    return (
+      title1: 'Latest Asymmetry',
+      val1: latestStr,
+      title2: 'Change',
+      val2: changeStr,
+      isPositive1: isPositiveLatest,
+      isPositive2: isPositiveChange,
+    );
+  } else if (mode == 0) {
     // CMJ mode
     final baselines = ref.watch(baselineHistoryProvider);
     final groupAthletes = groupAthletesAsync.whenOrNull(data: (l) => l) ?? [];
@@ -211,7 +245,57 @@ final rsiHistoryProvider = Provider<List<JumpTest>>((ref) {
       [];
 });
 
-/// The current mode for history/evolution screens: 0 = CMJ & Fatigue, 1 = RSI.
+/// Asymmetry sessions for the active athlete — one entry per paired L+R session,
+/// sorted chronologically. Each entry: (timestamp, asymmetryPct, strongerLeg).
+typedef AsymmetrySessionPoint = ({
+  DateTime timestamp,
+  double asymmetryPct,
+  String strongerLeg,
+  double leftHeightCm,
+  double rightHeightCm,
+});
+
+final asymmetrySessionHistoryProvider =
+    Provider<List<AsymmetrySessionPoint>>((ref) {
+  final history = ref.watch(athleteJumpHistoryProvider);
+  final tests = history.whenOrNull(
+        data: (all) =>
+            all.where((t) => t.testType == 'asymmetry').toList(),
+      ) ??
+      [];
+
+  // Group by asymmetrySessionId
+  final grouped = <int, List<JumpTest>>{};
+  for (final t in tests) {
+    final sid = t.asymmetrySessionId ?? t.timestamp.millisecondsSinceEpoch;
+    grouped.putIfAbsent(sid, () => []).add(t);
+  }
+
+  final points = <AsymmetrySessionPoint>[];
+  for (final pair in grouped.values) {
+    final left = pair.where((t) => t.leg == 'left').toList();
+    final right = pair.where((t) => t.leg == 'right').toList();
+    if (left.isEmpty || right.isEmpty) continue;
+    final leftH = left.first.heightCm;
+    final rightH = right.first.heightCm;
+    final maxH = leftH > rightH ? leftH : rightH;
+    final pct = (rightH - leftH) / maxH * 100;
+    final ts = left.first.timestamp.isBefore(right.first.timestamp)
+        ? left.first.timestamp
+        : right.first.timestamp;
+    points.add((
+      timestamp: ts,
+      asymmetryPct: pct,
+      strongerLeg: rightH >= leftH ? 'right' : 'left',
+      leftHeightCm: leftH,
+      rightHeightCm: rightH,
+    ));
+  }
+  points.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  return points;
+});
+
+/// The current mode for history/evolution screens: 0 = CMJ & Fatigue, 1 = RSI, 2 = Asymmetry.
 final historyModeProvider = StateProvider<int>((ref) => 0);
 
 // ── Group Overview ──
@@ -222,6 +306,8 @@ typedef GroupAthleteStats = ({
   double? latestContactTimeMs,
   double? latestFlightTimeMs,
   double? cmjImprovementPercent,
+  double? latestAsymmetryPct,
+  String? asymmetryStrongerLeg,
 });
 
 /// Aggregated stats for every athlete in the active group.
@@ -256,6 +342,8 @@ final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((ref) asyn
       latestContactTimeMs: latestContact,
       latestFlightTimeMs: latestFlight,
       cmjImprovementPercent: improvement,
+      latestAsymmetryPct: athlete.latestAsymmetryPct,
+      asymmetryStrongerLeg: athlete.asymmetryStrongerLeg,
     ));
   }
   return results;

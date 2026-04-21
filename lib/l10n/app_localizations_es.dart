@@ -615,4 +615,90 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get averageRsiScore => 'PUNTUACIÓN RSI MEDIA';
+
+  @override
+  String get tagAsymmetry => 'ASIMETRÍA';
+
+  @override
+  String get asymmetricTest => 'Test Asimétrico';
+
+  @override
+  String get singleLegCmj => 'CMJ unilateral · Izquierda vs Derecha';
+
+  @override
+  String get leftLeg => 'Pierna Izquierda';
+
+  @override
+  String get rightLeg => 'Pierna Derecha';
+
+  @override
+  String recordLegJumpNumber(String leg, int number) {
+    return 'Grabar salto $leg #$number';
+  }
+
+  @override
+  String get asymmetryTestInstructions =>
+      'Graba hasta 3 saltos CMJ por pierna.\nAlterna entre Izquierda y Derecha con el selector de arriba.';
+
+  @override
+  String get asymmetryPct => 'Asimetría';
+
+  @override
+  String get asymmetryPerfect => 'Perfecto';
+
+  @override
+  String get asymmetryGood => 'Bueno';
+
+  @override
+  String get asymmetryCaution => 'Precaución';
+
+  @override
+  String get asymmetryRisk => 'Riesgo';
+
+  @override
+  String get strongerLeg => 'Pierna más fuerte';
+
+  @override
+  String get leftStronger => 'Izquierda';
+
+  @override
+  String get rightStronger => 'Derecha';
+
+  @override
+  String saveAthleteAsymmetry(String name) {
+    return 'Guardar asimetría de $name';
+  }
+
+  @override
+  String get allAsymmetryTestsSaved => 'Todos los tests de asimetría guardados';
+
+  @override
+  String get asymmetryChartTitle => 'Gráfico Asimetría';
+
+  @override
+  String get asymmetryEvolution => 'Evolución de Asimetría';
+
+  @override
+  String get noAsymmetryData => 'Sin datos de asimetría';
+
+  @override
+  String asymmetryAthleteProgress(String name, int left, int right) {
+    return '$name (I:$left/3 D:$right/3)';
+  }
+
+  @override
+  String get rightStrongerLabel => 'Derecha';
+
+  @override
+  String get leftStrongerLabel => 'Izquierda';
+
+  @override
+  String get leftAvg => 'Media Izq';
+
+  @override
+  String get rightAvg => 'Media Der';
+
+  @override
+  String get asymmetryPositiveNote =>
+      'Positivo = Derecha más fuerte · Negativo = Izquierda más fuerte';
 }

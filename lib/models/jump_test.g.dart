@@ -17,88 +17,98 @@ const JumpTestSchema = CollectionSchema(
   name: r'JumpTest',
   id: -6600465219072699580,
   properties: {
-    r'athleteId': PropertySchema(
+    r'asymmetrySessionId': PropertySchema(
       id: 0,
+      name: r'asymmetrySessionId',
+      type: IsarType.long,
+    ),
+    r'athleteId': PropertySchema(
+      id: 1,
       name: r'athleteId',
       type: IsarType.long,
     ),
     r'baselineAtTest': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'baselineAtTest',
       type: IsarType.double,
     ),
     r'baselineSessionId': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'baselineSessionId',
       type: IsarType.long,
     ),
     r'contactTimeMs': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'contactTimeMs',
       type: IsarType.double,
     ),
     r'deltaHCm': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'deltaHCm',
       type: IsarType.double,
     ),
     r'deltaRsi': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'deltaRsi',
       type: IsarType.double,
     ),
     r'dropHeightCm': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'dropHeightCm',
       type: IsarType.double,
     ),
     r'flightTimeMs': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'flightTimeMs',
       type: IsarType.double,
     ),
     r'fps': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'fps',
       type: IsarType.double,
     ),
     r'heightCm': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'heightCm',
       type: IsarType.double,
     ),
     r'isOutlier': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'isOutlier',
       type: IsarType.bool,
     ),
     r'landing1Frame': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'landing1Frame',
       type: IsarType.long,
     ),
     r'landingFrame': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'landingFrame',
       type: IsarType.long,
     ),
+    r'leg': PropertySchema(
+      id: 14,
+      name: r'leg',
+      type: IsarType.string,
+    ),
     r'rsiScore': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'rsiScore',
       type: IsarType.double,
     ),
     r'takeoffFrame': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'takeoffFrame',
       type: IsarType.long,
     ),
     r'testType': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'testType',
       type: IsarType.string,
     ),
     r'timestamp': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'timestamp',
       type: IsarType.dateTime,
     )
@@ -150,6 +160,12 @@ int _jumpTestEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.leg;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.testType.length * 3;
   return bytesCount;
 }
@@ -160,23 +176,25 @@ void _jumpTestSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeLong(offsets[0], object.athleteId);
-  writer.writeDouble(offsets[1], object.baselineAtTest);
-  writer.writeLong(offsets[2], object.baselineSessionId);
-  writer.writeDouble(offsets[3], object.contactTimeMs);
-  writer.writeDouble(offsets[4], object.deltaHCm);
-  writer.writeDouble(offsets[5], object.deltaRsi);
-  writer.writeDouble(offsets[6], object.dropHeightCm);
-  writer.writeDouble(offsets[7], object.flightTimeMs);
-  writer.writeDouble(offsets[8], object.fps);
-  writer.writeDouble(offsets[9], object.heightCm);
-  writer.writeBool(offsets[10], object.isOutlier);
-  writer.writeLong(offsets[11], object.landing1Frame);
-  writer.writeLong(offsets[12], object.landingFrame);
-  writer.writeDouble(offsets[13], object.rsiScore);
-  writer.writeLong(offsets[14], object.takeoffFrame);
-  writer.writeString(offsets[15], object.testType);
-  writer.writeDateTime(offsets[16], object.timestamp);
+  writer.writeLong(offsets[0], object.asymmetrySessionId);
+  writer.writeLong(offsets[1], object.athleteId);
+  writer.writeDouble(offsets[2], object.baselineAtTest);
+  writer.writeLong(offsets[3], object.baselineSessionId);
+  writer.writeDouble(offsets[4], object.contactTimeMs);
+  writer.writeDouble(offsets[5], object.deltaHCm);
+  writer.writeDouble(offsets[6], object.deltaRsi);
+  writer.writeDouble(offsets[7], object.dropHeightCm);
+  writer.writeDouble(offsets[8], object.flightTimeMs);
+  writer.writeDouble(offsets[9], object.fps);
+  writer.writeDouble(offsets[10], object.heightCm);
+  writer.writeBool(offsets[11], object.isOutlier);
+  writer.writeLong(offsets[12], object.landing1Frame);
+  writer.writeLong(offsets[13], object.landingFrame);
+  writer.writeString(offsets[14], object.leg);
+  writer.writeDouble(offsets[15], object.rsiScore);
+  writer.writeLong(offsets[16], object.takeoffFrame);
+  writer.writeString(offsets[17], object.testType);
+  writer.writeDateTime(offsets[18], object.timestamp);
 }
 
 JumpTest _jumpTestDeserialize(
@@ -186,24 +204,26 @@ JumpTest _jumpTestDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = JumpTest();
-  object.athleteId = reader.readLong(offsets[0]);
-  object.baselineAtTest = reader.readDoubleOrNull(offsets[1]);
-  object.baselineSessionId = reader.readLongOrNull(offsets[2]);
-  object.contactTimeMs = reader.readDoubleOrNull(offsets[3]);
-  object.deltaHCm = reader.readDouble(offsets[4]);
-  object.deltaRsi = reader.readDoubleOrNull(offsets[5]);
-  object.dropHeightCm = reader.readDoubleOrNull(offsets[6]);
-  object.flightTimeMs = reader.readDouble(offsets[7]);
-  object.fps = reader.readDouble(offsets[8]);
-  object.heightCm = reader.readDouble(offsets[9]);
+  object.asymmetrySessionId = reader.readLongOrNull(offsets[0]);
+  object.athleteId = reader.readLong(offsets[1]);
+  object.baselineAtTest = reader.readDoubleOrNull(offsets[2]);
+  object.baselineSessionId = reader.readLongOrNull(offsets[3]);
+  object.contactTimeMs = reader.readDoubleOrNull(offsets[4]);
+  object.deltaHCm = reader.readDouble(offsets[5]);
+  object.deltaRsi = reader.readDoubleOrNull(offsets[6]);
+  object.dropHeightCm = reader.readDoubleOrNull(offsets[7]);
+  object.flightTimeMs = reader.readDouble(offsets[8]);
+  object.fps = reader.readDouble(offsets[9]);
+  object.heightCm = reader.readDouble(offsets[10]);
   object.id = id;
-  object.isOutlier = reader.readBool(offsets[10]);
-  object.landing1Frame = reader.readLongOrNull(offsets[11]);
-  object.landingFrame = reader.readLong(offsets[12]);
-  object.rsiScore = reader.readDoubleOrNull(offsets[13]);
-  object.takeoffFrame = reader.readLong(offsets[14]);
-  object.testType = reader.readString(offsets[15]);
-  object.timestamp = reader.readDateTime(offsets[16]);
+  object.isOutlier = reader.readBool(offsets[11]);
+  object.landing1Frame = reader.readLongOrNull(offsets[12]);
+  object.landingFrame = reader.readLong(offsets[13]);
+  object.leg = reader.readStringOrNull(offsets[14]);
+  object.rsiScore = reader.readDoubleOrNull(offsets[15]);
+  object.takeoffFrame = reader.readLong(offsets[16]);
+  object.testType = reader.readString(offsets[17]);
+  object.timestamp = reader.readDateTime(offsets[18]);
   return object;
 }
 
@@ -215,38 +235,42 @@ P _jumpTestDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readLong(offset)) as P;
-    case 1:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 2:
       return (reader.readLongOrNull(offset)) as P;
+    case 1:
+      return (reader.readLong(offset)) as P;
+    case 2:
+      return (reader.readDoubleOrNull(offset)) as P;
     case 3:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 4:
-      return (reader.readDouble(offset)) as P;
-    case 5:
       return (reader.readDoubleOrNull(offset)) as P;
+    case 5:
+      return (reader.readDouble(offset)) as P;
     case 6:
       return (reader.readDoubleOrNull(offset)) as P;
     case 7:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 8:
       return (reader.readDouble(offset)) as P;
     case 9:
       return (reader.readDouble(offset)) as P;
     case 10:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 11:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 12:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 13:
-      return (reader.readDoubleOrNull(offset)) as P;
-    case 14:
       return (reader.readLong(offset)) as P;
+    case 14:
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 16:
+      return (reader.readLong(offset)) as P;
+    case 17:
+      return (reader.readString(offset)) as P;
+    case 18:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -485,6 +509,80 @@ extension JumpTestQueryWhere on QueryBuilder<JumpTest, JumpTest, QWhereClause> {
 
 extension JumpTestQueryFilter
     on QueryBuilder<JumpTest, JumpTest, QFilterCondition> {
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'asymmetrySessionId',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'asymmetrySessionId',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'asymmetrySessionId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'asymmetrySessionId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'asymmetrySessionId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition>
+      asymmetrySessionIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'asymmetrySessionId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> athleteIdEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -1370,6 +1468,152 @@ extension JumpTestQueryFilter
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'leg',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'leg',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'leg',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'leg',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'leg',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'leg',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> legIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'leg',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterFilterCondition> rsiScoreIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1693,6 +1937,19 @@ extension JumpTestQueryLinks
     on QueryBuilder<JumpTest, JumpTest, QFilterCondition> {}
 
 extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByAsymmetrySessionId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetrySessionId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy>
+      sortByAsymmetrySessionIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetrySessionId', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByAthleteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'athleteId', Sort.asc);
@@ -1849,6 +2106,18 @@ extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByLeg() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'leg', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByLegDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'leg', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> sortByRsiScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rsiScore', Sort.asc);
@@ -1900,6 +2169,19 @@ extension JumpTestQuerySortBy on QueryBuilder<JumpTest, JumpTest, QSortBy> {
 
 extension JumpTestQuerySortThenBy
     on QueryBuilder<JumpTest, JumpTest, QSortThenBy> {
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByAsymmetrySessionId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetrySessionId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy>
+      thenByAsymmetrySessionIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'asymmetrySessionId', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByAthleteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'athleteId', Sort.asc);
@@ -2068,6 +2350,18 @@ extension JumpTestQuerySortThenBy
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByLeg() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'leg', Sort.asc);
+    });
+  }
+
+  QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByLegDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'leg', Sort.desc);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QAfterSortBy> thenByRsiScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rsiScore', Sort.asc);
@@ -2119,6 +2413,12 @@ extension JumpTestQuerySortThenBy
 
 extension JumpTestQueryWhereDistinct
     on QueryBuilder<JumpTest, JumpTest, QDistinct> {
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByAsymmetrySessionId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'asymmetrySessionId');
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByAthleteId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'athleteId');
@@ -2197,6 +2497,13 @@ extension JumpTestQueryWhereDistinct
     });
   }
 
+  QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByLeg(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'leg', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<JumpTest, JumpTest, QDistinct> distinctByRsiScore() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'rsiScore');
@@ -2228,6 +2535,12 @@ extension JumpTestQueryProperty
   QueryBuilder<JumpTest, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<JumpTest, int?, QQueryOperations> asymmetrySessionIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'asymmetrySessionId');
     });
   }
 
@@ -2306,6 +2619,12 @@ extension JumpTestQueryProperty
   QueryBuilder<JumpTest, int, QQueryOperations> landingFrameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'landingFrame');
+    });
+  }
+
+  QueryBuilder<JumpTest, String?, QQueryOperations> legProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'leg');
     });
   }
 

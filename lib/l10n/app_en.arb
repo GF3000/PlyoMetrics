@@ -337,5 +337,50 @@
   },
   "allRsiTestsSaved": "All RSI tests saved",
   "rsiTestInstructions": "Record up to 3 drop jumps to measure RSI performance.\nMaximum 3 jumps allowed.",
-  "averageRsiScore": "AVERAGE RSI SCORE"
+  "averageRsiScore": "AVERAGE RSI SCORE",
+
+  "tagAsymmetry": "ASYMMETRY",
+  "asymmetricTest": "Asymmetric Test",
+  "singleLegCmj": "Single-leg CMJ · Left vs Right",
+  "leftLeg": "Left Leg",
+  "rightLeg": "Right Leg",
+  "recordLegJumpNumber": "Record {leg} Jump #{number}",
+  "@recordLegJumpNumber": {
+    "placeholders": {
+      "leg": { "type": "String" },
+      "number": { "type": "int" }
+    }
+  },
+  "asymmetryTestInstructions": "Record up to 3 single-leg CMJ jumps per leg.\nAlternate between Left and Right using the toggle above.",
+  "asymmetryPct": "Asymmetry",
+  "asymmetryPerfect": "Perfect",
+  "asymmetryGood": "Good",
+  "asymmetryCaution": "Caution",
+  "asymmetryRisk": "Risk",
+  "strongerLeg": "Stronger Leg",
+  "leftStronger": "Left",
+  "rightStronger": "Right",
+  "saveAthleteAsymmetry": "Save {name}'s Asymmetry",
+  "@saveAthleteAsymmetry": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "allAsymmetryTestsSaved": "All asymmetry tests saved",
+  "asymmetryChartTitle": "Asymmetry Chart",
+  "asymmetryEvolution": "Asymmetry Evolution",
+  "noAsymmetryData": "No asymmetry data",
+  "asymmetryAthleteProgress": "{name} (L:{left}/3 R:{right}/3)",
+  "@asymmetryAthleteProgress": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "left": { "type": "int" },
+      "right": { "type": "int" }
+    }
+  },
+  "rightStrongerLabel": "Right",
+  "leftStrongerLabel": "Left",
+  "leftAvg": "Left Avg",
+  "rightAvg": "Right Avg",
+  "asymmetryPositiveNote": "Positive = Right stronger · Negative = Left stronger"
 }

@@ -611,4 +611,90 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get averageRsiScore => 'AVERAGE RSI SCORE';
+
+  @override
+  String get tagAsymmetry => 'ASYMMETRY';
+
+  @override
+  String get asymmetricTest => 'Asymmetric Test';
+
+  @override
+  String get singleLegCmj => 'Single-leg CMJ · Left vs Right';
+
+  @override
+  String get leftLeg => 'Left Leg';
+
+  @override
+  String get rightLeg => 'Right Leg';
+
+  @override
+  String recordLegJumpNumber(String leg, int number) {
+    return 'Record $leg Jump #$number';
+  }
+
+  @override
+  String get asymmetryTestInstructions =>
+      'Record up to 3 single-leg CMJ jumps per leg.\nAlternate between Left and Right using the toggle above.';
+
+  @override
+  String get asymmetryPct => 'Asymmetry';
+
+  @override
+  String get asymmetryPerfect => 'Perfect';
+
+  @override
+  String get asymmetryGood => 'Good';
+
+  @override
+  String get asymmetryCaution => 'Caution';
+
+  @override
+  String get asymmetryRisk => 'Risk';
+
+  @override
+  String get strongerLeg => 'Stronger Leg';
+
+  @override
+  String get leftStronger => 'Left';
+
+  @override
+  String get rightStronger => 'Right';
+
+  @override
+  String saveAthleteAsymmetry(String name) {
+    return 'Save $name\'s Asymmetry';
+  }
+
+  @override
+  String get allAsymmetryTestsSaved => 'All asymmetry tests saved';
+
+  @override
+  String get asymmetryChartTitle => 'Asymmetry Chart';
+
+  @override
+  String get asymmetryEvolution => 'Asymmetry Evolution';
+
+  @override
+  String get noAsymmetryData => 'No asymmetry data';
+
+  @override
+  String asymmetryAthleteProgress(String name, int left, int right) {
+    return '$name (L:$left/3 R:$right/3)';
+  }
+
+  @override
+  String get rightStrongerLabel => 'Right';
+
+  @override
+  String get leftStrongerLabel => 'Left';
+
+  @override
+  String get leftAvg => 'Left Avg';
+
+  @override
+  String get rightAvg => 'Right Avg';
+
+  @override
+  String get asymmetryPositiveNote =>
+      'Positive = Right stronger · Negative = Left stronger';
 }
