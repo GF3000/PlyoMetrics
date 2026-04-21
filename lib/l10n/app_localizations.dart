@@ -1112,11 +1112,77 @@ abstract class AppLocalizations {
   /// **'RSI Scatter'**
   String get rsiScatterTitle;
 
+  /// No description provided for @cmjBarChartTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CMJ Bar Chart'**
+  String get cmjBarChartTitle;
+
   /// No description provided for @fullscreenChart.
   ///
   /// In en, this message translates to:
   /// **'Fullscreen'**
   String get fullscreenChart;
+
+  /// No description provided for @saveAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Save All'**
+  String get saveAll;
+
+  /// No description provided for @allBaselinesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'All baselines saved'**
+  String get allBaselinesSaved;
+
+  /// No description provided for @saveAthleteBaseline.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {name}\'s Baseline'**
+  String saveAthleteBaseline(String name);
+
+  /// No description provided for @athleteJumpProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} ({done}/3)'**
+  String athleteJumpProgress(String name, int done);
+
+  /// No description provided for @pleaseSelectGroupFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a group with athletes first'**
+  String get pleaseSelectGroupFirst;
+
+  /// No description provided for @recordDropJumpNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Record Drop Jump #{number}'**
+  String recordDropJumpNumber(int number);
+
+  /// No description provided for @saveAthleteRsi.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {name}\'s RSI'**
+  String saveAthleteRsi(String name);
+
+  /// No description provided for @allRsiTestsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'All RSI tests saved'**
+  String get allRsiTestsSaved;
+
+  /// No description provided for @rsiTestInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Record up to 3 drop jumps to measure RSI performance.\nMaximum 3 jumps allowed.'**
+  String get rsiTestInstructions;
+
+  /// No description provided for @averageRsiScore.
+  ///
+  /// In en, this message translates to:
+  /// **'AVERAGE RSI SCORE'**
+  String get averageRsiScore;
 }
 
 class _AppLocalizationsDelegate

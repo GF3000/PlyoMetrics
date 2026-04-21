@@ -9,17 +9,23 @@ import '../providers/cmj_session_provider.dart';
 import '../providers/management_providers.dart';
 import 'cmj_video_trim_screen.dart';
 
-/// Main CMJ Baseline screen. Orchestrates recording up to 3 jumps,
-/// displays results with error margins, detects outliers, and saves
-/// the baseline to Isar.
+/// Main CMJ Baseline screen. Orchestrates recording up to 3 jumps per athlete,
+/// displays results with error margins, detects outliers, and saves baselines.
+/// Supports round-robin multi-athlete testing via the athlete chip bar.
 class CmjBaselineScreen extends ConsumerWidget {
-  const CmjBaselineScreen({super.key});
+  final List<Athlete> athletes;
+
+  const CmjBaselineScreen({super.key, required this.athletes});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context)!;
-    final athlete = ref.watch(activeAthleteProvider);
     final session = ref.watch(cmjSessionProvider);
+    final activeSession = session.activeSession;
+    final activeAthlete = activeSession != null
+        ? athletes.firstWhere((a) => a.id == activeSession.athleteId,
+            orElse: () => athletes.first)
+        : athletes.first;
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -35,15 +41,14 @@ class CmjBaselineScreen extends ConsumerWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            if (athlete != null)
-              Text(
-                athlete.name,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.textSecondary,
-                ),
+            Text(
+              activeSession?.athleteName ?? activeAthlete.name,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textSecondary,
               ),
+            ),
           ],
         ),
         leading: IconButton(
@@ -60,8 +65,19 @@ class CmjBaselineScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // Athlete chip bar (multi-athlete mode only)
+                if (session.isMultiAthlete) ...[
+                  _AthleteChipBar(
+                    sessions: session.orderedSessions,
+                    activeAthleteId: session.activeAthleteId,
+                    onSelect: (id) =>
+                        ref.read(cmjSessionProvider.notifier).setActiveAthlete(id),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+
                 // Instructions
-                if (session.jumps.isEmpty)
+                if ((activeSession?.jumps ?? []).isEmpty)
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -106,7 +122,7 @@ class CmjBaselineScreen extends ConsumerWidget {
                 const SizedBox(height: 16),
 
                 // Record jump button
-                if (session.jumps.length < 3)
+                if (session.jumps.length < 3 && activeSession?.saved != true)
                   OutlinedButton.icon(
                     onPressed: () => _recordJump(context, ref),
                     icon: const Icon(Icons.videocam),
@@ -128,38 +144,29 @@ class CmjBaselineScreen extends ConsumerWidget {
                   _BaselineSummary(
                     averageHeight: session.averageHeightCm!,
                     propagatedError: session.propagatedErrorCm!,
-                    athlete: athlete,
+                    athlete: activeAthlete,
                   ),
                 ],
               ],
             ),
           ),
 
-          // Footer: Save button
-          if (session.canSave)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppColors.card,
-                border: Border(
-                  top: BorderSide(color: AppColors.borderLight),
-                ),
+          // Footer: save button(s)
+          if (session.canSave || session.anySaveable)
+            _SaveFooter(
+              session: session,
+              activeAthlete: activeAthlete,
+              athletes: athletes,
+              onSaveActive: () => _saveAthleteSession(
+                context,
+                ref,
+                activeSession!,
+                activeAthlete,
+                popOnDone: !session.isMultiAthlete,
               ),
-              child: FilledButton.icon(
-                onPressed: () => _saveBaseline(context, ref, session),
-                icon: const Icon(Icons.save),
-                label: Text(l.saveMeasurement),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  textStyle: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              onSaveAll: session.isMultiAthlete
+                  ? () => _saveAll(context, ref, session)
+                  : null,
             ),
         ],
       ),
@@ -175,13 +182,16 @@ class CmjBaselineScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _saveBaseline(
+  Future<void> _saveAthleteSession(
     BuildContext context,
     WidgetRef ref,
-    CmjSessionState session,
-  ) async {
+    AthleteSession athleteSession,
+    Athlete athlete, {
+    required bool popOnDone,
+  }) async {
     final l = AppLocalizations.of(context)!;
-    final jumpCount = session.jumps.length;
+    final jumpCount = athleteSession.jumps.length;
+
     if (jumpCount < 3) {
       final proceed = await showDialog<bool>(
         context: context,
@@ -211,57 +221,255 @@ class CmjBaselineScreen extends ConsumerWidget {
       if (proceed != true) return;
     }
 
-    final athlete = ref.read(activeAthleteProvider);
-    if (athlete == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.noAthleteSelected)),
-      );
-      return;
-    }
-
     final service = ref.read(isarServiceProvider);
 
-    // Compute average flight time from valid (non-outlier) jumps
     final validJumps = [
-      for (int i = 0; i < session.jumps.length; i++)
-        if (!session.outlierFlags[i]) session.jumps[i],
+      for (int i = 0; i < athleteSession.jumps.length; i++)
+        if (!athleteSession.outlierFlags[i]) athleteSession.jumps[i],
     ];
     final avgFlightTimeMs = validJumps.isEmpty
         ? 0.0
         : validJumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
             validJumps.length;
 
-    // Create a single JumpTest record for the average
     final test = JumpTest()
       ..athleteId = athlete.id
       ..testType = 'cmj_baseline'
       ..timestamp = DateTime.now()
       ..takeoffFrame = 0
       ..landingFrame = 0
-      ..fps = session.jumps.isNotEmpty ? session.jumps.first.fps : 0
+      ..fps = athleteSession.jumps.isNotEmpty ? athleteSession.jumps.first.fps : 0
       ..flightTimeMs = avgFlightTimeMs
-      ..heightCm = session.averageHeightCm!
-      ..deltaHCm = session.propagatedErrorCm!
+      ..heightCm = athleteSession.averageHeightCm!
+      ..deltaHCm = athleteSession.propagatedErrorCm!
       ..isOutlier = false;
 
     await service.saveJumpTests([test]);
     await service.updateAthleteBaseline(
       athlete.id,
-      session.averageHeightCm!,
+      athleteSession.averageHeightCm!,
       baselineDate: DateTime.now(),
     );
 
-    ref.read(cmjSessionProvider.notifier).reset();
+    ref.read(cmjSessionProvider.notifier).markSaved(athlete.id);
 
-    // Refresh the active athlete to reflect the new baseline
-    final updatedAthlete = await service.db.athletes.get(athlete.id);
-    if (updatedAthlete != null) {
-      ref.read(activeAthleteProvider.notifier).state = updatedAthlete;
+    // Keep activeAthleteProvider in sync for the dashboard
+    final globalActive = ref.read(activeAthleteProvider);
+    if (globalActive?.id == athlete.id) {
+      final updatedAthlete = await service.db.athletes.get(athlete.id);
+      if (updatedAthlete != null) {
+        ref.read(activeAthleteProvider.notifier).state = updatedAthlete;
+      }
+    }
+
+    if (popOnDone && context.mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _saveAll(
+    BuildContext context,
+    WidgetRef ref,
+    CmjSessionState session,
+  ) async {
+    final l = AppLocalizations.of(context)!;
+    final toSave = session.orderedSessions
+        .where((s) => s.canSave && !s.saved)
+        .toList();
+
+    for (final athleteSession in toSave) {
+      final athlete = athletes.firstWhere(
+        (a) => a.id == athleteSession.athleteId,
+      );
+      await _saveAthleteSession(
+        context,
+        ref,
+        athleteSession,
+        athlete,
+        popOnDone: false,
+      );
+      if (!context.mounted) return;
     }
 
     if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.allBaselinesSaved)),
+      );
+      ref.read(cmjSessionProvider.notifier).reset();
       Navigator.of(context).pop();
     }
+  }
+}
+
+// ── Athlete Chip Bar ──
+
+class _AthleteChipBar extends StatelessWidget {
+  final List<AthleteSession> sessions;
+  final int? activeAthleteId;
+  final void Function(int athleteId) onSelect;
+
+  const _AthleteChipBar({
+    required this.sessions,
+    required this.activeAthleteId,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 44,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: sessions.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final s = sessions[index];
+          final isActive = s.athleteId == activeAthleteId;
+          final label = '${s.athleteName} (${s.validJumpCount}/3)';
+
+          if (s.saved) {
+            return _SavedChip(label: s.athleteName);
+          }
+
+          return FilterChip(
+            label: Text(
+              label,
+              style: TextStyle(
+                color: isActive ? AppColors.brand : AppColors.textSecondary,
+                fontWeight:
+                    isActive ? FontWeight.w600 : FontWeight.w400,
+                fontSize: 13,
+              ),
+            ),
+            selected: isActive,
+            onSelected: (_) => onSelect(s.athleteId),
+            backgroundColor: AppColors.card,
+            selectedColor: AppColors.brand.withAlpha(20),
+            side: BorderSide(
+              color: isActive ? AppColors.brand : AppColors.borderLight,
+            ),
+            showCheckmark: false,
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SavedChip extends StatelessWidget {
+  final String label;
+  const _SavedChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      avatar: const Icon(Icons.check_circle, size: 16, color: Colors.green),
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Colors.green,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      backgroundColor: Colors.green.withAlpha(20),
+      side: BorderSide(color: Colors.green.withAlpha(80)),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+    );
+  }
+}
+
+// ── Save Footer ──
+
+class _SaveFooter extends StatelessWidget {
+  final CmjSessionState session;
+  final Athlete activeAthlete;
+  final List<Athlete> athletes;
+  final VoidCallback onSaveActive;
+  final VoidCallback? onSaveAll;
+
+  const _SaveFooter({
+    required this.session,
+    required this.activeAthlete,
+    required this.athletes,
+    required this.onSaveActive,
+    this.onSaveAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    final activeCanSave =
+        session.canSave && session.activeSession?.saved != true;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: AppColors.card,
+        border: Border(top: BorderSide(color: AppColors.borderLight)),
+      ),
+      child: session.isMultiAthlete
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (activeCanSave)
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: onSaveActive,
+                      icon: const Icon(Icons.save),
+                      label: Text(
+                          l.saveAthleteBaseline(activeAthlete.name)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brand,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (activeCanSave && session.anySaveable)
+                  const SizedBox(height: 8),
+                if (session.anySaveable && onSaveAll != null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: onSaveAll,
+                      icon: const Icon(Icons.save_alt),
+                      label: Text(l.saveAll),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.brand,
+                        side: const BorderSide(color: AppColors.brand),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            )
+          : FilledButton.icon(
+              onPressed: onSaveActive,
+              icon: const Icon(Icons.save),
+              label: Text(l.saveMeasurement),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.brand,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+    );
   }
 }
 
@@ -369,7 +577,7 @@ class _JumpCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Text(
-                '\u00b1 ${jump.deltaHCm.toStringAsFixed(1)} cm',
+                '± ${jump.deltaHCm.toStringAsFixed(1)} cm',
                 style: TextStyle(
                   fontSize: 14,
                   color: isOutlier
@@ -454,7 +662,7 @@ class _BaselineSummary extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                '\u00b1 ${propagatedError.toStringAsFixed(1)} cm',
+                '± ${propagatedError.toStringAsFixed(1)} cm',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,

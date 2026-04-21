@@ -123,10 +123,10 @@ class GroupOverviewScreen extends ConsumerWidget {
     if (chartMode == 1) {
       return _buildRsiScatterChart(context, stats, l);
     }
-    return _buildCmjBarChart(stats, l);
+    return _buildCmjBarChart(context, stats, l);
   }
 
-  Widget _buildCmjBarChart(List<GroupAthleteStats> stats, AppLocalizations l) {
+  Widget _buildCmjBarChart(BuildContext context, List<GroupAthleteStats> stats, AppLocalizations l) {
     final hasData = stats.any((s) => s.athlete.baselineCmjHeight != null);
 
     if (!hasData) {
@@ -138,15 +138,17 @@ class GroupOverviewScreen extends ConsumerWidget {
     final maxVal = values.reduce((a, b) => a > b ? a : b);
     final yMax = maxVal > 0 ? maxVal * 1.2 : 1.0;
 
-    return Container(
-      height: 200,
-      padding: const EdgeInsets.fromLTRB(0, 16, 8, 8),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderLight),
-      ),
-      child: BarChart(
+    return Stack(
+      children: [
+        Container(
+          height: 200,
+          padding: const EdgeInsets.fromLTRB(0, 16, 8, 8),
+          decoration: BoxDecoration(
+            color: AppColors.card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.borderLight),
+          ),
+          child: BarChart(
         BarChartData(
           maxY: yMax,
           barTouchData: BarTouchData(
@@ -232,6 +234,29 @@ class GroupOverviewScreen extends ConsumerWidget {
           }),
         ),
       ),
+    ),
+        Positioned(
+          top: 8,
+          right: 12,
+          child: InkWell(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                fullscreenDialog: true,
+                builder: (_) => _FullscreenCmjChart(stats: stats, l: l),
+              ),
+            ),
+            borderRadius: BorderRadius.circular(4),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(
+                Icons.fullscreen,
+                color: AppColors.textTertiary,
+                size: 20,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -700,6 +725,185 @@ class _InitialDotPainter extends FlDotPainter {
 
   @override
   List<Object?> get props => [initial, backgroundColor, radius];
+}
+
+// ---------------------------------------------------------------------------
+// Fullscreen CMJ Bar Chart (landscape)
+// ---------------------------------------------------------------------------
+
+class _FullscreenCmjChart extends StatefulWidget {
+  final List<GroupAthleteStats> stats;
+  final AppLocalizations l;
+
+  const _FullscreenCmjChart({required this.stats, required this.l});
+
+  @override
+  State<_FullscreenCmjChart> createState() => _FullscreenCmjChartState();
+}
+
+class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
+  @override
+  void initState() {
+    super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasData = widget.stats.any((s) => s.athlete.baselineCmjHeight != null);
+
+    if (!hasData) {
+      return Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: AppBar(
+          backgroundColor: AppColors.surface,
+          leading: IconButton(
+            icon: const Icon(Icons.close, color: AppColors.textPrimary),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: Text(
+            widget.l.cmjBarChartTitle,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        body: Center(
+          child: Text(
+            widget.l.noDataAvailable,
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    final values =
+        widget.stats.map((s) => s.athlete.baselineCmjHeight ?? 0).toList();
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final yMax = maxVal > 0 ? maxVal * 1.2 : 1.0;
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          widget.l.cmjBarChartTitle,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: BarChart(
+          BarChartData(
+            maxY: yMax,
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => AppColors.card,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  final athlete = widget.stats[group.x].athlete;
+                  return BarTooltipItem(
+                    '${athlete.name}\n${rod.toY.toStringAsFixed(1)} cm',
+                    const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+              ),
+            ),
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (_) => FlLine(
+                color: AppColors.borderSubtle,
+                strokeWidth: 0.5,
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            titlesData: FlTitlesData(
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 32,
+                  getTitlesWidget: (value, _) {
+                    final idx = value.toInt();
+                    if (idx < 0 || idx >= widget.stats.length) {
+                      return const SizedBox.shrink();
+                    }
+                    final name = widget.stats[idx].athlete.name;
+                    final label =
+                        name.length > 8 ? '${name.substring(0, 8)}.' : name;
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                            color: AppColors.textTertiary, fontSize: 11),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 40,
+                  getTitlesWidget: (value, _) => Text(
+                    value.toStringAsFixed(0),
+                    style: const TextStyle(
+                        color: AppColors.textTertiary, fontSize: 11),
+                  ),
+                ),
+              ),
+            ),
+            barGroups: List.generate(widget.stats.length, (i) {
+              return BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: values[i],
+                    color: AppColors.brand,
+                    width: widget.stats.length <= 4 ? 32 : 20,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(4),
+                      topRight: Radius.circular(4),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

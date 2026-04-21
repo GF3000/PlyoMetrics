@@ -97,33 +97,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-           RichText(
-             text: TextSpan(
-               children: [
-                 TextSpan(
-                   text: 'Plyo',
-                   style: const TextStyle(
-                     fontFamily: 'Orbitron',
-                     fontSize: 22,
-                     fontWeight: FontWeight.w800,
-                     color: Colors.white,
-                     letterSpacing: -0.5,
-                   ),
-                 ),
-                 TextSpan(
-                   text: 'Metrics',
-                   style: const TextStyle(
-                     fontFamily: 'Orbitron',
-                     fontSize: 22,
-                     fontWeight: FontWeight.w800,
-                     color: AppColors.brand,
-                     letterSpacing: -0.5,
-                   ),
-                 ),
-               ],
-             ),
-           ),
-           groupsAsync.when(
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Plyo',
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Metrics',
+                  style: const TextStyle(
+                    fontFamily: 'Orbitron',
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.brand,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          groupsAsync.when(
             loading: () => const SizedBox(
               width: 16,
               height: 16,
@@ -145,7 +145,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.card,
                       borderRadius: BorderRadius.circular(20),
@@ -211,8 +214,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             child: Text(
                               g.name,
                               style: TextStyle(
-                                color: isSelected ? AppColors.brand : Colors.white,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                color: isSelected
+                                    ? AppColors.brand
+                                    : Colors.white,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -221,15 +228,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (isSelected)
-                                const Icon(Icons.check, color: AppColors.brand, size: 18),
+                                const Icon(
+                                  Icons.check,
+                                  color: AppColors.brand,
+                                  size: 18,
+                                ),
                               const SizedBox(width: 4),
                               IconButton(
-                                icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                                icon: const Icon(
+                                  Icons.more_vert,
+                                  color: AppColors.textSecondary,
+                                  size: 20,
+                                ),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
                                 onPressed: () {
-                                  Navigator.pop(context); // Dismiss the popup menu
-                                  _showGroupOptions(context, g, groups); // Open bottom sheet
+                                  Navigator.pop(
+                                    context,
+                                  ); // Dismiss the popup menu
+                                  _showGroupOptions(
+                                    context,
+                                    g,
+                                    groups,
+                                  ); // Open bottom sheet
                                 },
                               ),
                             ],
@@ -245,7 +266,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       value: -1,
                       child: Row(
                         children: [
-                          const Icon(Icons.add, color: AppColors.brand, size: 18),
+                          const Icon(
+                            Icons.add,
+                            color: AppColors.brand,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             l.newGroup,
@@ -262,7 +287,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return items;
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.card,
                     borderRadius: BorderRadius.circular(20),
@@ -280,7 +308,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      const Icon(Icons.keyboard_arrow_down, color: AppColors.textSecondary, size: 18),
+                      const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: AppColors.textSecondary,
+                        size: 18,
+                      ),
                     ],
                   ),
                 ),
@@ -291,7 +323,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       ),
     );
   }
-
 
   // ── Home tab content ──
 
@@ -421,11 +452,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       const SizedBox(width: 16),
                       // RSI Score
-                      const Icon(
-                        Icons.speed,
-                        size: 14,
-                        color: AppColors.brand,
-                      ),
+                      const Icon(Icons.speed, size: 14, color: AppColors.brand),
                       const SizedBox(width: 4),
                       Text(
                         athlete.baselineRsi != null
@@ -463,8 +490,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         subtitleColor = _warningAmber;
         needsAttention = true;
       } else {
-        final daysSince =
-            DateTime.now().difference(athlete.baselineDate!).inDays;
+        final daysSince = DateTime.now()
+            .difference(athlete.baselineDate!)
+            .inDays;
         if (daysSince >= 28) {
           subtitle = l.baselineOutdated(daysSince);
           subtitleColor = _warningAmber;
@@ -485,19 +513,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       subtitleColor: subtitleColor,
       icon: Icons.trending_up,
       hasGlow: needsAttention,
-      onTap: () {
-        final athlete = ref.read(activeAthleteProvider);
-        if (athlete == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
-          );
-          return;
-        }
-        ref.read(cmjSessionProvider.notifier).reset();
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
-        );
-      },
+      onTap: () => _launchCmjBaseline(context, AppLocalizations.of(context)!),
+    );
+  }
+
+  void _launchCmjBaseline(BuildContext ctx, AppLocalizations l) {
+    final athletes = ref.read(groupAthletesProvider).valueOrNull ?? [];
+    if (athletes.isEmpty) {
+      ScaffoldMessenger.of(
+        ctx,
+      ).showSnackBar(SnackBar(content: Text(l.pleaseSelectGroupFirst)));
+      return;
+    }
+    final activeAthlete = ref.read(activeAthleteProvider);
+    ref
+        .read(cmjSessionProvider.notifier)
+        .initWithAthletes(athletes, defaultAthleteId: activeAthlete?.id);
+    Navigator.of(ctx).push(
+      MaterialPageRoute(builder: (_) => CmjBaselineScreen(athletes: athletes)),
+    );
+  }
+
+  void _launchRsiTest(BuildContext ctx, AppLocalizations l) {
+    final groupAthletes = ref.read(groupAthletesProvider).valueOrNull ?? [];
+    final active = ref.read(activeAthleteProvider);
+
+    if (active == null && groupAthletes.isEmpty) {
+      ScaffoldMessenger.of(
+        ctx,
+      ).showSnackBar(SnackBar(content: Text(l.selectAnAthleteFirst)));
+      return;
+    }
+
+    final athletes = groupAthletes.isNotEmpty ? groupAthletes : [active!];
+    ref
+        .read(rsiSessionProvider.notifier)
+        .initWithAthletes(athletes, defaultAthleteId: active?.id);
+    Navigator.of(ctx).push(
+      MaterialPageRoute(builder: (_) => RsiTestScreen(athletes: athletes)),
     );
   }
 
@@ -509,7 +562,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     bool hasRecentFatigue = false;
 
     // Only show dynamic data if athlete has a recent CMJ baseline
-    final hasRecentBaseline = athlete != null &&
+    final hasRecentBaseline =
+        athlete != null &&
         athlete.baselineDate != null &&
         DateTime.now().difference(athlete.baselineDate!).inDays < 28;
 
@@ -522,8 +576,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             hasRecentFatigue = true;
             final lossPercent =
                 ((test.baselineAtTest! - test.heightCm) /
-                    test.baselineAtTest! *
-                    100);
+                test.baselineAtTest! *
+                100);
             String status;
             if (lossPercent <= 5) {
               status = l.fatigueOptimal;
@@ -535,10 +589,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               status = l.fatigueHigh;
               subtitleColor = const Color(0xFFEF4444);
             }
-            return l.todayFatigueLoss(
-              lossPercent.toStringAsFixed(1),
-              status,
-            );
+            return l.todayFatigueLoss(lossPercent.round().toString(), status);
           }
           return l.pendingDailyTest;
         },
@@ -557,20 +608,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       onTap: () {
         final athlete = ref.read(activeAthleteProvider);
         if (athlete == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l.pleaseSelectAthleteFirst)));
           return;
         }
         if (athlete.baselineCmjHeight == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.completeCmjBaselineFirst)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l.completeCmjBaselineFirst)));
           return;
         }
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const FatigueTestScreen()),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const FatigueTestScreen()));
       },
     );
   }
@@ -588,19 +639,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       title: l.rsiDropJumpTest,
       subtitle: subtitle,
       icon: Icons.timer_outlined,
-      onTap: () {
-        final athlete = ref.read(activeAthleteProvider);
-        if (athlete == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l.selectAnAthleteFirst)),
-          );
-          return;
-        }
-        ref.read(rsiSessionProvider.notifier).reset();
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const RsiTestScreen()),
-        );
-      },
+      onTap: () => _launchRsiTest(context, l),
     );
   }
 
@@ -815,7 +854,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                     side: BorderSide(
-                      color: AppColors.brand.withAlpha((animation.value * 255).toInt()),
+                      color: AppColors.brand.withAlpha(
+                        (animation.value * 255).toInt(),
+                      ),
                       width: 1.5,
                     ),
                   ),
@@ -1111,7 +1152,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 child: Material(
                   color: AppColors.brand,
                   shape: const CircleBorder(),
-                  clipBehavior: Clip.antiAlias, // Ensures the ripple stays inside the circle
+                  clipBehavior: Clip
+                      .antiAlias, // Ensures the ripple stays inside the circle
                   child: InkWell(
                     onTap: () {
                       if (_selectedNavIndex == 4) {
@@ -1120,7 +1162,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         _showNewTestMenu(context);
                       }
                     },
-                    splashColor: Colors.black26, // A subtle dark ripple looks great on the bright brand color
+                    splashColor: Colors
+                        .black26, // A subtle dark ripple looks great on the bright brand color
                     highlightColor: Colors.black12,
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 300),
@@ -1176,7 +1219,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  void _showGroupOptions(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) {
+  void _showGroupOptions(
+    BuildContext context,
+    AthleteGroup group,
+    List<AthleteGroup> allGroups,
+  ) {
     final l = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
@@ -1203,16 +1250,28 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const Divider(color: AppColors.borderLight, height: 1),
             ListTile(
-              leading: const Icon(Icons.edit_outlined, color: AppColors.textPrimary),
-              title: Text(l.renameGroup, style: const TextStyle(color: AppColors.textPrimary)),
+              leading: const Icon(
+                Icons.edit_outlined,
+                color: AppColors.textPrimary,
+              ),
+              title: Text(
+                l.renameGroup,
+                style: const TextStyle(color: AppColors.textPrimary),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _renameGroup(context, group);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              title: Text(l.deleteGroup, style: const TextStyle(color: Colors.redAccent)),
+              leading: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+              ),
+              title: Text(
+                l.deleteGroup,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 _deleteGroup(context, group, allGroups);
@@ -1264,14 +1323,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
 
     if (newName != null && newName.isNotEmpty && newName != group.name) {
-      final updatedGroup = await IsarService.instance.updateGroup(group, newName);
+      final updatedGroup = await IsarService.instance.updateGroup(
+        group,
+        newName,
+      );
       if (ref.read(activeGroupProvider)?.id == updatedGroup.id) {
         ref.read(activeGroupProvider.notifier).state = updatedGroup;
       }
     }
   }
 
-  Future<void> _deleteGroup(BuildContext context, AthleteGroup group, List<AthleteGroup> allGroups) async {
+  Future<void> _deleteGroup(
+    BuildContext context,
+    AthleteGroup group,
+    List<AthleteGroup> allGroups,
+  ) async {
     final l = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
@@ -1299,8 +1365,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     if (confirm == true) {
       await IsarService.instance.deleteGroup(group.id);
       if (ref.read(activeGroupProvider)?.id == group.id) {
-        final remainingGroups = allGroups.where((g) => g.id != group.id).toList();
-        ref.read(activeGroupProvider.notifier).state = remainingGroups.isNotEmpty ? remainingGroups.first : null;
+        final remainingGroups = allGroups
+            .where((g) => g.id != group.id)
+            .toList();
+        ref.read(activeGroupProvider.notifier).state =
+            remainingGroups.isNotEmpty ? remainingGroups.first : null;
         ref.read(activeAthleteProvider.notifier).state = null;
       }
     }
@@ -1349,21 +1418,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: const Icon(Icons.trending_up, color: AppColors.brand),
               ),
-              title: Text(l.cmjBaseline, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: Text(l.verticalJumpMetrics, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(
+                l.cmjBaseline,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l.verticalJumpMetrics,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx); // Dismiss the sheet
-                final athlete = ref.read(activeAthleteProvider);
-                if (athlete == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
-                  );
-                  return;
-                }
-                ref.read(cmjSessionProvider.notifier).reset();
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const CmjBaselineScreen()),
-                );
+                _launchCmjBaseline(context, l);
               },
             ),
             // Fatigue Test Option
@@ -1374,10 +1445,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   color: AppColors.brand.withAlpha(25),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.check_circle_outline, color: AppColors.brand),
+                child: const Icon(
+                  Icons.check_circle_outline,
+                  color: AppColors.brand,
+                ),
               ),
-              title: Text(l.fatigueTest, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: Text(l.dailyReadinessTracking, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(
+                l.fatigueTest,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l.dailyReadinessTracking,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 final athlete = ref.read(activeAthleteProvider);
@@ -1408,21 +1494,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 child: const Icon(Icons.timer_outlined, color: AppColors.brand),
               ),
-              title: Text(l.rsiDropJump, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              subtitle: Text(l.groundContactEfficiency, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              title: Text(
+                l.rsiDropJump,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                l.groundContactEfficiency,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
-                final athlete = ref.read(activeAthleteProvider);
-                if (athlete == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l.pleaseSelectAthleteFirst)),
-                  );
-                  return;
-                }
-                ref.read(rsiSessionProvider.notifier).reset();
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RsiTestScreen()),
-                );
+                _launchRsiTest(context, l);
               },
             ),
             const SizedBox(height: 16),
@@ -1433,12 +1521,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showAddAthleteToGroup() async {
-    final l = AppLocalizations.of(context)!;
     final activeGroup = ref.read(activeGroupProvider);
     if (activeGroup == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select a group first')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Please select a group first')));
       return;
     }
     final athlete = await showDialog<Athlete>(

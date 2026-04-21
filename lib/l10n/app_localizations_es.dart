@@ -571,5 +571,48 @@ class AppLocalizationsEs extends AppLocalizations {
   String get rsiScatterTitle => 'Dispersión RSI';
 
   @override
+  String get cmjBarChartTitle => 'Gráfico de Barras CMJ';
+
+  @override
   String get fullscreenChart => 'Pantalla completa';
+
+  @override
+  String get saveAll => 'Guardar todo';
+
+  @override
+  String get allBaselinesSaved => 'Todas las baselines guardadas';
+
+  @override
+  String saveAthleteBaseline(String name) {
+    return 'Guardar baseline de $name';
+  }
+
+  @override
+  String athleteJumpProgress(String name, int done) {
+    return '$name ($done/3)';
+  }
+
+  @override
+  String get pleaseSelectGroupFirst =>
+      'Selecciona un grupo con atletas primero';
+
+  @override
+  String recordDropJumpNumber(int number) {
+    return 'Grabar salto de caída #$number';
+  }
+
+  @override
+  String saveAthleteRsi(String name) {
+    return 'Guardar RSI de $name';
+  }
+
+  @override
+  String get allRsiTestsSaved => 'Todos los tests RSI guardados';
+
+  @override
+  String get rsiTestInstructions =>
+      'Graba hasta 3 saltos de caída para medir el RSI.\nMáximo 3 saltos permitidos.';
+
+  @override
+  String get averageRsiScore => 'PUNTUACIÓN RSI MEDIA';
 }

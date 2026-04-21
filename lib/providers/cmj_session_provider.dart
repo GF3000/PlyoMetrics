@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/athlete.dart';
+
 // ── In-memory result from a single jump analysis ──
 
 class JumpResult {
@@ -31,36 +33,90 @@ class JumpResult {
   }
 }
 
-// ── Session state ──
+// ── Per-athlete in-memory session ──
 
-class CmjSessionState {
+class AthleteSession {
+  final int athleteId;
+  final String athleteName;
   final List<JumpResult> jumps;
   final List<bool> outlierFlags;
   final double? averageHeightCm;
   final double? propagatedErrorCm;
   final bool canSave;
+  final bool saved;
 
-  const CmjSessionState({
+  const AthleteSession({
+    required this.athleteId,
+    required this.athleteName,
     this.jumps = const [],
     this.outlierFlags = const [],
     this.averageHeightCm,
     this.propagatedErrorCm,
     this.canSave = false,
+    this.saved = false,
   });
 
-  CmjSessionState copyWith({
+  AthleteSession copyWith({
     List<JumpResult>? jumps,
     List<bool>? outlierFlags,
     double? averageHeightCm,
     double? propagatedErrorCm,
     bool? canSave,
+    bool? saved,
   }) {
-    return CmjSessionState(
+    return AthleteSession(
+      athleteId: athleteId,
+      athleteName: athleteName,
       jumps: jumps ?? this.jumps,
       outlierFlags: outlierFlags ?? this.outlierFlags,
       averageHeightCm: averageHeightCm ?? this.averageHeightCm,
       propagatedErrorCm: propagatedErrorCm ?? this.propagatedErrorCm,
       canSave: canSave ?? this.canSave,
+      saved: saved ?? this.saved,
+    );
+  }
+
+  int get validJumpCount =>
+      outlierFlags.isEmpty ? 0 : outlierFlags.where((f) => !f).length;
+}
+
+// ── Session state ──
+
+class CmjSessionState {
+  final Map<int, AthleteSession> athleteSessions;
+  final List<AthleteSession> orderedSessions;
+  final int? activeAthleteId;
+
+  const CmjSessionState({
+    this.athleteSessions = const {},
+    this.orderedSessions = const [],
+    this.activeAthleteId,
+  });
+
+  AthleteSession? get activeSession =>
+      activeAthleteId != null ? athleteSessions[activeAthleteId] : null;
+
+  // Back-compat getters so existing call sites compile unchanged
+  List<JumpResult> get jumps => activeSession?.jumps ?? const [];
+  List<bool> get outlierFlags => activeSession?.outlierFlags ?? const [];
+  double? get averageHeightCm => activeSession?.averageHeightCm;
+  double? get propagatedErrorCm => activeSession?.propagatedErrorCm;
+  bool get canSave => activeSession?.canSave ?? false;
+
+  bool get isMultiAthlete => orderedSessions.length > 1;
+  bool get allSaved =>
+      orderedSessions.isNotEmpty && orderedSessions.every((s) => s.saved);
+  bool get anySaveable => orderedSessions.any((s) => s.canSave && !s.saved);
+
+  CmjSessionState copyWith({
+    Map<int, AthleteSession>? athleteSessions,
+    List<AthleteSession>? orderedSessions,
+    int? activeAthleteId,
+  }) {
+    return CmjSessionState(
+      athleteSessions: athleteSessions ?? this.athleteSessions,
+      orderedSessions: orderedSessions ?? this.orderedSessions,
+      activeAthleteId: activeAthleteId ?? this.activeAthleteId,
     );
   }
 }
@@ -71,31 +127,63 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
   @override
   CmjSessionState build() => const CmjSessionState();
 
+  void initWithAthletes(List<Athlete> athletes, {int? defaultAthleteId}) {
+    assert(athletes.isNotEmpty);
+    final sessions = <int, AthleteSession>{
+      for (final a in athletes)
+        a.id: AthleteSession(athleteId: a.id, athleteName: a.name),
+    };
+    final activeId =
+        defaultAthleteId != null && sessions.containsKey(defaultAthleteId)
+        ? defaultAthleteId
+        : athletes.first.id;
+    state = CmjSessionState(
+      athleteSessions: sessions,
+      orderedSessions: [for (final a in athletes) sessions[a.id]!],
+      activeAthleteId: activeId,
+    );
+  }
+
+  void setActiveAthlete(int athleteId) {
+    assert(state.athleteSessions.containsKey(athleteId));
+    state = state.copyWith(activeAthleteId: athleteId);
+  }
+
   void addJump(JumpResult result) {
-    final newJumps = [...state.jumps, result];
-    _recalculate(newJumps);
+    final id = state.activeAthleteId;
+    if (id == null) return;
+    final session = state.athleteSessions[id]!;
+    _recalculateForAthlete(id, [...session.jumps, result]);
   }
 
   void removeJump(int index) {
-    final newJumps = [...state.jumps]..removeAt(index);
-    _recalculate(newJumps);
+    final id = state.activeAthleteId;
+    if (id == null) return;
+    final session = state.athleteSessions[id]!;
+    final newJumps = [...session.jumps]..removeAt(index);
+    _recalculateForAthlete(id, newJumps);
+  }
+
+  void markSaved(int athleteId) {
+    final updated = state.athleteSessions[athleteId]!.copyWith(saved: true);
+    _replaceSession(athleteId, updated);
   }
 
   void reset() => state = const CmjSessionState();
 
-  void _recalculate(List<JumpResult> jumps) {
+  void _recalculateForAthlete(int athleteId, List<JumpResult> jumps) {
+    final current = state.athleteSessions[athleteId]!;
+
     if (jumps.isEmpty) {
-      state = CmjSessionState(
-        jumps: jumps,
-        outlierFlags: List.filled(jumps.length, false),
+      _replaceSession(
+        athleteId,
+        current.copyWith(jumps: jumps, outlierFlags: [], canSave: false),
       );
       return;
     }
 
     final flags = List.filled(jumps.length, false);
 
-    // Outlier detection: a jump is an outlier if its difference from the
-    // mean of the OTHER jumps exceeds max(10% of its height, 2 * deltaH).
     if (jumps.length >= 2) {
       for (int i = 0; i < jumps.length; i++) {
         final others = <double>[
@@ -104,41 +192,65 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
         ];
         final meanOthers = others.reduce((a, b) => a + b) / others.length;
         final diff = (jumps[i].heightCm - meanOthers).abs();
-        final threshold = max(0.10 * jumps[i].heightCm, 2.0 * jumps[i].deltaHCm);
+        final threshold = max(
+          0.10 * jumps[i].heightCm,
+          2.0 * jumps[i].deltaHCm,
+        );
         flags[i] = diff > threshold;
       }
     }
 
-    // Average excluding outliers
     final valid = <JumpResult>[
       for (int i = 0; i < jumps.length; i++)
         if (!flags[i]) jumps[i],
     ];
 
     if (valid.isEmpty) {
-      state = CmjSessionState(jumps: jumps, outlierFlags: flags);
+      _replaceSession(
+        athleteId,
+        current.copyWith(jumps: jumps, outlierFlags: flags, canSave: false),
+      );
       return;
     }
 
     final avgHeight =
         valid.map((j) => j.heightCm).reduce((a, b) => a + b) / valid.length;
-
-    // Propagated error: sqrt(sum(deltaH^2)) / N
     final propagatedError =
-        sqrt(valid.map((j) => j.deltaHCm * j.deltaHCm).reduce((a, b) => a + b)) /
-            valid.length;
+        sqrt(
+          valid.map((j) => j.deltaHCm * j.deltaHCm).reduce((a, b) => a + b),
+        ) /
+        valid.length;
 
-    state = CmjSessionState(
-      jumps: jumps,
-      outlierFlags: flags,
-      averageHeightCm: avgHeight,
-      propagatedErrorCm: propagatedError,
-      canSave: valid.length >= 1,
+    _replaceSession(
+      athleteId,
+      AthleteSession(
+        athleteId: athleteId,
+        athleteName: current.athleteName,
+        jumps: jumps,
+        outlierFlags: flags,
+        averageHeightCm: avgHeight,
+        propagatedErrorCm: propagatedError,
+        canSave: true,
+        saved: current.saved,
+      ),
+    );
+  }
+
+  void _replaceSession(int athleteId, AthleteSession updated) {
+    final newMap = Map<int, AthleteSession>.from(state.athleteSessions)
+      ..[athleteId] = updated;
+    final newOrdered = [
+      for (final s in state.orderedSessions)
+        if (s.athleteId == athleteId) updated else s,
+    ];
+    state = state.copyWith(
+      athleteSessions: newMap,
+      orderedSessions: newOrdered,
     );
   }
 }
 
 final cmjSessionProvider =
     NotifierProvider<CmjSessionNotifier, CmjSessionState>(
-  CmjSessionNotifier.new,
-);
+      CmjSessionNotifier.new,
+    );

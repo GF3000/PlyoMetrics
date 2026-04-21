@@ -567,5 +567,48 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rsiScatterTitle => 'RSI Scatter';
 
   @override
+  String get cmjBarChartTitle => 'CMJ Bar Chart';
+
+  @override
   String get fullscreenChart => 'Fullscreen';
+
+  @override
+  String get saveAll => 'Save All';
+
+  @override
+  String get allBaselinesSaved => 'All baselines saved';
+
+  @override
+  String saveAthleteBaseline(String name) {
+    return 'Save $name\'s Baseline';
+  }
+
+  @override
+  String athleteJumpProgress(String name, int done) {
+    return '$name ($done/3)';
+  }
+
+  @override
+  String get pleaseSelectGroupFirst =>
+      'Please select a group with athletes first';
+
+  @override
+  String recordDropJumpNumber(int number) {
+    return 'Record Drop Jump #$number';
+  }
+
+  @override
+  String saveAthleteRsi(String name) {
+    return 'Save $name\'s RSI';
+  }
+
+  @override
+  String get allRsiTestsSaved => 'All RSI tests saved';
+
+  @override
+  String get rsiTestInstructions =>
+      'Record up to 3 drop jumps to measure RSI performance.\nMaximum 3 jumps allowed.';
+
+  @override
+  String get averageRsiScore => 'AVERAGE RSI SCORE';
 }

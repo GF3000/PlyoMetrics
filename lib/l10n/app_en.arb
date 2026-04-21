@@ -303,5 +303,39 @@
   "flightTimeAxisMs": "Air Time (ms)",
 
   "rsiScatterTitle": "RSI Scatter",
-  "fullscreenChart": "Fullscreen"
+  "cmjBarChartTitle": "CMJ Bar Chart",
+  "fullscreenChart": "Fullscreen",
+
+  "saveAll": "Save All",
+  "allBaselinesSaved": "All baselines saved",
+  "saveAthleteBaseline": "Save {name}'s Baseline",
+  "@saveAthleteBaseline": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "athleteJumpProgress": "{name} ({done}/3)",
+  "@athleteJumpProgress": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "done": { "type": "int" }
+    }
+  },
+  "pleaseSelectGroupFirst": "Please select a group with athletes first",
+
+  "recordDropJumpNumber": "Record Drop Jump #{number}",
+  "@recordDropJumpNumber": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "saveAthleteRsi": "Save {name}'s RSI",
+  "@saveAthleteRsi": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "allRsiTestsSaved": "All RSI tests saved",
+  "rsiTestInstructions": "Record up to 3 drop jumps to measure RSI performance.\nMaximum 3 jumps allowed.",
+  "averageRsiScore": "AVERAGE RSI SCORE"
 }

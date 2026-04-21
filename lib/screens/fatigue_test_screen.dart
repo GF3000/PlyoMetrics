@@ -152,28 +152,54 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                       ),
                     ),
                     onPressed: () async {
-                      final athlete = ref.read(activeAthleteProvider)!;
-                      await IsarService.instance.updateAthleteBaseline(
-                        athlete.id,
-                        newHeight,
-                      );
-                      final updated = await IsarService
-                          .instance.db.athletes
-                          .get(athlete.id);
-                      if (updated != null) {
-                        ref.read(activeAthleteProvider.notifier).state =
-                            updated;
-                      }
-                      if (mounted) {
-                        setState(() {
-                          _fatiguePercent =
-                              ((newHeight - _jumpResult!.heightCm) /
-                                      newHeight) *
-                                  100;
-                        });
-                        Navigator.of(ctx).pop();
-                      }
-                    },
+                       final dialogNav = Navigator.of(ctx);
+                       final screenNav = Navigator.of(context);
+                       final athlete = ref.read(activeAthleteProvider)!;
+                       await IsarService.instance.updateAthleteBaseline(
+                         athlete.id,
+                         newHeight,
+                       );
+                       final updated = await IsarService
+                           .instance.db.athletes
+                           .get(athlete.id);
+                       if (updated != null) {
+                         ref.read(activeAthleteProvider.notifier).state =
+                             updated;
+                       }
+
+                       // Save two jump test records: CMJ Baseline and Fatigue (0% fatigue)
+                       final timestamp = DateTime.now();
+                       final test1 = JumpTest()
+                         ..athleteId = athlete.id
+                         ..testType = 'cmj_baseline'
+                         ..timestamp = timestamp
+                         ..takeoffFrame = _jumpResult!.takeoffFrame
+                         ..landingFrame = _jumpResult!.landingFrame
+                         ..fps = _jumpResult!.fps
+                         ..flightTimeMs = _jumpResult!.flightTimeMs
+                         ..heightCm = newHeight
+                         ..deltaHCm = _jumpResult!.deltaHCm
+                         ..baselineAtTest = null;
+
+                       final test2 = JumpTest()
+                         ..athleteId = athlete.id
+                         ..testType = 'fatigue'
+                         ..timestamp = timestamp
+                         ..takeoffFrame = _jumpResult!.takeoffFrame
+                         ..landingFrame = _jumpResult!.landingFrame
+                         ..fps = _jumpResult!.fps
+                         ..flightTimeMs = _jumpResult!.flightTimeMs
+                         ..heightCm = _jumpResult!.heightCm
+                         ..deltaHCm = _jumpResult!.deltaHCm
+                         ..baselineAtTest = newHeight;
+
+                       await ref.read(isarServiceProvider).saveJumpTests([test1, test2]);
+
+                       if (mounted) {
+                         dialogNav.pop(); // Close dialog
+                         screenNav.pop(); // Return to Dashboard
+                       }
+                     },
                     child: Text(
                       l.updateBaseline,
                       style: TextStyle(

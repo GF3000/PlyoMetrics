@@ -16,7 +16,7 @@ class NeonModeToggle extends ConsumerWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -62,7 +62,7 @@ class _ToggleItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isActive ? AppColors.brand.withOpacity(0.15) : Colors.transparent,
+          color: isActive ? AppColors.brand.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(

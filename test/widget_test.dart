@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:plyometrics/core/theme.dart';
-import 'package:plyometrics/screens/dashboard_screen.dart';
-import 'package:plyometrics/providers/management_providers.dart';
-import 'package:plyometrics/models/athlete_group.dart';
-import 'package:plyometrics/models/athlete.dart';
+import 'package:PlyoMetrics/core/theme.dart';
+import 'package:PlyoMetrics/screens/dashboard_screen.dart';
+import 'package:PlyoMetrics/providers/management_providers.dart';
+import 'package:PlyoMetrics/models/athlete_group.dart';
+import 'package:PlyoMetrics/models/athlete.dart';
 
 void main() {
   testWidgets('Dashboard renders title and empty state', (tester) async {

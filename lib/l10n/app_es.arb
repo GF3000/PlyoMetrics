@@ -191,5 +191,39 @@
   "flightTimeAxisMs": "T. Vuelo (ms)",
 
   "rsiScatterTitle": "Dispersión RSI",
-  "fullscreenChart": "Pantalla completa"
+  "cmjBarChartTitle": "Gráfico de Barras CMJ",
+  "fullscreenChart": "Pantalla completa",
+
+  "saveAll": "Guardar todo",
+  "allBaselinesSaved": "Todas las baselines guardadas",
+  "saveAthleteBaseline": "Guardar baseline de {name}",
+  "@saveAthleteBaseline": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "athleteJumpProgress": "{name} ({done}/3)",
+  "@athleteJumpProgress": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "done": { "type": "int" }
+    }
+  },
+  "pleaseSelectGroupFirst": "Selecciona un grupo con atletas primero",
+
+  "recordDropJumpNumber": "Grabar salto de caída #{number}",
+  "@recordDropJumpNumber": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "saveAthleteRsi": "Guardar RSI de {name}",
+  "@saveAthleteRsi": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "allRsiTestsSaved": "Todos los tests RSI guardados",
+  "rsiTestInstructions": "Graba hasta 3 saltos de caída para medir el RSI.\nMáximo 3 saltos permitidos.",
+  "averageRsiScore": "PUNTUACIÓN RSI MEDIA"
 }

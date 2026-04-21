@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
+import '../models/athlete.dart';
 
 // ── In-memory result from a single RSI drop jump analysis ──
 
@@ -96,25 +99,62 @@ class RsiJumpResult {
   return (label: 'Elite', color: const Color(0xFF4ADE80));
 }
 
+// ── Per-athlete RSI session ──
+
+class RsiAthleteSession {
+  final int athleteId;
+  final String athleteName;
+  final List<RsiJumpResult> jumps;
+  final double? averageRsi;
+  final double? averageDeltaRsi;
+  final bool canSave;
+  final bool saved;
+
+  const RsiAthleteSession({
+    required this.athleteId,
+    required this.athleteName,
+    this.jumps = const [],
+    this.averageRsi,
+    this.averageDeltaRsi,
+    this.canSave = false,
+    this.saved = false,
+  });
+}
+
 // ── Session state ──
 
 class RsiSessionState {
   final double dropHeightCm;
-  final RsiJumpResult? result;
+  final Map<int, RsiAthleteSession> athleteSessions;
+  final List<RsiAthleteSession> orderedSessions;
+  final int? activeAthleteId;
 
   const RsiSessionState({
     this.dropHeightCm = 30.0,
-    this.result,
+    this.athleteSessions = const {},
+    this.orderedSessions = const [],
+    this.activeAthleteId,
   });
+
+  RsiAthleteSession? get activeSession =>
+      activeAthleteId != null ? athleteSessions[activeAthleteId] : null;
+
+  List<RsiJumpResult> get jumps => activeSession?.jumps ?? const [];
+  bool get isMultiAthlete => orderedSessions.length > 1;
+  bool get canSave => activeSession?.canSave ?? false;
+  bool get anySaveable => orderedSessions.any((s) => s.canSave && !s.saved);
 
   RsiSessionState copyWith({
     double? dropHeightCm,
-    RsiJumpResult? result,
-    bool clearResult = false,
+    Map<int, RsiAthleteSession>? athleteSessions,
+    List<RsiAthleteSession>? orderedSessions,
+    int? activeAthleteId,
   }) {
     return RsiSessionState(
       dropHeightCm: dropHeightCm ?? this.dropHeightCm,
-      result: clearResult ? null : (result ?? this.result),
+      athleteSessions: athleteSessions ?? this.athleteSessions,
+      orderedSessions: orderedSessions ?? this.orderedSessions,
+      activeAthleteId: activeAthleteId ?? this.activeAthleteId,
     );
   }
 }
@@ -125,18 +165,119 @@ class RsiSessionNotifier extends Notifier<RsiSessionState> {
   @override
   RsiSessionState build() => const RsiSessionState();
 
+  void initWithAthletes(List<Athlete> athletes, {int? defaultAthleteId}) {
+    assert(athletes.isNotEmpty);
+    final sessions = <int, RsiAthleteSession>{
+      for (final a in athletes)
+        a.id: RsiAthleteSession(athleteId: a.id, athleteName: a.name),
+    };
+    final activeId =
+        defaultAthleteId != null && sessions.containsKey(defaultAthleteId)
+        ? defaultAthleteId
+        : athletes.first.id;
+    state = RsiSessionState(
+      athleteSessions: sessions,
+      orderedSessions: [for (final a in athletes) sessions[a.id]!],
+      activeAthleteId: activeId,
+    );
+  }
+
+  void setActiveAthlete(int athleteId) {
+    assert(state.athleteSessions.containsKey(athleteId));
+    state = state.copyWith(activeAthleteId: athleteId);
+  }
+
   void setDropHeight(double cm) {
     state = state.copyWith(dropHeightCm: cm);
   }
 
-  void setResult(RsiJumpResult result) {
-    state = state.copyWith(result: result);
+  void addJump(RsiJumpResult result) {
+    final id = state.activeAthleteId;
+    if (id == null) return;
+    final session = state.athleteSessions[id]!;
+    _recalculateForAthlete(id, [...session.jumps, result]);
+  }
+
+  void removeJump(int index) {
+    final id = state.activeAthleteId;
+    if (id == null) return;
+    final session = state.athleteSessions[id]!;
+    final newJumps = [...session.jumps]..removeAt(index);
+    _recalculateForAthlete(id, newJumps);
+  }
+
+  void markSaved(int athleteId) {
+    final current = state.athleteSessions[athleteId]!;
+    _replaceSession(
+      athleteId,
+      RsiAthleteSession(
+        athleteId: current.athleteId,
+        athleteName: current.athleteName,
+        jumps: current.jumps,
+        averageRsi: current.averageRsi,
+        averageDeltaRsi: current.averageDeltaRsi,
+        canSave: current.canSave,
+        saved: true,
+      ),
+    );
   }
 
   void reset() => state = const RsiSessionState();
+
+  void _recalculateForAthlete(int athleteId, List<RsiJumpResult> jumps) {
+    final current = state.athleteSessions[athleteId]!;
+
+    if (jumps.isEmpty) {
+      _replaceSession(
+        athleteId,
+        RsiAthleteSession(
+          athleteId: athleteId,
+          athleteName: current.athleteName,
+          jumps: const [],
+          canSave: false,
+          saved: current.saved,
+        ),
+      );
+      return;
+    }
+
+    final avgRsi =
+        jumps.map((j) => j.rsiScore).reduce((a, b) => a + b) / jumps.length;
+    final avgDelta =
+        sqrt(
+          jumps.map((j) => j.deltaRsi * j.deltaRsi).reduce((a, b) => a + b),
+        ) /
+        jumps.length;
+
+    _replaceSession(
+      athleteId,
+      RsiAthleteSession(
+        athleteId: athleteId,
+        athleteName: current.athleteName,
+        jumps: jumps,
+        averageRsi: avgRsi,
+        averageDeltaRsi: avgDelta,
+        canSave: true,
+        saved: current.saved,
+      ),
+    );
+  }
+
+  void _replaceSession(int athleteId, RsiAthleteSession updated) {
+    final newMap = Map<int, RsiAthleteSession>.from(state.athleteSessions)
+      ..[athleteId] = updated;
+    final newOrdered = [
+      for (final s in state.orderedSessions)
+        if (s.athleteId == athleteId) updated else s,
+    ];
+    state = state.copyWith(
+      athleteSessions: newMap,
+      orderedSessions: newOrdered,
+    );
+  }
 }
 
 final rsiSessionProvider =
     NotifierProvider<RsiSessionNotifier, RsiSessionState>(
-  RsiSessionNotifier.new,
-);
+      RsiSessionNotifier.new,
+    );
