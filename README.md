@@ -172,6 +172,26 @@ keyPassword=...
 
 Do not commit `key.properties` or keystore files. Without this file, release builds fall back to the debug signing config so local portfolio demos remain easy to run.
 
+### Android APK releases with GitHub Actions
+
+The Android release workflow builds a signed release APK and publishes it to a GitHub Release.
+
+Configure these repository secrets before running the workflow:
+
+- `ANDROID_KEYSTORE_BASE64`: base64-encoded Android keystore file.
+- `ANDROID_KEYSTORE_PASSWORD`: keystore password.
+- `ANDROID_KEY_ALIAS`: key alias.
+- `ANDROID_KEY_PASSWORD`: key password.
+
+Create a release by pushing a semantic version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+You can also run the `Android Release` workflow manually and provide the release tag name. The workflow fails if any signing secret is missing so unsigned or debug-signed APKs are not published.
+
 ## Data and privacy
 
 PlyoMetrics is local-first. Athlete profiles and test results are stored on the device using Isar. The app does not require an account or remote backend for the current showcase flow.
