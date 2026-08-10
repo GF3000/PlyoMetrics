@@ -194,7 +194,7 @@ class CmjBaselineScreen extends ConsumerWidget {
 
     if (athleteSession.validJumpCount < 2) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.cmjBaselineInstructions)),
+        SnackBar(content: Text(l.notEnoughValidJumpsToSave)),
       );
       return;
     }

@@ -52,6 +52,7 @@
   "saveMeasurement": "Guardar Medición",
   "incompleteBaseline": "Referencia Incompleta",
   "incompleteBaselineMessage": "Dos saltos válidos son suficientes para guardar, pero tres mejoran el filtrado de anomalías. ¿Seguro que quieres guardar ahora?",
+  "notEnoughValidJumpsToSave": "Necesitas al menos 2 saltos válidos para guardar la referencia.",
   "saveAnyway": "Guardar de Todos Modos",
   "noAthleteSelected": "Ningún atleta seleccionado",
   "createGroupAndAthleteOnboarding": "Crea un grupo y agrega atletas para desbloquear CMJ, fatiga, RSI, asimetría y evolución.",

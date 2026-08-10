@@ -368,6 +368,12 @@ abstract class AppLocalizations {
   /// **'Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?'**
   String get incompleteBaselineMessage;
 
+  /// No description provided for @notEnoughValidJumpsToSave.
+  ///
+  /// In en, this message translates to:
+  /// **'You need at least 2 valid jumps to save the baseline.'**
+  String get notEnoughValidJumpsToSave;
+
   /// No description provided for @saveAnyway.
   ///
   /// In en, this message translates to:

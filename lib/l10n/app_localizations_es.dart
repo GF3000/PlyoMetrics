@@ -153,6 +153,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Dos saltos válidos son suficientes para guardar, pero tres mejoran el filtrado de anomalías. ¿Seguro que quieres guardar ahora?';
 
   @override
+  String get notEnoughValidJumpsToSave =>
+      'Necesitas al menos 2 saltos válidos para guardar la referencia.';
+
+  @override
   String get saveAnyway => 'Guardar de Todos Modos';
 
   @override

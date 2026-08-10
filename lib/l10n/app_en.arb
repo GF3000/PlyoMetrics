@@ -62,6 +62,7 @@
   "saveMeasurement": "Save Measurement",
   "incompleteBaseline": "Incomplete Baseline",
   "incompleteBaselineMessage": "Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?",
+  "notEnoughValidJumpsToSave": "You need at least 2 valid jumps to save the baseline.",
   "saveAnyway": "Save Anyway",
   "noAthleteSelected": "No athlete selected",
   "createGroupAndAthleteOnboarding": "Create a group and add athletes to unlock CMJ, fatigue, RSI, asymmetry, and evolution tracking.",

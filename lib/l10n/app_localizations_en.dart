@@ -151,6 +151,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?';
 
   @override
+  String get notEnoughValidJumpsToSave =>
+      'You need at least 2 valid jumps to save the baseline.';
+
+  @override
   String get saveAnyway => 'Save Anyway';
 
   @override
