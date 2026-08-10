@@ -182,18 +182,18 @@ class JumpMetricsService {
   }) {
     _validateFps(fps);
     final frameDuration = 1 / fps;
-    final minContact = contactTimeSec + frameDuration;
-    final maxContact = contactTimeSec - frameDuration;
+    final minContact = contactTimeSec - frameDuration;
+    final maxContact = contactTimeSec + frameDuration;
     final minFlight = flightTimeSec - frameDuration;
     final maxFlight = flightTimeSec + frameDuration;
-    if (maxContact <= 0 || minFlight <= 0) {
+    if (minContact <= 0 || minFlight <= 0) {
       return 0;
     }
 
     final minHeight = jumpHeightMeters(minFlight);
     final maxHeight = jumpHeightMeters(maxFlight);
-    final minRsi = minHeight / minContact;
-    final maxRsi = maxHeight / maxContact;
+    final minRsi = minHeight / maxContact;
+    final maxRsi = maxHeight / minContact;
     return (maxRsi - minRsi) / 2;
   }
 
