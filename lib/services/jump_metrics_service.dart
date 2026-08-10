@@ -229,7 +229,7 @@ class JumpMetricsService {
         valid.map((jump) => jump.heightCm).reduce((a, b) => a + b) /
             valid.length;
     final propagatedError =
-        rootMeanSquare(valid.map((jump) => jump.deltaHeightCm));
+        propagatedAverageError(valid.map((jump) => jump.deltaHeightCm));
     return JumpSummary(
       outlierFlags: flags,
       averageHeightCm: averageHeight,
@@ -257,7 +257,7 @@ class JumpMetricsService {
     return flags;
   }
 
-  static double rootMeanSquare(Iterable<double> values) {
+  static double propagatedAverageError(Iterable<double> values) {
     final list = values.toList();
     if (list.isEmpty) {
       throw ArgumentError.value(values, 'values', 'Must not be empty.');

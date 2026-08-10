@@ -228,7 +228,7 @@ class RsiSessionNotifier extends Notifier<RsiSessionState> {
 
     final avgRsi =
         jumps.map((j) => j.rsiScore).reduce((a, b) => a + b) / jumps.length;
-    final avgDelta = JumpMetricsService.rootMeanSquare(
+    final avgDelta = JumpMetricsService.propagatedAverageError(
       jumps.map((jump) => jump.deltaRsi),
     );
 
