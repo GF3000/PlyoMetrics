@@ -139,6 +139,21 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                                   color: AppColors.textSecondary,
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
+                                child: Text(
+                                  l.highSpeedVideoTip,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textTertiary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                   ),

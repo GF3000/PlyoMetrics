@@ -7,6 +7,7 @@ import '../models/jump_test.dart';
 import '../providers/cmj_session_provider.dart';
 import '../providers/management_providers.dart';
 import '../services/isar_service.dart';
+import '../services/jump_metrics_service.dart';
 import 'cmj_video_trim_screen.dart';
 
 class FatigueTestScreen extends ConsumerStatefulWidget {
@@ -51,7 +52,10 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
 
     setState(() {
       _jumpResult = result;
-      _fatiguePercent = ((baseline - result.heightCm) / baseline) * 100;
+      _fatiguePercent = JumpMetricsService.fatigueLossPercent(
+        baselineHeightCm: baseline,
+        currentHeightCm: result.heightCm,
+      );
     });
 
     // PB detection

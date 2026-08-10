@@ -23,7 +23,9 @@ class VideoService {
       final logText = logs.map((l) => l.getMessage()).join('\n');
       developer.log('getFramerate: FFprobe returned null info.\nLogs:\n$logText',
           name: _tag, level: 900);
-      throw Exception('Could not read video metadata. Check console logs.');
+      throw Exception(
+        'Could not read this video. Try exporting it as MP4 or selecting a shorter high-FPS clip.',
+      );
     }
 
     developer.log(
@@ -93,8 +95,11 @@ class VideoService {
           final logText = logs.map((l) => l.getMessage()).join('\n');
           developer.log('extractFrames: FAILED.\nFull FFmpeg log:\n$logText',
               name: _tag, level: 900);
-          completer.completeError(Exception(
-              'Frame extraction failed (rc=${returnCode?.getValue()}). See console logs.'));
+          completer.completeError(
+            Exception(
+              'Frame extraction failed. Try a shorter MP4 clip recorded at 60 FPS or higher.',
+            ),
+          );
         }
       },
       (log) {

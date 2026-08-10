@@ -135,7 +135,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get cmjBaselineInstructions =>
-      'Graba al menos 1 salto para establecer una referencia.\nMáximo 3 saltos permitidos.';
+      'Graba al menos 2 saltos para establecer una referencia fiable.\nMáximo 3 saltos permitidos.';
 
   @override
   String recordJumpNumber(int number) {
@@ -150,13 +150,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get incompleteBaselineMessage =>
-      'Se recomienda grabar al menos 3 saltos para establecer una referencia precisa y filtrar anomalías. ¿Estás seguro de que deseas guardar?';
+      'Dos saltos válidos son suficientes para guardar, pero tres mejoran el filtrado de anomalías. ¿Seguro que quieres guardar ahora?';
 
   @override
   String get saveAnyway => 'Guardar de Todos Modos';
 
   @override
   String get noAthleteSelected => 'Ningún atleta seleccionado';
+
+  @override
+  String get createGroupAndAthleteOnboarding =>
+      'Crea un grupo y agrega atletas para desbloquear CMJ, fatiga, RSI, asimetría y evolución.';
 
   @override
   String jumpNumber(int number) {
@@ -184,10 +188,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get pickVideoToAnalyze => 'Selecciona un video para analizar';
 
   @override
+  String get highSpeedVideoTip =>
+      'Para una mayor precisión, usa un video corto grabado a 60 FPS o más. La grabación integrada está planificada; importar desde galería mantiene el análisis reproducible por ahora.';
+
+  @override
   String get analyzeJumpFromHere => 'Analizar Salto desde Aquí';
 
   @override
   String get pickVideoFromGallery => 'Seleccionar Video de la Galería';
+
+  @override
+  String get cmjFrameSelectionInstructions =>
+      'Avanza fotograma a fotograma. Marca el primer fotograma donde ambos pies despegan del suelo y luego el primer fotograma de aterrizaje.';
+
+  @override
+  String get rsiFrameSelectionInstructions =>
+      'Avanza fotograma a fotograma. Marca el primer contacto, el despegue y el primer aterrizaje después del vuelo.';
+
+  @override
+  String get videoExtractionHelp =>
+      'La app no pudo extraer fotogramas de este clip. Prueba con un MP4 más corto grabado a 60 FPS o más e inicia el análisis cerca del salto.';
 
   @override
   String get landingFrameAfterTakeoff =>

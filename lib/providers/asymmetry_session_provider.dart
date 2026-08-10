@@ -1,8 +1,7 @@
-import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/athlete.dart';
+import '../services/jump_metrics_service.dart';
 import 'cmj_session_provider.dart';
 
 // ── Per-leg session ──
@@ -200,33 +199,23 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
   ) {
     final current = state.athleteSessions[athleteId]!;
 
-    final flags = _computeOutlierFlags(jumps);
-    final valid = [
-      for (int i = 0; i < jumps.length; i++)
-        if (!flags[i]) jumps[i],
-    ];
+    final summary = JumpMetricsService.summarizeJumps([
+      for (final jump in jumps)
+        JumpSample(heightCm: jump.heightCm, deltaHeightCm: jump.deltaHCm),
+    ]);
 
     AsymmetryLegSession updatedLeg;
-    if (valid.isEmpty) {
+    if (summary.averageHeightCm == null || summary.propagatedErrorCm == null) {
       updatedLeg = AsymmetryLegSession(
         jumps: jumps,
-        outlierFlags: flags,
+        outlierFlags: summary.outlierFlags,
       );
     } else {
-      final avg =
-          valid.map((j) => j.heightCm).reduce((a, b) => a + b) / valid.length;
-      final err =
-          sqrt(
-            valid
-                .map((j) => j.deltaHCm * j.deltaHCm)
-                .reduce((a, b) => a + b),
-          ) /
-          valid.length;
       updatedLeg = AsymmetryLegSession(
         jumps: jumps,
-        outlierFlags: flags,
-        averageHeightCm: avg,
-        propagatedErrorCm: err,
+        outlierFlags: summary.outlierFlags,
+        averageHeightCm: summary.averageHeightCm,
+        propagatedErrorCm: summary.propagatedErrorCm,
       );
     }
 
@@ -238,9 +227,12 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
     final leftAvg = newLeft.averageHeightCm;
     final rightAvg = newRight.averageHeightCm;
     if (leftAvg != null && rightAvg != null) {
-      final maxVal = max(leftAvg, rightAvg);
-      asymmetry = (rightAvg - leftAvg) / maxVal * 100;
-      stronger = rightAvg >= leftAvg ? 'right' : 'left';
+      final metrics = JumpMetricsService.asymmetry(
+        leftHeightCm: leftAvg,
+        rightHeightCm: rightAvg,
+      );
+      asymmetry = metrics.percent;
+      stronger = metrics.strongerLeg;
     }
 
     final canSave = leftAvg != null && rightAvg != null;
@@ -259,26 +251,6 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
         saved: current.saved,
       ),
     );
-  }
-
-  List<bool> _computeOutlierFlags(List<JumpResult> jumps) {
-    final flags = List.filled(jumps.length, false);
-    if (jumps.length >= 2) {
-      for (int i = 0; i < jumps.length; i++) {
-        final others = <double>[
-          for (int j = 0; j < jumps.length; j++)
-            if (j != i) jumps[j].heightCm,
-        ];
-        final meanOthers = others.reduce((a, b) => a + b) / others.length;
-        final diff = (jumps[i].heightCm - meanOthers).abs();
-        final threshold = max(
-          0.10 * jumps[i].heightCm,
-          2.0 * jumps[i].deltaHCm,
-        );
-        flags[i] = diff > threshold;
-      }
-    }
-    return flags;
   }
 
   void _replaceSession(int athleteId, AsymmetryAthleteSession updated) {

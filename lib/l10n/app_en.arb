@@ -52,7 +52,7 @@
   "dailyReadinessTracking": "Daily readiness tracking",
   "rsiDropJump": "RSI Drop Jump",
 
-  "cmjBaselineInstructions": "Record at least 1 jump to establish a baseline.\nMaximum 3 jumps allowed.",
+  "cmjBaselineInstructions": "Record at least 2 jumps to establish a reliable baseline.\nMaximum 3 jumps allowed.",
   "recordJumpNumber": "Record Jump #{number}",
   "@recordJumpNumber": {
     "placeholders": {
@@ -61,9 +61,10 @@
   },
   "saveMeasurement": "Save Measurement",
   "incompleteBaseline": "Incomplete Baseline",
-  "incompleteBaselineMessage": "It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?",
+  "incompleteBaselineMessage": "Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?",
   "saveAnyway": "Save Anyway",
   "noAthleteSelected": "No athlete selected",
+  "createGroupAndAthleteOnboarding": "Create a group and add athletes to unlock CMJ, fatigue, RSI, asymmetry, and evolution tracking.",
   "jumpNumber": "Jump #{number}",
   "@jumpNumber": {
     "placeholders": {
@@ -83,8 +84,12 @@
 
   "selectJumpMoment": "Select Jump Moment",
   "pickVideoToAnalyze": "Pick a video to analyze",
+  "highSpeedVideoTip": "For best accuracy, use a short video recorded at 60 FPS or higher. In-app recording is planned; gallery import keeps the analysis reproducible for now.",
   "analyzeJumpFromHere": "Analyze Jump from Here",
   "pickVideoFromGallery": "Pick Video from Gallery",
+  "cmjFrameSelectionInstructions": "Step frame by frame. Mark the first frame where both feet leave the ground, then the first frame where the athlete lands.",
+  "rsiFrameSelectionInstructions": "Step frame by frame. Mark first ground contact, takeoff, and the first landing frame after flight.",
+  "videoExtractionHelp": "The app could not extract frames from this clip. Try a shorter MP4 recorded at 60 FPS or higher, then start the analysis close to the jump.",
 
   "landingFrameAfterTakeoff": "Landing frame must be after takeoff frame",
   "framesInOrder": "Frames must be in order: Landing 1 < Takeoff < Landing 2",

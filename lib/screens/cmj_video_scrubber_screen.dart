@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import '../core/theme.dart';
 import '../providers/cmj_session_provider.dart';
 import '../providers/rsi_session_provider.dart';
+import '../services/jump_metrics_service.dart';
 import '../services/video_service.dart';
 
 enum ScrubberMode { cmj, rsi }
@@ -123,11 +124,10 @@ class _CmjVideoScrubberScreenState
         });
       }
     } catch (e, stackTrace) {
-      developer.log('Extraction FAILED: $e\n$stackTrace',
-          name: tag, level: 900);
+      developer.log('Extraction FAILED: $e\n$stackTrace', name: tag, level: 900);
       if (mounted) {
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = AppLocalizations.of(context)!.videoExtractionHelp;
           _isExtracting = false;
         });
       }
@@ -200,20 +200,19 @@ class _CmjVideoScrubberScreenState
       return;
     }
 
-    final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
-    final flightTimeMs = flightTimeSec * 1000;
-    const g = 9.81;
-    final heightMeters = g * flightTimeSec * flightTimeSec / 8;
-    final heightCm = heightMeters * 100;
-    final deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+    final metrics = JumpMetricsService.cmjFromFrames(
+      takeoffFrame: _takeoffFrame!,
+      landingFrame: _landingFrame!,
+      fps: _fps,
+    );
 
     final result = JumpResult(
       takeoffFrame: _takeoffFrame!,
       landingFrame: _landingFrame!,
       fps: _fps,
-      flightTimeMs: flightTimeMs,
-      heightCm: heightCm,
-      deltaHCm: deltaHCm,
+      flightTimeMs: metrics.flightTimeMs,
+      heightCm: metrics.heightCm,
+      deltaHCm: metrics.deltaHeightCm,
       videoPath: widget.videoPath,
     );
 
@@ -404,26 +403,30 @@ class _CmjVideoScrubberScreenState
           _landing1Frame! < _takeoffFrame! &&
           _takeoffFrame! < _landingFrame!;
       if (hasResults) {
-        const g = 9.81;
-        final contactSec = (_takeoffFrame! - _landing1Frame!) / _fps;
-        final flightSec = (_landingFrame! - _takeoffFrame!) / _fps;
-        contactTimeMs = contactSec * 1000;
-        flightTimeMs = flightSec * 1000;
-        final heightMeters = g * flightSec * flightSec / 8;
-        heightCm = heightMeters * 100;
-        rsiScore = heightMeters / contactSec;
+        final metrics = JumpMetricsService.rsiFromFrames(
+          landing1Frame: _landing1Frame!,
+          takeoffFrame: _takeoffFrame!,
+          landing2Frame: _landingFrame!,
+          fps: _fps,
+        );
+        contactTimeMs = metrics.contactTimeMs;
+        flightTimeMs = metrics.flightTimeMs;
+        heightCm = metrics.heightCm;
+        rsiScore = metrics.rsiScore;
       }
     } else {
       hasResults = _takeoffFrame != null &&
           _landingFrame != null &&
           _landingFrame! > _takeoffFrame!;
       if (hasResults) {
-        final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
-        flightTimeMs = flightTimeSec * 1000;
-        const g = 9.81;
-        final heightMeters = g * flightTimeSec * flightTimeSec / 8;
-        heightCm = heightMeters * 100;
-        deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+        final metrics = JumpMetricsService.cmjFromFrames(
+          takeoffFrame: _takeoffFrame!,
+          landingFrame: _landingFrame!,
+          fps: _fps,
+        );
+        flightTimeMs = metrics.flightTimeMs;
+        heightCm = metrics.heightCm;
+        deltaHCm = metrics.deltaHeightCm;
       }
     }
 
@@ -570,6 +573,18 @@ class _CmjVideoScrubberScreenState
           ),
           child: Column(
             children: [
+              Text(
+                isRsi
+                    ? l.rsiFrameSelectionInstructions
+                    : l.cmjFrameSelectionInstructions,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 12),
               // Mark buttons
               if (isRsi)
                 Row(

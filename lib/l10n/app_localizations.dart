@@ -341,7 +341,7 @@ abstract class AppLocalizations {
   /// No description provided for @cmjBaselineInstructions.
   ///
   /// In en, this message translates to:
-  /// **'Record at least 1 jump to establish a baseline.\nMaximum 3 jumps allowed.'**
+  /// **'Record at least 2 jumps to establish a reliable baseline.\nMaximum 3 jumps allowed.'**
   String get cmjBaselineInstructions;
 
   /// No description provided for @recordJumpNumber.
@@ -365,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @incompleteBaselineMessage.
   ///
   /// In en, this message translates to:
-  /// **'It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?'**
+  /// **'Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?'**
   String get incompleteBaselineMessage;
 
   /// No description provided for @saveAnyway.
@@ -379,6 +379,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No athlete selected'**
   String get noAthleteSelected;
+
+  /// No description provided for @createGroupAndAthleteOnboarding.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a group and add athletes to unlock CMJ, fatigue, RSI, asymmetry, and evolution tracking.'**
+  String get createGroupAndAthleteOnboarding;
 
   /// No description provided for @jumpNumber.
   ///
@@ -422,6 +428,12 @@ abstract class AppLocalizations {
   /// **'Pick a video to analyze'**
   String get pickVideoToAnalyze;
 
+  /// No description provided for @highSpeedVideoTip.
+  ///
+  /// In en, this message translates to:
+  /// **'For best accuracy, use a short video recorded at 60 FPS or higher. In-app recording is planned; gallery import keeps the analysis reproducible for now.'**
+  String get highSpeedVideoTip;
+
   /// No description provided for @analyzeJumpFromHere.
   ///
   /// In en, this message translates to:
@@ -433,6 +445,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pick Video from Gallery'**
   String get pickVideoFromGallery;
+
+  /// No description provided for @cmjFrameSelectionInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Step frame by frame. Mark the first frame where both feet leave the ground, then the first frame where the athlete lands.'**
+  String get cmjFrameSelectionInstructions;
+
+  /// No description provided for @rsiFrameSelectionInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Step frame by frame. Mark first ground contact, takeoff, and the first landing frame after flight.'**
+  String get rsiFrameSelectionInstructions;
+
+  /// No description provided for @videoExtractionHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'The app could not extract frames from this clip. Try a shorter MP4 recorded at 60 FPS or higher, then start the analysis close to the jump.'**
+  String get videoExtractionHelp;
 
   /// No description provided for @landingFrameAfterTakeoff.
   ///

@@ -1,10 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
 import '../models/athlete.dart';
+import '../services/jump_metrics_service.dart';
 
 // ── In-memory result from a single RSI drop jump analysis ──
 
@@ -44,37 +43,23 @@ class RsiJumpResult {
     required double dropHeightCm,
     required String videoPath,
   }) {
-    const g = 9.81;
-    final frameDuration = 1 / fps;
-    final contactTimeSec = (takeoffFrame - landing1Frame) / fps;
-    final flightTimeSec = (landing2Frame - takeoffFrame) / fps;
-    final heightMeters = g * flightTimeSec * flightTimeSec / 8;
-    final rsi = heightMeters / contactTimeSec;
-
-    // ±1 frame error propagation
-    double deltaRsi = 0.0;
-    final minContact = contactTimeSec + frameDuration;
-    final maxContact = contactTimeSec - frameDuration;
-    final minFlight = flightTimeSec - frameDuration;
-    final maxFlight = flightTimeSec + frameDuration;
-    if (maxContact > 0 && minFlight > 0) {
-      final minH = g * minFlight * minFlight / 8;
-      final maxH = g * maxFlight * maxFlight / 8;
-      final minRsi = minH / minContact;
-      final maxRsi = maxH / maxContact;
-      deltaRsi = (maxRsi - minRsi) / 2;
-    }
+    final metrics = JumpMetricsService.rsiFromFrames(
+      landing1Frame: landing1Frame,
+      takeoffFrame: takeoffFrame,
+      landing2Frame: landing2Frame,
+      fps: fps,
+    );
 
     return RsiJumpResult(
       landing1Frame: landing1Frame,
       takeoffFrame: takeoffFrame,
       landing2Frame: landing2Frame,
       fps: fps,
-      contactTimeMs: contactTimeSec * 1000,
-      flightTimeMs: flightTimeSec * 1000,
-      heightCm: heightMeters * 100,
-      rsiScore: rsi,
-      deltaRsi: deltaRsi,
+      contactTimeMs: metrics.contactTimeMs,
+      flightTimeMs: metrics.flightTimeMs,
+      heightCm: metrics.heightCm,
+      rsiScore: metrics.rsiScore,
+      deltaRsi: metrics.deltaRsi,
       dropHeightCm: dropHeightCm,
       videoPath: videoPath,
     );
@@ -243,11 +228,9 @@ class RsiSessionNotifier extends Notifier<RsiSessionState> {
 
     final avgRsi =
         jumps.map((j) => j.rsiScore).reduce((a, b) => a + b) / jumps.length;
-    final avgDelta =
-        sqrt(
-          jumps.map((j) => j.deltaRsi * j.deltaRsi).reduce((a, b) => a + b),
-        ) /
-        jumps.length;
+    final avgDelta = JumpMetricsService.rootMeanSquare(
+      jumps.map((jump) => jump.deltaRsi),
+    );
 
     _replaceSession(
       athleteId,

@@ -1,8 +1,7 @@
-import 'dart:math';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/athlete.dart';
+import '../services/jump_metrics_service.dart';
 
 // ── In-memory result from a single jump analysis ──
 
@@ -28,8 +27,10 @@ class JumpResult {
   /// Sensitivity error: deltaH = sqrt((g * h) / 2) * (1 / fps) * 100
   /// where h is height in meters, result in cm.
   static double computeDeltaH(double heightMeters, double fps) {
-    const g = 9.81;
-    return sqrt((g * heightMeters) / 2) * (1 / fps) * 100;
+    return JumpMetricsService.deltaHeightCm(
+      heightMeters: heightMeters,
+      fps: fps,
+    );
   }
 }
 
@@ -182,44 +183,22 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
       return;
     }
 
-    final flags = List.filled(jumps.length, false);
+    final summary = JumpMetricsService.summarizeJumps([
+      for (final jump in jumps)
+        JumpSample(heightCm: jump.heightCm, deltaHeightCm: jump.deltaHCm),
+    ]);
 
-    if (jumps.length >= 2) {
-      for (int i = 0; i < jumps.length; i++) {
-        final others = <double>[
-          for (int j = 0; j < jumps.length; j++)
-            if (j != i) jumps[j].heightCm,
-        ];
-        final meanOthers = others.reduce((a, b) => a + b) / others.length;
-        final diff = (jumps[i].heightCm - meanOthers).abs();
-        final threshold = max(
-          0.10 * jumps[i].heightCm,
-          2.0 * jumps[i].deltaHCm,
-        );
-        flags[i] = diff > threshold;
-      }
-    }
-
-    final valid = <JumpResult>[
-      for (int i = 0; i < jumps.length; i++)
-        if (!flags[i]) jumps[i],
-    ];
-
-    if (valid.isEmpty) {
+    if (summary.averageHeightCm == null || summary.propagatedErrorCm == null) {
       _replaceSession(
         athleteId,
-        current.copyWith(jumps: jumps, outlierFlags: flags, canSave: false),
+        current.copyWith(
+          jumps: jumps,
+          outlierFlags: summary.outlierFlags,
+          canSave: false,
+        ),
       );
       return;
     }
-
-    final avgHeight =
-        valid.map((j) => j.heightCm).reduce((a, b) => a + b) / valid.length;
-    final propagatedError =
-        sqrt(
-          valid.map((j) => j.deltaHCm * j.deltaHCm).reduce((a, b) => a + b),
-        ) /
-        valid.length;
 
     _replaceSession(
       athleteId,
@@ -227,10 +206,10 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
         athleteId: athleteId,
         athleteName: current.athleteName,
         jumps: jumps,
-        outlierFlags: flags,
-        averageHeightCm: avgHeight,
-        propagatedErrorCm: propagatedError,
-        canSave: true,
+        outlierFlags: summary.outlierFlags,
+        averageHeightCm: summary.averageHeightCm,
+        propagatedErrorCm: summary.propagatedErrorCm,
+        canSave: summary.validCount >= 2,
         saved: current.saved,
       ),
     );

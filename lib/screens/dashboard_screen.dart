@@ -349,9 +349,64 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildAthleteCard() {
     final athlete = ref.watch(activeAthleteProvider);
+    final l = AppLocalizations.of(context)!;
 
     if (athlete == null) {
-      return Container(/* ... existing placeholder code ... */);
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: AppColors.brand.withAlpha(25),
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.brand.withAlpha(120)),
+              ),
+              child: const Icon(
+                Icons.person_add_alt_1,
+                color: AppColors.brand,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              l.noAthleteSelected,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              l.createGroupAndAthleteOnboarding,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _showAddAthleteToGroup,
+              icon: const Icon(Icons.add),
+              label: Text(l.addAthlete),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.brand,
+                side: const BorderSide(color: AppColors.brand),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     return GestureDetector(
@@ -447,7 +502,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Text(
                         athlete.baselineCmjHeight != null
                             ? '${athlete.baselineCmjHeight!.toStringAsFixed(1)} cm'
-                            : 'No data',
+                            : l.noDataAvailable,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.brand,
@@ -460,7 +515,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       Text(
                         athlete.baselineRsi != null
                             ? '${athlete.baselineRsi!.toStringAsFixed(2)} RSI'
-                            : 'No data',
+                            : l.noDataAvailable,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.brand,
@@ -1600,11 +1655,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _showAddAthleteToGroup() async {
+    final l = AppLocalizations.of(context)!;
     final activeGroup = ref.read(activeGroupProvider);
     if (activeGroup == null) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please select a group first')));
+      ).showSnackBar(SnackBar(content: Text(l.pleaseSelectGroupFirst)));
       return;
     }
     final athlete = await showDialog<Athlete>(

@@ -133,7 +133,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cmjBaselineInstructions =>
-      'Record at least 1 jump to establish a baseline.\nMaximum 3 jumps allowed.';
+      'Record at least 2 jumps to establish a reliable baseline.\nMaximum 3 jumps allowed.';
 
   @override
   String recordJumpNumber(int number) {
@@ -148,13 +148,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get incompleteBaselineMessage =>
-      'It is highly recommended to record at least 3 jumps to establish an accurate baseline and filter out anomalies. Are you sure you want to save?';
+      'Two valid jumps are enough to save, but three jumps improve anomaly filtering. Are you sure you want to save now?';
 
   @override
   String get saveAnyway => 'Save Anyway';
 
   @override
   String get noAthleteSelected => 'No athlete selected';
+
+  @override
+  String get createGroupAndAthleteOnboarding =>
+      'Create a group and add athletes to unlock CMJ, fatigue, RSI, asymmetry, and evolution tracking.';
 
   @override
   String jumpNumber(int number) {
@@ -182,10 +186,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pickVideoToAnalyze => 'Pick a video to analyze';
 
   @override
+  String get highSpeedVideoTip =>
+      'For best accuracy, use a short video recorded at 60 FPS or higher. In-app recording is planned; gallery import keeps the analysis reproducible for now.';
+
+  @override
   String get analyzeJumpFromHere => 'Analyze Jump from Here';
 
   @override
   String get pickVideoFromGallery => 'Pick Video from Gallery';
+
+  @override
+  String get cmjFrameSelectionInstructions =>
+      'Step frame by frame. Mark the first frame where both feet leave the ground, then the first frame where the athlete lands.';
+
+  @override
+  String get rsiFrameSelectionInstructions =>
+      'Step frame by frame. Mark first ground contact, takeoff, and the first landing frame after flight.';
+
+  @override
+  String get videoExtractionHelp =>
+      'The app could not extract frames from this clip. Try a shorter MP4 recorded at 60 FPS or higher, then start the analysis close to the jump.';
 
   @override
   String get landingFrameAfterTakeoff =>

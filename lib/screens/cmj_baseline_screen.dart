@@ -192,6 +192,13 @@ class CmjBaselineScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final jumpCount = athleteSession.jumps.length;
 
+    if (athleteSession.validJumpCount < 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l.cmjBaselineInstructions)),
+      );
+      return;
+    }
+
     if (jumpCount < 3) {
       final proceed = await showDialog<bool>(
         context: context,
