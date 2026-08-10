@@ -56,6 +56,10 @@ class JumpSummary {
 }
 
 class AsymmetryMetrics {
+  /// Signed asymmetry percentage.
+  ///
+  /// Positive values mean the right leg jumped higher; negative values mean the
+  /// left leg jumped higher.
   final double percent;
   final String strongerLeg;
 

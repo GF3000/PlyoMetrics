@@ -31,6 +31,18 @@ void main() {
       expect(metrics.deltaRsi, greaterThan(0));
     });
 
+    test('returns zero RSI error when one-frame contact is too short', () {
+      final metrics = JumpMetricsService.rsiFromFrames(
+        landing1Frame: 10,
+        takeoffFrame: 11,
+        landing2Frame: 47,
+        fps: 120,
+      );
+
+      expect(metrics.contactTimeMs, closeTo(8.333, 0.001));
+      expect(metrics.deltaRsi, 0);
+    });
+
     test('computes fatigue loss against baseline', () {
       final loss = JumpMetricsService.fatigueLossPercent(
         baselineHeightCm: 40,
@@ -62,6 +74,14 @@ void main() {
 
       expect(metrics.percent, closeTo(20, 0.001));
       expect(metrics.strongerLeg, 'right');
+
+      final leftStronger = JumpMetricsService.asymmetry(
+        leftHeightCm: 35,
+        rightHeightCm: 28,
+      );
+
+      expect(leftStronger.percent, closeTo(-20, 0.001));
+      expect(leftStronger.strongerLeg, 'left');
     });
 
     test('rejects invalid frame ordering', () {
