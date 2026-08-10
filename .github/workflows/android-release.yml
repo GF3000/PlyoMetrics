@@ -29,6 +29,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           missing=0
           for secret_name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
             if [ -z "${!secret_name}" ]; then
@@ -57,13 +58,14 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
-          cat > android/key.properties <<EOF
-          storeFile=upload-keystore.jks
-          storePassword=$ANDROID_KEYSTORE_PASSWORD
-          keyAlias=$ANDROID_KEY_ALIAS
-          keyPassword=$ANDROID_KEY_PASSWORD
-          EOF
+          {
+            printf '%s\n' "storeFile=upload-keystore.jks"
+            printf '%s\n' "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+            printf '%s\n' "keyAlias=$ANDROID_KEY_ALIAS"
+            printf '%s\n' "keyPassword=$ANDROID_KEY_PASSWORD"
+          } > android/key.properties
 
       - name: Build release APK
         run: flutter build apk --release
