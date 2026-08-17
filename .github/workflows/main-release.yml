@@ -1,0 +1,102 @@
+name: Main pre-release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-release
+  cancel-in-progress: true
+
+jobs:
+  build-and-release:
+    name: Validate, build, and release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate source files
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Generate localizations
+        run: flutter gen-l10n
+
+      - name: Analyze source
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test --no-pub -j 1
+
+      - name: Calculate build version
+        id: version
+        shell: bash
+        run: |
+          base_version="$(sed -nE 's/^version: ([0-9]+\.[0-9]+)\..*/\1/p' pubspec.yaml)"
+          if [[ -z "$base_version" ]]; then
+            echo "Could not read the major and minor version from pubspec.yaml." >&2
+            exit 1
+          fi
+
+          echo "name=${base_version}.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "tag=main-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Android debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: plyometrics-debug-keystore-v1
+
+      - name: Build Android APK
+        run: >
+          flutter build apk --debug --no-pub
+          --build-name="${{ steps.version.outputs.name }}"
+          --build-number="${{ github.run_number }}"
+
+      - name: Prepare release asset
+        id: asset
+        shell: bash
+        run: |
+          asset_name="PlyoMetrics-${{ steps.version.outputs.name }}.apk"
+          cp build/app/outputs/flutter-apk/app-debug.apk "$asset_name"
+          echo "path=$asset_name" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_TITLE: PlyoMetrics ${{ steps.version.outputs.name }}
+          RELEASE_ASSET: ${{ steps.asset.outputs.path }}
+        shell: bash
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "$RELEASE_ASSET" --clobber
+            gh release edit "$RELEASE_TAG" \
+              --target "$GITHUB_SHA" \
+              --title "$RELEASE_TITLE" \
+              --prerelease
+          else
+            gh release create "$RELEASE_TAG" "$RELEASE_ASSET" \
+              --target "$GITHUB_SHA" \
+              --title "$RELEASE_TITLE" \
+              --generate-notes \
+              --prerelease
+          fi
