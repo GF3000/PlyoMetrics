@@ -35,6 +35,19 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Apply Isar Android namespace compatibility
+        shell: bash
+        run: |
+          isar_gradle="$PUB_CACHE/hosted/pub.dev/isar_flutter_libs-3.1.0+1/android/build.gradle"
+          if [[ ! -f "$isar_gradle" ]]; then
+            echo "Isar Android build file was not found at $isar_gradle." >&2
+            exit 1
+          fi
+
+          if ! grep -q 'namespace "dev.isar.isar_flutter_libs"' "$isar_gradle"; then
+            sed -i '/^android {/a\    namespace "dev.isar.isar_flutter_libs"' "$isar_gradle"
+          fi
+
       - name: Generate source files
         run: dart run build_runner build --delete-conflicting-outputs
 
