@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/outlier_detection.dart';
 import '../models/athlete.dart';
 
 // ── In-memory result from a single jump analysis ──
@@ -14,6 +15,8 @@ class JumpResult {
   final double heightCm;
   final double deltaHCm;
   final String videoPath;
+  final double? takeoffTimeSeconds;
+  final double? landingTimeSeconds;
 
   const JumpResult({
     required this.takeoffFrame,
@@ -23,13 +26,22 @@ class JumpResult {
     required this.heightCm,
     required this.deltaHCm,
     required this.videoPath,
+    this.takeoffTimeSeconds,
+    this.landingTimeSeconds,
   });
 
   /// Sensitivity error: deltaH = sqrt((g * h) / 2) * (1 / fps) * 100
   /// where h is height in meters, result in cm.
   static double computeDeltaH(double heightMeters, double fps) {
+    return computeDeltaHForFrameDuration(heightMeters, 1 / fps);
+  }
+
+  static double computeDeltaHForFrameDuration(
+    double heightMeters,
+    double frameDurationSeconds,
+  ) {
     const g = 9.81;
-    return sqrt((g * heightMeters) / 2) * (1 / fps) * 100;
+    return sqrt((g * heightMeters) / 2) * frameDurationSeconds * 100;
   }
 }
 
@@ -182,23 +194,10 @@ class CmjSessionNotifier extends Notifier<CmjSessionState> {
       return;
     }
 
-    final flags = List.filled(jumps.length, false);
-
-    if (jumps.length >= 2) {
-      for (int i = 0; i < jumps.length; i++) {
-        final others = <double>[
-          for (int j = 0; j < jumps.length; j++)
-            if (j != i) jumps[j].heightCm,
-        ];
-        final meanOthers = others.reduce((a, b) => a + b) / others.length;
-        final diff = (jumps[i].heightCm - meanOthers).abs();
-        final threshold = max(
-          0.10 * jumps[i].heightCm,
-          2.0 * jumps[i].deltaHCm,
-        );
-        flags[i] = diff > threshold;
-      }
-    }
+    final flags = detectOutliers([
+      for (final jump in jumps)
+        (value: jump.heightCm, uncertainty: jump.deltaHCm),
+    ]);
 
     final valid = <JumpResult>[
       for (int i = 0; i < jumps.length; i++)

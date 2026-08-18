@@ -57,7 +57,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
                   if (athlete != null)
                     Text(
                       athlete.name,
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                 ],
               ),
@@ -66,8 +69,11 @@ class AthleteHistoryScreen extends ConsumerWidget {
         ),
         Expanded(
           child: historyAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: AppColors.brand)),
-            error: (err, stack) => Center(child: Text(l.errorWithMessage(err.toString()))),
+            loading: () => const Center(
+              child: CircularProgressIndicator(color: AppColors.brand),
+            ),
+            error: (err, stack) =>
+                Center(child: Text(l.errorWithMessage(err.toString()))),
             data: (tests) {
               final entries = _buildEntries(tests);
 
@@ -76,7 +82,11 @@ class AthleteHistoryScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.history, size: 48, color: AppColors.textTertiary.withAlpha(100)),
+                      Icon(
+                        Icons.history,
+                        size: 48,
+                        color: AppColors.textTertiary.withAlpha(100),
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         l.noJumpRecordsYet,
@@ -94,8 +104,18 @@ class AthleteHistoryScreen extends ConsumerWidget {
                 itemBuilder: (context, index) {
                   final entry = entries[index];
                   return switch (entry) {
-                    _SingleTestEntry e => _buildSingleRow(context, ref, l, e.test),
-                    _AsymmetryPairEntry e => _buildAsymmetryRow(context, ref, l, e),
+                    _SingleTestEntry e => _buildSingleRow(
+                      context,
+                      ref,
+                      l,
+                      e.test,
+                    ),
+                    _AsymmetryPairEntry e => _buildAsymmetryRow(
+                      context,
+                      ref,
+                      l,
+                      e,
+                    ),
                   };
                 },
               );
@@ -117,7 +137,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
       final t = tests[i];
       if (t.testType == 'asymmetry') {
         asymmetryIndices.add(i);
-        final sid = t.asymmetrySessionId ?? t.id;
+        final sid = t.sessionId ?? t.id;
         grouped.putIfAbsent(sid, () => []).add(t);
       }
     }
@@ -130,7 +150,7 @@ class AthleteHistoryScreen extends ConsumerWidget {
         continue;
       }
 
-      final sid = test.asymmetrySessionId ?? test.id;
+      final sid = test.sessionId ?? test.id;
       if (seenSessionIds.contains(sid)) continue;
       seenSessionIds.add(sid);
 
@@ -151,11 +171,13 @@ class AthleteHistoryScreen extends ConsumerWidget {
       final maxH = leftH > rightH ? leftH : rightH;
       final pct = maxH > 0 ? (rightH - leftH) / maxH * 100 : 0.0;
 
-      entries.add(_AsymmetryPairEntry(
-        left: leftList.first,
-        right: rightList.first,
-        asymmetryPct: pct,
-      ));
+      entries.add(
+        _AsymmetryPairEntry(
+          left: leftList.first,
+          right: rightList.first,
+          asymmetryPct: pct,
+        ),
+      );
     }
 
     return entries;
@@ -163,22 +185,40 @@ class AthleteHistoryScreen extends ConsumerWidget {
 
   // ── Single-test row ────────────────────────────────────────────────────────
 
-  Widget _buildSingleRow(BuildContext context, WidgetRef ref, AppLocalizations l, JumpTest test) {
-    final dateStr = DateFormat('MMM dd, yyyy • HH:mm', l.localeName).format(test.timestamp);
-    final bool isFatigueTest = test.testType == 'fatigue' && test.baselineAtTest != null;
+  Widget _buildSingleRow(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l,
+    JumpTest test,
+  ) {
+    final dateStr = DateFormat(
+      'MMM dd, yyyy • HH:mm',
+      l.localeName,
+    ).format(test.timestamp);
+    final bool isFatigueTest =
+        test.testType == 'fatigue' && test.baselineAtTest != null;
     double? fatiguePercent;
     if (isFatigueTest) {
-      fatiguePercent = ((test.baselineAtTest! - test.heightCm) / test.baselineAtTest!) * 100;
+      fatiguePercent =
+          ((test.baselineAtTest! - test.heightCm) / test.baselineAtTest!) * 100;
     }
 
     return Dismissible(
       key: ValueKey('single_${test.id}'),
       direction: DismissDirection.endToStart,
       background: _deleteBg(),
-      confirmDismiss: (_) => _confirmDelete(context, l, _localizedTestTag(l, test.testType), dateStr),
+      confirmDismiss: (_) => _confirmDelete(
+        context,
+        l,
+        _localizedTestTag(l, test.testType),
+        dateStr,
+      ),
       onDismissed: (_) async {
-        final updated = await ref.read(isarServiceProvider).deleteJumpTest(test.id);
-        if (updated != null && ref.read(activeAthleteProvider)?.id == updated.id) {
+        final updated = await ref
+            .read(isarServiceProvider)
+            .deleteJumpTest(test.id);
+        if (updated != null &&
+            ref.read(activeAthleteProvider)?.id == updated.id) {
           ref.read(activeAthleteProvider.notifier).state = updated;
         }
       },
@@ -196,7 +236,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
                 : '${test.heightCm.toStringAsFixed(1)} cm',
             secondary: isFatigueTest && fatiguePercent != null
                 ? Text(
-                    l.fatiguePercent(fatiguePercent >= 0 ? '-' : '+', fatiguePercent.abs().toStringAsFixed(0)),
+                    l.fatiguePercent(
+                      fatiguePercent >= 0 ? '-' : '+',
+                      fatiguePercent.abs().toStringAsFixed(0),
+                    ),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -204,14 +247,20 @@ class AthleteHistoryScreen extends ConsumerWidget {
                     ),
                   )
                 : test.testType == 'rsi' && test.deltaRsi != null
-                    ? Text(
-                        '±${test.deltaRsi!.toStringAsFixed(2)} RSI',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-                      )
-                    : Text(
-                        '±${test.deltaHCm.toStringAsFixed(1)} cm',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
-                      ),
+                ? Text(
+                    '±${test.deltaRsi!.toStringAsFixed(2)} RSI',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  )
+                : Text(
+                    '±${test.deltaHCm.toStringAsFixed(1)} cm',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -220,28 +269,33 @@ class AthleteHistoryScreen extends ConsumerWidget {
 
   // ── Asymmetry pair row ─────────────────────────────────────────────────────
 
-  Widget _buildAsymmetryRow(BuildContext context, WidgetRef ref, AppLocalizations l, _AsymmetryPairEntry entry) {
+  Widget _buildAsymmetryRow(
+    BuildContext context,
+    WidgetRef ref,
+    AppLocalizations l,
+    _AsymmetryPairEntry entry,
+  ) {
     final pct = entry.asymmetryPct;
     final absPct = pct.abs().round();
     final sign = pct >= 0 ? '+' : '-';
-    final dateStr = DateFormat('MMM dd, yyyy • HH:mm', l.localeName)
-        .format(entry.left.timestamp.isBefore(entry.right.timestamp)
-            ? entry.left.timestamp
-            : entry.right.timestamp);
+    final dateStr = DateFormat('MMM dd, yyyy • HH:mm', l.localeName).format(
+      entry.left.timestamp.isBefore(entry.right.timestamp)
+          ? entry.left.timestamp
+          : entry.right.timestamp,
+    );
     final legLabel = pct >= 0 ? l.rightStrongerLabel : l.leftStrongerLabel;
     final pctColor = _asymmetryColor(pct.abs());
 
     return Dismissible(
-      key: ValueKey('asym_${entry.left.asymmetrySessionId ?? entry.left.id}'),
+      key: ValueKey('asym_${entry.left.sessionId ?? entry.left.id}'),
       direction: DismissDirection.endToStart,
       background: _deleteBg(),
       confirmDismiss: (_) => _confirmDelete(context, l, 'ASYMMETRY', dateStr),
       onDismissed: (_) async {
-        // Delete both legs; each call recalculates asymmetry
         final service = ref.read(isarServiceProvider);
-        await service.deleteJumpTest(entry.left.id);
-        final updated = await service.deleteJumpTest(entry.right.id);
-        if (updated != null && ref.read(activeAthleteProvider)?.id == updated.id) {
+        final updated = await service.deleteJumpTest(entry.left.id);
+        if (updated != null &&
+            ref.read(activeAthleteProvider)?.id == updated.id) {
           ref.read(activeAthleteProvider.notifier).state = updated;
         }
       },
@@ -258,7 +312,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
             primaryColor: pctColor,
             secondary: Text(
               legLabel,
-              style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textTertiary,
+              ),
             ),
           ),
         ),
@@ -290,7 +347,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: tagColor.withAlpha(30),
                     borderRadius: BorderRadius.circular(4),
@@ -308,7 +368,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   dateStr,
-                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -335,30 +398,44 @@ class AthleteHistoryScreen extends ConsumerWidget {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   Widget _deleteBg() => Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: Colors.red.shade700,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white),
-      );
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: 20),
+    decoration: BoxDecoration(
+      color: Colors.red.shade700,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: const Icon(Icons.delete, color: Colors.white),
+  );
 
-  Future<bool> _confirmDelete(BuildContext context, AppLocalizations l, String tag, String dateStr) async {
+  Future<bool> _confirmDelete(
+    BuildContext context,
+    AppLocalizations l,
+    String tag,
+    String dateStr,
+  ) async {
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
             backgroundColor: AppColors.card,
-            title: Text(l.deleteJump, style: const TextStyle(color: Colors.white)),
+            title: Text(
+              l.deleteJump,
+              style: const TextStyle(color: Colors.white),
+            ),
             content: Text(
               l.confirmDeleteRecord(tag, dateStr),
               style: const TextStyle(color: AppColors.textSecondary),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(l.cancel)),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(l.cancel),
+              ),
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: Text(l.delete, style: TextStyle(color: Colors.red.shade400)),
+                child: Text(
+                  l.delete,
+                  style: TextStyle(color: Colors.red.shade400),
+                ),
               ),
             ],
           ),
@@ -394,11 +471,19 @@ class AthleteHistoryScreen extends ConsumerWidget {
 
   // ── Detail sheets ──────────────────────────────────────────────────────────
 
-  void _showJumpDetails(BuildContext context, JumpTest test, double? fatiguePercent) {
+  void _showJumpDetails(
+    BuildContext context,
+    JumpTest test,
+    double? fatiguePercent,
+  ) {
     final l = AppLocalizations.of(context)!;
-    final rawDate = DateFormat('EEEE, MMM dd yyyy • HH:mm:ss', l.localeName).format(test.timestamp);
+    final rawDate = DateFormat(
+      'EEEE, MMM dd yyyy • HH:mm:ss',
+      l.localeName,
+    ).format(test.timestamp);
     final dateStr = rawDate[0].toUpperCase() + rawDate.substring(1);
-    final isFatigueTest = test.testType == 'fatigue' && test.baselineAtTest != null;
+    final isFatigueTest =
+        test.testType == 'fatigue' && test.baselineAtTest != null;
 
     showModalBottomSheet(
       context: context,
@@ -433,13 +518,23 @@ class AthleteHistoryScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text(dateStr, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              child: Text(
+                dateStr,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
             _buildDetailGrid(sheetContext, test),
             if (isFatigueTest) ...[
               const SizedBox(height: 20),
-              _buildComparisonChart(context, test.baselineAtTest!, test.heightCm),
+              _buildComparisonChart(
+                context,
+                test.baselineAtTest!,
+                test.heightCm,
+              ),
             ],
           ],
         ),
@@ -447,23 +542,29 @@ class AthleteHistoryScreen extends ConsumerWidget {
     );
   }
 
-  void _showAsymmetryDetails(BuildContext context, AppLocalizations l, _AsymmetryPairEntry entry) {
+  void _showAsymmetryDetails(
+    BuildContext context,
+    AppLocalizations l,
+    _AsymmetryPairEntry entry,
+  ) {
     final pct = entry.asymmetryPct;
     final absPct = pct.abs().round();
     final sign = pct >= 0 ? '+' : '-';
     final rawDate = DateFormat('EEEE, MMM dd yyyy • HH:mm:ss', l.localeName)
-        .format(entry.left.timestamp.isBefore(entry.right.timestamp)
-            ? entry.left.timestamp
-            : entry.right.timestamp);
+        .format(
+          entry.left.timestamp.isBefore(entry.right.timestamp)
+              ? entry.left.timestamp
+              : entry.right.timestamp,
+        );
     final dateStr = rawDate[0].toUpperCase() + rawDate.substring(1);
     final pctColor = _asymmetryColor(pct.abs());
     final statusLabel = absPct < 5
         ? l.asymmetryPerfect
         : absPct < 10
-            ? l.asymmetryGood
-            : absPct < 15
-                ? l.asymmetryCaution
-                : l.asymmetryRisk;
+        ? l.asymmetryGood
+        : absPct < 15
+        ? l.asymmetryCaution
+        : l.asymmetryRisk;
 
     // Average error for the pair
     final avgError = (entry.left.deltaHCm + entry.right.deltaHCm) / 2;
@@ -485,7 +586,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                _tagBadge(l.asymmetricTest.toUpperCase(), const Color(0xFF8B5CF6)),
+                _tagBadge(
+                  l.asymmetricTest.toUpperCase(),
+                  const Color(0xFF8B5CF6),
+                ),
                 const Spacer(),
                 Text(
                   '$sign$absPct%',
@@ -500,7 +604,13 @@ class AthleteHistoryScreen extends ConsumerWidget {
             const SizedBox(height: 4),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text(dateStr, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+              child: Text(
+                dateStr,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -509,10 +619,27 @@ class AthleteHistoryScreen extends ConsumerWidget {
               spacing: 12,
               runSpacing: 12,
               children: [
-                _detailCell(sheetContext, l.leftLeg, '${entry.left.heightCm.toStringAsFixed(1)} cm'),
-                _detailCell(sheetContext, l.rightLeg, '${entry.right.heightCm.toStringAsFixed(1)} cm'),
-                _detailCell(sheetContext, l.detailErrorMargin, '±${avgError.toStringAsFixed(1)} cm'),
-                _detailCell(sheetContext, l.asymmetryPct, '$sign$absPct%', valueColor: pctColor),
+                _detailCell(
+                  sheetContext,
+                  l.leftLeg,
+                  '${entry.left.heightCm.toStringAsFixed(1)} cm',
+                ),
+                _detailCell(
+                  sheetContext,
+                  l.rightLeg,
+                  '${entry.right.heightCm.toStringAsFixed(1)} cm',
+                ),
+                _detailCell(
+                  sheetContext,
+                  l.detailErrorMargin,
+                  '±${avgError.toStringAsFixed(1)} cm',
+                ),
+                _detailCell(
+                  sheetContext,
+                  l.asymmetryPct,
+                  '$sign$absPct%',
+                  valueColor: pctColor,
+                ),
               ],
             ),
 
@@ -542,32 +669,37 @@ class AthleteHistoryScreen extends ConsumerWidget {
   }
 
   Widget _sheetHandle() => Container(
-        width: 40,
-        height: 4,
-        decoration: BoxDecoration(
-          color: AppColors.textTertiary.withAlpha(80),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      );
+    width: 40,
+    height: 4,
+    decoration: BoxDecoration(
+      color: AppColors.textTertiary.withAlpha(80),
+      borderRadius: BorderRadius.circular(2),
+    ),
+  );
 
   Widget _tagBadge(String label, Color color) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withAlpha(30),
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w800,
-            color: color,
-            letterSpacing: 0.5,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: color.withAlpha(30),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+      label,
+      style: TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w800,
+        color: color,
+        letterSpacing: 0.5,
+      ),
+    ),
+  );
 
-  Widget _detailCell(BuildContext context, String label, String value, {Color? valueColor}) {
+  Widget _detailCell(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
     return SizedBox(
       width: (MediaQuery.of(context).size.width - 52) / 2,
       child: Container(
@@ -609,18 +741,30 @@ class AthleteHistoryScreen extends ConsumerWidget {
     final isRsi = test.testType == 'rsi';
     final items = <_DetailItem>[
       _DetailItem(l.detailHeight, '${test.heightCm.toStringAsFixed(1)} cm'),
-      _DetailItem(l.detailFlightTime, '${test.flightTimeMs.toStringAsFixed(1)} ms'),
-      _DetailItem(l.detailFps, test.fps.toStringAsFixed(0)),
+      _DetailItem(
+        l.detailFlightTime,
+        '${test.flightTimeMs.toStringAsFixed(1)} ms',
+      ),
+      _DetailItem(l.detailFps, test.fps?.toStringAsFixed(0) ?? '—'),
       if (isRsi && test.deltaRsi != null)
         _DetailItem(l.detailRsiError, '±${test.deltaRsi!.toStringAsFixed(2)}')
       else
-        _DetailItem(l.detailErrorMargin, '±${test.deltaHCm.toStringAsFixed(1)} cm'),
+        _DetailItem(
+          l.detailErrorMargin,
+          '±${test.deltaHCm.toStringAsFixed(1)} cm',
+        ),
       if (isRsi && test.contactTimeMs != null)
-        _DetailItem(l.detailContactTime, '${test.contactTimeMs!.toStringAsFixed(1)} ms'),
+        _DetailItem(
+          l.detailContactTime,
+          '${test.contactTimeMs!.toStringAsFixed(1)} ms',
+        ),
       if (isRsi && test.rsiScore != null)
         _DetailItem(l.detailRsiScore, test.rsiScore!.toStringAsFixed(2)),
       if (test.baselineAtTest != null)
-        _DetailItem(l.detailBaselineAtTest, '${test.baselineAtTest!.toStringAsFixed(1)} cm'),
+        _DetailItem(
+          l.detailBaselineAtTest,
+          '${test.baselineAtTest!.toStringAsFixed(1)} cm',
+        ),
     ];
 
     return Wrap(
@@ -632,7 +776,11 @@ class AthleteHistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildComparisonChart(BuildContext context, double baseline, double current) {
+  Widget _buildComparisonChart(
+    BuildContext context,
+    double baseline,
+    double current,
+  ) {
     final l = AppLocalizations.of(context)!;
     final maxVal = baseline > current ? baseline : current;
     final baselineRatio = maxVal > 0 ? baseline / maxVal : 0.0;
@@ -687,7 +835,11 @@ class AthleteHistoryScreen extends ConsumerWidget {
       children: [
         Text(
           value,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11, fontWeight: FontWeight.w600),
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 4),
         Expanded(
@@ -698,10 +850,17 @@ class AthleteHistoryScreen extends ConsumerWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
+                  ),
                   border: Border(top: BorderSide(color: borderColor, width: 2)),
                   boxShadow: glow
-                      ? [BoxShadow(color: AppColors.brand.withAlpha(77), blurRadius: 8)]
+                      ? [
+                          BoxShadow(
+                            color: AppColors.brand.withAlpha(77),
+                            blurRadius: 8,
+                          ),
+                        ]
                       : null,
                 ),
               ),
@@ -709,7 +868,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+        ),
       ],
     );
   }

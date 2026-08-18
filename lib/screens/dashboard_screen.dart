@@ -142,6 +142,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       builder: (_) => const AddGroupDialog(),
                     );
                     if (group != null && mounted) {
+                      setState(() => _reorderedAthletes = null);
                       ref.read(activeGroupProvider.notifier).state = group;
                       ref.read(activeAthleteProvider.notifier).state = null;
                     }
@@ -194,12 +195,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       builder: (_) => const AddGroupDialog(),
                     );
                     if (group != null && mounted) {
+                      setState(() => _reorderedAthletes = null);
                       ref.read(activeGroupProvider.notifier).state = group;
                       ref.read(activeAthleteProvider.notifier).state = null;
                     }
                   } else {
                     // Existing group selected
                     final group = groups.firstWhere((g) => g.id == id);
+                    setState(() => _reorderedAthletes = null);
                     ref.read(activeGroupProvider.notifier).state = group;
                     ref.read(activeAthleteProvider.notifier).state = null;
                   }
@@ -348,10 +351,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // ── Selected athlete profile card ──
 
   Widget _buildAthleteCard() {
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider);
 
     if (athlete == null) {
-      return Container(/* ... existing placeholder code ... */);
+      final group = ref.watch(activeGroupProvider);
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderLight),
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.person_add_alt_1_outlined,
+              size: 40,
+              color: AppColors.textTertiary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              group == null ? l.noGroups : l.noAthleteSelected,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l.selectOrAddAthlete,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      );
     }
 
     return GestureDetector(
@@ -446,8 +482,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(width: 4),
                       Text(
                         athlete.baselineCmjHeight != null
-                            ? '${athlete.baselineCmjHeight!.toStringAsFixed(1)} cm'
-                            : 'No data',
+                            ? '${athlete.baselineCmjHeight!.toStringAsFixed(1)} ${l.unitCm}'
+                            : l.noData,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.brand,
@@ -459,8 +495,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(width: 4),
                       Text(
                         athlete.baselineRsi != null
-                            ? '${athlete.baselineRsi!.toStringAsFixed(2)} RSI'
-                            : 'No data',
+                            ? '${athlete.baselineRsi!.toStringAsFixed(2)} ${l.rsi}'
+                            : l.noData,
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.brand,
@@ -837,7 +873,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             data: (athletes) => _rosterExpanded
-                ? _buildExpandedRoster(athletes, activeAthlete, activeGroup)
+                ? _buildExpandedRoster(athletes, activeAthlete, activeGroup, l)
                 : SizedBox(
                     height: 80,
                     child: ListView.separated(
@@ -872,13 +908,27 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     List<Athlete> athletes,
     Athlete? activeAthlete,
     AthleteGroup? activeGroup,
+    AppLocalizations l,
   ) {
-    // Use optimistic local order if available, otherwise use stream data
-    final displayAthletes = _reorderedAthletes ?? athletes;
+    final reordered = _reorderedAthletes;
+    final hasSameMembers =
+        reordered != null &&
+        reordered.length == athletes.length &&
+        reordered.every(
+          (candidate) => athletes.any((athlete) => athlete.id == candidate.id),
+        );
+    final displayAthletes = hasSameMembers ? reordered : athletes;
+
+    if (reordered != null && !hasSameMembers) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _reorderedAthletes = null);
+      });
+    }
+
     // Clear the override once the stream catches up with the same order
-    if (_reorderedAthletes != null &&
-        _reorderedAthletes!.length == athletes.length &&
-        _listOrderMatches(_reorderedAthletes!, athletes)) {
+    if (reordered != null &&
+        hasSameMembers &&
+        _listOrderMatches(reordered, athletes)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => _reorderedAthletes = null);
       });
@@ -917,13 +967,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: child,
           );
         },
-        onReorder: (oldIndex, newIndex) {
+        // ignore: deprecated_member_use
+        onReorder: (oldIndex, newIndex) async {
           if (newIndex > oldIndex) newIndex--;
           final reordered = List<Athlete>.from(displayAthletes);
           final item = reordered.removeAt(oldIndex);
           reordered.insert(newIndex, item);
           setState(() => _reorderedAthletes = reordered);
-          IsarService.instance.reorderAthletes(reordered);
+          try {
+            await IsarService.instance.reorderAthletes(reordered);
+          } catch (_) {
+            if (!mounted) return;
+            setState(() => _reorderedAthletes = null);
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(l.operationFailed)));
+          }
         },
         footer: _buildAddAthleteRow(activeGroup),
         itemBuilder: (context, index) {
@@ -1373,12 +1432,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
 
     if (newName != null && newName.isNotEmpty && newName != group.name) {
-      final updatedGroup = await IsarService.instance.updateGroup(
-        group,
-        newName,
-      );
-      if (ref.read(activeGroupProvider)?.id == updatedGroup.id) {
-        ref.read(activeGroupProvider.notifier).state = updatedGroup;
+      try {
+        final updatedGroup = await IsarService.instance.updateGroup(
+          group,
+          newName,
+        );
+        if (ref.read(activeGroupProvider)?.id == updatedGroup.id) {
+          ref.read(activeGroupProvider.notifier).state = updatedGroup;
+        }
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.operationFailed)));
       }
     }
   }
@@ -1413,14 +1479,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
 
     if (confirm == true) {
-      await IsarService.instance.deleteGroup(group.id);
-      if (ref.read(activeGroupProvider)?.id == group.id) {
-        final remainingGroups = allGroups
-            .where((g) => g.id != group.id)
-            .toList();
-        ref.read(activeGroupProvider.notifier).state =
-            remainingGroups.isNotEmpty ? remainingGroups.first : null;
-        ref.read(activeAthleteProvider.notifier).state = null;
+      try {
+        await IsarService.instance.deleteGroup(group.id);
+        if (ref.read(activeGroupProvider)?.id == group.id) {
+          if (mounted) setState(() => _reorderedAthletes = null);
+          final remainingGroups = allGroups
+              .where((g) => g.id != group.id)
+              .toList();
+          ref.read(activeGroupProvider.notifier).state =
+              remainingGroups.isNotEmpty ? remainingGroups.first : null;
+          ref.read(activeAthleteProvider.notifier).state = null;
+        }
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l.operationFailed)));
       }
     }
   }
@@ -1602,9 +1676,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _showAddAthleteToGroup() async {
     final activeGroup = ref.read(activeGroupProvider);
     if (activeGroup == null) {
+      final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Please select a group first')));
+      ).showSnackBar(SnackBar(content: Text(l.pleaseSelectGroupFirst)));
       return;
     }
     final athlete = await showDialog<Athlete>(

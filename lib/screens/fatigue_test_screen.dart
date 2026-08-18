@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/theme.dart';
-import '../models/athlete.dart';
 import '../models/jump_test.dart';
 import '../providers/cmj_session_provider.dart';
 import '../providers/management_providers.dart';
-import '../services/isar_service.dart';
 import 'cmj_video_trim_screen.dart';
 
 class FatigueTestScreen extends ConsumerStatefulWidget {
@@ -38,8 +36,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     super.dispose();
   }
 
-  double get _baseline =>
-      ref.read(activeAthleteProvider)!.baselineCmjHeight!;
+  double get _baseline => ref.read(activeAthleteProvider)!.baselineCmjHeight!;
 
   Future<void> _recordJump() async {
     final result = await Navigator.of(context).push<JumpResult>(
@@ -76,9 +73,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
             decoration: BoxDecoration(
               color: AppColors.card,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppColors.brand.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: AppColors.brand.withValues(alpha: 0.5)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.5),
@@ -112,33 +107,35 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                   ),
                 ),
                 const SizedBox(height: 8),
-                Builder(builder: (_) {
-                  final heightStr = '${newHeight.toStringAsFixed(1)}cm';
-                  final fullMsg = l.pbDialogMessage(newHeight.toStringAsFixed(1));
-                  final parts = fullMsg.split(heightStr);
-                  return RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 13,
-                      ),
-                      children: [
-                        TextSpan(text: parts[0]),
-                        TextSpan(
-                          text: heightStr,
-                          style: const TextStyle(
-                            color: AppColors.brand,
-                            fontWeight: FontWeight.bold,
+                Builder(
+                  builder: (_) {
+                    final heightStr = '${newHeight.toStringAsFixed(1)}cm';
+                    final fullMsg = l.pbDialogMessage(
+                      newHeight.toStringAsFixed(1),
+                    );
+                    final parts = fullMsg.split(heightStr);
+                    return RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 13,
+                        ),
+                        children: [
+                          TextSpan(text: parts[0]),
+                          TextSpan(
+                            text: heightStr,
+                            style: const TextStyle(
+                              color: AppColors.brand,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        TextSpan(
-                          text: parts.length > 1 ? parts[1] : '',
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                          TextSpan(text: parts.length > 1 ? parts[1] : ''),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -152,54 +149,85 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                       ),
                     ),
                     onPressed: () async {
-                       final dialogNav = Navigator.of(ctx);
-                       final screenNav = Navigator.of(context);
-                       final athlete = ref.read(activeAthleteProvider)!;
-                       await IsarService.instance.updateAthleteBaseline(
-                         athlete.id,
-                         newHeight,
-                       );
-                       final updated = await IsarService
-                           .instance.db.athletes
-                           .get(athlete.id);
-                       if (updated != null) {
-                         ref.read(activeAthleteProvider.notifier).state =
-                             updated;
-                       }
+                      try {
+                        final dialogNav = Navigator.of(ctx);
+                        final screenNav = Navigator.of(context);
+                        final athlete = ref.read(activeAthleteProvider)!;
+                        final timestamp = DateTime.now();
+                        final baselineSessionId =
+                            timestamp.microsecondsSinceEpoch;
+                        final baselineTrial = JumpTest()
+                          ..athleteId = athlete.id
+                          ..testType = 'cmj_baseline'
+                          ..timestamp = timestamp
+                          ..takeoffFrame = _jumpResult!.takeoffFrame
+                          ..landingFrame = _jumpResult!.landingFrame
+                          ..fps = _jumpResult!.fps
+                          ..takeoffTimeSeconds = _jumpResult!.takeoffTimeSeconds
+                          ..landingTimeSeconds = _jumpResult!.landingTimeSeconds
+                          ..flightTimeMs = _jumpResult!.flightTimeMs
+                          ..heightCm = newHeight
+                          ..deltaHCm = _jumpResult!.deltaHCm
+                          ..sessionId = baselineSessionId
+                          ..isSummary = false;
 
-                       // Save two jump test records: CMJ Baseline and Fatigue (0% fatigue)
-                       final timestamp = DateTime.now();
-                       final test1 = JumpTest()
-                         ..athleteId = athlete.id
-                         ..testType = 'cmj_baseline'
-                         ..timestamp = timestamp
-                         ..takeoffFrame = _jumpResult!.takeoffFrame
-                         ..landingFrame = _jumpResult!.landingFrame
-                         ..fps = _jumpResult!.fps
-                         ..flightTimeMs = _jumpResult!.flightTimeMs
-                         ..heightCm = newHeight
-                         ..deltaHCm = _jumpResult!.deltaHCm
-                         ..baselineAtTest = null;
+                        final baselineSummary = JumpTest()
+                          ..athleteId = athlete.id
+                          ..testType = 'cmj_baseline'
+                          ..timestamp = timestamp
+                          ..flightTimeMs = _jumpResult!.flightTimeMs
+                          ..heightCm = newHeight
+                          ..deltaHCm = _jumpResult!.deltaHCm
+                          ..sessionId = baselineSessionId
+                          ..isSummary = true;
 
-                       final test2 = JumpTest()
-                         ..athleteId = athlete.id
-                         ..testType = 'fatigue'
-                         ..timestamp = timestamp
-                         ..takeoffFrame = _jumpResult!.takeoffFrame
-                         ..landingFrame = _jumpResult!.landingFrame
-                         ..fps = _jumpResult!.fps
-                         ..flightTimeMs = _jumpResult!.flightTimeMs
-                         ..heightCm = _jumpResult!.heightCm
-                         ..deltaHCm = _jumpResult!.deltaHCm
-                         ..baselineAtTest = newHeight;
+                        final fatigueTest = JumpTest()
+                          ..athleteId = athlete.id
+                          ..testType = 'fatigue'
+                          ..timestamp = timestamp
+                          ..takeoffFrame = _jumpResult!.takeoffFrame
+                          ..landingFrame = _jumpResult!.landingFrame
+                          ..fps = _jumpResult!.fps
+                          ..takeoffTimeSeconds = _jumpResult!.takeoffTimeSeconds
+                          ..landingTimeSeconds = _jumpResult!.landingTimeSeconds
+                          ..flightTimeMs = _jumpResult!.flightTimeMs
+                          ..heightCm = _jumpResult!.heightCm
+                          ..deltaHCm = _jumpResult!.deltaHCm
+                          ..baselineAtTest = newHeight
+                          ..sessionId = baselineSessionId + 1
+                          ..isSummary = true;
 
-                       await ref.read(isarServiceProvider).saveJumpTests([test1, test2]);
+                        final updated = await ref
+                            .read(isarServiceProvider)
+                            .saveFatiguePersonalBest(
+                              tests: [
+                                baselineTrial,
+                                baselineSummary,
+                                fatigueTest,
+                              ],
+                              athleteId: athlete.id,
+                              baselineHeightCm: newHeight,
+                              timestamp: timestamp,
+                            );
+                        if (updated == null) {
+                          throw StateError(
+                            'Athlete ${athlete.id} no longer exists.',
+                          );
+                        }
+                        ref.read(activeAthleteProvider.notifier).state =
+                            updated;
 
-                       if (mounted) {
-                         dialogNav.pop(); // Close dialog
-                         screenNav.pop(); // Return to Dashboard
-                       }
-                     },
+                        if (mounted) {
+                          dialogNav.pop();
+                          screenNav.pop();
+                        }
+                      } catch (_) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(l.operationFailed)),
+                        );
+                      }
+                    },
                     child: Text(
                       l.updateBaseline,
                       style: TextStyle(
@@ -224,10 +252,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                       ),
                     ),
                     onPressed: () => Navigator.of(ctx).pop(),
-                    child: Text(
-                      l.dismiss,
-                      style: TextStyle(fontSize: 13),
-                    ),
+                    child: Text(l.dismiss, style: TextStyle(fontSize: 13)),
                   ),
                 ),
               ],
@@ -242,6 +267,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     if (_jumpResult == null) return;
     setState(() => _isSaving = true);
 
+    final l = AppLocalizations.of(context)!;
     final athlete = ref.read(activeAthleteProvider)!;
     final test = JumpTest()
       ..athleteId = athlete.id
@@ -250,15 +276,24 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       ..takeoffFrame = _jumpResult!.takeoffFrame
       ..landingFrame = _jumpResult!.landingFrame
       ..fps = _jumpResult!.fps
+      ..takeoffTimeSeconds = _jumpResult!.takeoffTimeSeconds
+      ..landingTimeSeconds = _jumpResult!.landingTimeSeconds
       ..flightTimeMs = _jumpResult!.flightTimeMs
       ..heightCm = _jumpResult!.heightCm
       ..deltaHCm = _jumpResult!.deltaHCm
       ..baselineAtTest = athlete.baselineCmjHeight;
 
-    await ref.read(isarServiceProvider).saveJumpTests([test]);
-
-    if (mounted) {
-      Navigator.of(context).pop();
+    try {
+      await ref.read(isarServiceProvider).saveJumpTests([test]);
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.operationFailed)));
     }
   }
 
@@ -269,14 +304,25 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     });
   }
 
-  ({String label, Color color}) get _fatigueStatus {
+  ({int level, Color color}) get _fatigueStatus {
     final p = _fatiguePercent ?? 0;
     if (p < 5) {
-      return (label: 'Optimal', color: const Color(0xFF4ADE80));
+      return (level: 0, color: const Color(0xFF4ADE80));
     } else if (p <= 10) {
-      return (label: 'Moderate Fatigue', color: const Color(0xFFFACC15));
+      return (level: 1, color: const Color(0xFFFACC15));
     } else {
-      return (label: 'High Fatigue', color: const Color(0xFFEF4444));
+      return (level: 2, color: const Color(0xFFEF4444));
+    }
+  }
+
+  String _fatigueLabel(AppLocalizations l, int level) {
+    switch (level) {
+      case 0:
+        return l.optimal;
+      case 1:
+        return l.moderateFatigue;
+      default:
+        return l.highFatigue;
     }
   }
 
@@ -336,10 +382,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
               const SizedBox(height: 4),
               Text(
                 l.countermovementJumpCMJ,
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
             ],
           ),
@@ -351,12 +394,14 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
             height: 12,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.brand
-                  .withValues(alpha: 0.4 + _pulseController.value * 0.6),
+              color: AppColors.brand.withValues(
+                alpha: 0.4 + _pulseController.value * 0.6,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.brand
-                      .withValues(alpha: _pulseController.value * 0.4),
+                  color: AppColors.brand.withValues(
+                    alpha: _pulseController.value * 0.4,
+                  ),
                   blurRadius: 8,
                   spreadRadius: 2,
                 ),
@@ -451,11 +496,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
     final status = _fatigueStatus;
     final percent = _fatiguePercent ?? 0;
     final displayPercent = percent.abs().toStringAsFixed(0);
-    final localizedLabel = percent <= 5
-        ? l.optimal
-        : percent <= 10
-            ? l.moderateFatigue
-            : l.highFatigue;
+    final localizedLabel = _fatigueLabel(l, status.level);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -499,13 +540,10 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
             percent <= 5
                 ? l.fatigueOptimalMessage
                 : percent <= 10
-                    ? l.fatigueModerateMessage
-                    : l.fatigueHighMessage,
+                ? l.fatigueModerateMessage
+                : l.fatigueHighMessage,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppColors.textTertiary, fontSize: 12),
           ),
         ],
       ),
@@ -570,11 +608,10 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
               child: Container(
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(4)),
-                  border: Border(
-                    top: BorderSide(color: borderColor, width: 2),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(4),
                   ),
+                  border: Border(top: BorderSide(color: borderColor, width: 2)),
                   boxShadow: glow
                       ? [
                           BoxShadow(
@@ -591,10 +628,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
         const SizedBox(height: 8),
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 12,
-          ),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
       ],
     );
@@ -606,9 +640,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
         backgroundColor: AppColors.brand,
         foregroundColor: const Color(0xFF0F172A),
         padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         elevation: 4,
         shadowColor: AppColors.brand.withValues(alpha: 0.3),
       ),
@@ -616,10 +648,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
       icon: const Icon(Icons.videocam_rounded),
       label: Text(
         l.recordDailyJump,
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
     );
   }
@@ -651,10 +680,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
                 )
               : Text(
                   l.saveTest,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
         ),
         const SizedBox(height: 12),
@@ -662,10 +688,7 @@ class _FatigueTestScreenState extends ConsumerState<FatigueTestScreen>
           onPressed: _isSaving ? null : _discard,
           child: Text(
             l.discardResult,
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textTertiary, fontSize: 14),
           ),
         ),
       ],

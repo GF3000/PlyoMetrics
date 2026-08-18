@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/save_outcome.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/jump_test.dart';
@@ -23,8 +24,10 @@ class CmjBaselineScreen extends ConsumerWidget {
     final session = ref.watch(cmjSessionProvider);
     final activeSession = session.activeSession;
     final activeAthlete = activeSession != null
-        ? athletes.firstWhere((a) => a.id == activeSession.athleteId,
-            orElse: () => athletes.first)
+        ? athletes.firstWhere(
+            (a) => a.id == activeSession.athleteId,
+            orElse: () => athletes.first,
+          )
         : athletes.first;
 
     return Scaffold(
@@ -70,8 +73,9 @@ class CmjBaselineScreen extends ConsumerWidget {
                   _AthleteChipBar(
                     sessions: session.orderedSessions,
                     activeAthleteId: session.activeAthleteId,
-                    onSelect: (id) =>
-                        ref.read(cmjSessionProvider.notifier).setActiveAthlete(id),
+                    onSelect: (id) => ref
+                        .read(cmjSessionProvider.notifier)
+                        .setActiveAthlete(id),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -108,11 +112,13 @@ class CmjBaselineScreen extends ConsumerWidget {
 
                 // Jump cards
                 for (int i = 0; i < session.jumps.length; i++) ...[
-                  if (i > 0 || session.jumps.isEmpty) const SizedBox(height: 12),
+                  if (i > 0 || session.jumps.isEmpty)
+                    const SizedBox(height: 12),
                   _JumpCard(
                     index: i,
                     jump: session.jumps[i],
-                    isOutlier: session.outlierFlags.length > i &&
+                    isOutlier:
+                        session.outlierFlags.length > i &&
                         session.outlierFlags[i],
                     onRemove: () =>
                         ref.read(cmjSessionProvider.notifier).removeJump(i),
@@ -182,7 +188,7 @@ class CmjBaselineScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _saveAthleteSession(
+  Future<SaveResult> _saveAthleteSession(
     BuildContext context,
     WidgetRef ref,
     AthleteSession athleteSession,
@@ -218,52 +224,80 @@ class CmjBaselineScreen extends ConsumerWidget {
           ],
         ),
       );
-      if (proceed != true) return;
+      if (proceed != true) return const SaveCancelled();
     }
 
-    final service = ref.read(isarServiceProvider);
+    try {
+      final service = ref.read(isarServiceProvider);
 
-    final validJumps = [
-      for (int i = 0; i < athleteSession.jumps.length; i++)
-        if (!athleteSession.outlierFlags[i]) athleteSession.jumps[i],
-    ];
-    final avgFlightTimeMs = validJumps.isEmpty
-        ? 0.0
-        : validJumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
-            validJumps.length;
+      final validJumps = [
+        for (int i = 0; i < athleteSession.jumps.length; i++)
+          if (!athleteSession.outlierFlags[i]) athleteSession.jumps[i],
+      ];
+      final avgFlightTimeMs = validJumps.isEmpty
+          ? 0.0
+          : validJumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
+                validJumps.length;
 
-    final test = JumpTest()
-      ..athleteId = athlete.id
-      ..testType = 'cmj_baseline'
-      ..timestamp = DateTime.now()
-      ..takeoffFrame = 0
-      ..landingFrame = 0
-      ..fps = athleteSession.jumps.isNotEmpty ? athleteSession.jumps.first.fps : 0
-      ..flightTimeMs = avgFlightTimeMs
-      ..heightCm = athleteSession.averageHeightCm!
-      ..deltaHCm = athleteSession.propagatedErrorCm!
-      ..isOutlier = false;
+      final timestamp = DateTime.now();
+      final sessionId = timestamp.microsecondsSinceEpoch;
+      final trialTests = <JumpTest>[
+        for (int i = 0; i < athleteSession.jumps.length; i++)
+          JumpTest()
+            ..athleteId = athlete.id
+            ..testType = 'cmj_baseline'
+            ..timestamp = timestamp
+            ..takeoffFrame = athleteSession.jumps[i].takeoffFrame
+            ..landingFrame = athleteSession.jumps[i].landingFrame
+            ..fps = athleteSession.jumps[i].fps
+            ..takeoffTimeSeconds = athleteSession.jumps[i].takeoffTimeSeconds
+            ..landingTimeSeconds = athleteSession.jumps[i].landingTimeSeconds
+            ..flightTimeMs = athleteSession.jumps[i].flightTimeMs
+            ..heightCm = athleteSession.jumps[i].heightCm
+            ..deltaHCm = athleteSession.jumps[i].deltaHCm
+            ..sessionId = sessionId
+            ..isSummary = false
+            ..isOutlier = athleteSession.outlierFlags[i],
+      ];
+      final summary = JumpTest()
+        ..athleteId = athlete.id
+        ..testType = 'cmj_baseline'
+        ..timestamp = timestamp
+        ..flightTimeMs = avgFlightTimeMs
+        ..heightCm = athleteSession.averageHeightCm!
+        ..deltaHCm = athleteSession.propagatedErrorCm!
+        ..sessionId = sessionId
+        ..isSummary = true
+        ..isOutlier = false;
 
-    await service.saveJumpTests([test]);
-    await service.updateAthleteBaseline(
-      athlete.id,
-      athleteSession.averageHeightCm!,
-      baselineDate: DateTime.now(),
-    );
+      final updatedAthlete = await service.saveCmjBaselineSession(
+        tests: [...trialTests, summary],
+        athleteId: athlete.id,
+        heightCm: athleteSession.averageHeightCm!,
+        baselineDate: timestamp,
+      );
+      if (updatedAthlete == null) {
+        throw StateError('Athlete ${athlete.id} no longer exists.');
+      }
 
-    ref.read(cmjSessionProvider.notifier).markSaved(athlete.id);
+      ref.read(cmjSessionProvider.notifier).markSaved(athlete.id);
 
-    // Keep activeAthleteProvider in sync for the dashboard
-    final globalActive = ref.read(activeAthleteProvider);
-    if (globalActive?.id == athlete.id) {
-      final updatedAthlete = await service.db.athletes.get(athlete.id);
-      if (updatedAthlete != null) {
+      final globalActive = ref.read(activeAthleteProvider);
+      if (globalActive?.id == athlete.id) {
         ref.read(activeAthleteProvider.notifier).state = updatedAthlete;
       }
-    }
 
-    if (popOnDone && context.mounted) {
-      Navigator.of(context).pop();
+      if (popOnDone && context.mounted) {
+        Navigator.of(context).pop();
+      }
+      return const SaveSucceeded();
+    } catch (error, stackTrace) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.errorWithMessage(error.toString()))),
+        );
+      }
+      return SaveFailed(error, stackTrace);
     }
   }
 
@@ -281,20 +315,21 @@ class CmjBaselineScreen extends ConsumerWidget {
       final athlete = athletes.firstWhere(
         (a) => a.id == athleteSession.athleteId,
       );
-      await _saveAthleteSession(
+      final result = await _saveAthleteSession(
         context,
         ref,
         athleteSession,
         athlete,
         popOnDone: false,
       );
+      if (result is SaveCancelled || result is SaveFailed) return;
       if (!context.mounted) return;
     }
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.allBaselinesSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.allBaselinesSaved)));
       ref.read(cmjSessionProvider.notifier).reset();
       Navigator.of(context).pop();
     }
@@ -316,6 +351,7 @@ class _AthleteChipBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return SizedBox(
       height: 44,
       child: ListView.separated(
@@ -325,7 +361,7 @@ class _AthleteChipBar extends StatelessWidget {
         itemBuilder: (context, index) {
           final s = sessions[index];
           final isActive = s.athleteId == activeAthleteId;
-          final label = '${s.athleteName} (${s.validJumpCount}/3)';
+          final label = l.athleteJumpProgress(s.athleteName, s.validJumpCount);
 
           if (s.saved) {
             return _SavedChip(label: s.athleteName);
@@ -336,8 +372,7 @@ class _AthleteChipBar extends StatelessWidget {
               label,
               style: TextStyle(
                 color: isActive ? AppColors.brand : AppColors.textSecondary,
-                fontWeight:
-                    isActive ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 fontSize: 13,
               ),
             ),
@@ -420,8 +455,7 @@ class _SaveFooter extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onSaveActive,
                       icon: const Icon(Icons.save),
-                      label: Text(
-                          l.saveAthleteBaseline(activeAthlete.name)),
+                      label: Text(l.saveAthleteBaseline(activeAthlete.name)),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.black,
@@ -497,7 +531,9 @@ class _JumpCard extends StatelessWidget {
         color: AppColors.card,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isOutlier ? Colors.amber.withAlpha(100) : AppColors.borderLight,
+          color: isOutlier
+              ? Colors.amber.withAlpha(100)
+              : AppColors.borderLight,
         ),
       ),
       child: Column(
@@ -532,8 +568,11 @@ class _JumpCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.warning_amber,
-                              size: 14, color: Colors.amber),
+                          const Icon(
+                            Icons.warning_amber,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             l.outlier,
@@ -592,11 +631,11 @@ class _JumpCard extends StatelessWidget {
 
           // Flight time
           Text(
-            l.flightTimeInfo(jump.flightTimeMs.toStringAsFixed(1), jump.fps.toStringAsFixed(0)),
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
+            l.flightTimeInfo(
+              jump.flightTimeMs.toStringAsFixed(1),
+              jump.fps.toStringAsFixed(0),
             ),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -679,29 +718,37 @@ class _BaselineSummary extends StatelessWidget {
                 style: TextStyle(
                   color: AppColors.brand,
                   fontSize: 14,
-                  shadows: [Shadow(color: AppColors.brand.withValues(alpha: 0.5), blurRadius: 10)],
+                  shadows: [
+                    Shadow(
+                      color: AppColors.brand.withValues(alpha: 0.5),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
               ),
             ),
           const SizedBox(height: 4),
-          if (athlete != null && athlete!.getRelativePower(averageHeight) != null)
+          if (athlete != null &&
+              athlete!.getRelativePower(averageHeight) != null)
             Center(
               child: Text(
                 '${l.relativePowerLabel}: ${athlete!.getRelativePower(averageHeight)!.toStringAsFixed(1)} W/kg',
                 style: TextStyle(
                   color: AppColors.brand,
                   fontSize: 14,
-                  shadows: [Shadow(color: AppColors.brand.withValues(alpha: 0.5), blurRadius: 10)],
+                  shadows: [
+                    Shadow(
+                      color: AppColors.brand.withValues(alpha: 0.5),
+                      blurRadius: 10,
+                    ),
+                  ],
                 ),
               ),
             ),
           const SizedBox(height: 4),
           Text(
             l.outliersExcluded,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ],
       ),

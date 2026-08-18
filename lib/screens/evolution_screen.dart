@@ -109,7 +109,7 @@ class EvolutionScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 12),
-                        _buildMetricCards(stats),
+                        _buildMetricCards(l, stats),
                         const SizedBox(height: 20),
                         _buildChart(baselines, fatigueTests),
                         const SizedBox(height: 24),
@@ -131,15 +131,7 @@ class EvolutionScreen extends ConsumerWidget {
     AppLocalizations l,
     List<AsymmetrySessionPoint> sessions,
     List<JumpTest> allTests,
-    ({
-      String title1,
-      String val1,
-      String title2,
-      String val2,
-      bool isPositive1,
-      bool isPositive2,
-    })
-    stats,
+    AthleteEvolutionStats stats,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -147,7 +139,7 @@ class EvolutionScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
-          _buildMetricCards(stats),
+          _buildMetricCards(l, stats),
           const SizedBox(height: 20),
           _buildAsymmetryChart(l, sessions),
           const SizedBox(height: 24),
@@ -339,15 +331,7 @@ class EvolutionScreen extends ConsumerWidget {
     AppLocalizations l,
     List<JumpTest> rsiTests,
     List<JumpTest> allTests,
-    ({
-      String title1,
-      String val1,
-      String title2,
-      String val2,
-      bool isPositive1,
-      bool isPositive2,
-    })
-    stats,
+    AthleteEvolutionStats stats,
   ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -355,7 +339,7 @@ class EvolutionScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 12),
-          _buildMetricCards(stats),
+          _buildMetricCards(l, stats),
           const SizedBox(height: 20),
           _buildRsiChart(l, rsiTests),
           const SizedBox(height: 24),
@@ -508,22 +492,12 @@ class EvolutionScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMetricCards(
-    ({
-      String title1,
-      String val1,
-      String title2,
-      String val2,
-      bool isPositive1,
-      bool isPositive2,
-    })
-    stats,
-  ) {
+  Widget _buildMetricCards(AppLocalizations l, AthleteEvolutionStats stats) {
     return Row(
       children: [
         Expanded(
           child: _metricCard(
-            label: stats.title1,
+            label: _evolutionMetricLabel(l, stats.title1),
             value: stats.val1,
             isPositive: stats.isPositive1,
           ),
@@ -531,13 +505,23 @@ class EvolutionScreen extends ConsumerWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _metricCard(
-            label: stats.title2,
+            label: _evolutionMetricLabel(l, stats.title2),
             value: stats.val2,
             isPositive: stats.isPositive2,
           ),
         ),
       ],
     );
+  }
+
+  String _evolutionMetricLabel(AppLocalizations l, EvolutionMetricLabel label) {
+    return switch (label) {
+      EvolutionMetricLabel.latestAsymmetry => l.evolutionLatestAsymmetry,
+      EvolutionMetricLabel.change => l.evolutionChange,
+      EvolutionMetricLabel.heightGain => l.evolutionHeightGain,
+      EvolutionMetricLabel.versusGroupMean => l.evolutionVsGroupMean,
+      EvolutionMetricLabel.rsiGain => l.evolutionRsiGain,
+    };
   }
 
   Widget _metricCard({
@@ -778,7 +762,7 @@ class EvolutionScreen extends ConsumerWidget {
     // Baseline: group by session, take max height per session
     final Map<int, JumpTest> bestPerSession = {};
     for (final t in baselines) {
-      final key = t.baselineSessionId ?? t.id;
+      final key = t.sessionId ?? t.id;
       if (!bestPerSession.containsKey(key) ||
           t.heightCm > bestPerSession[key]!.heightCm) {
         bestPerSession[key] = t;
@@ -836,15 +820,13 @@ class EvolutionScreen extends ConsumerWidget {
 
     for (final test in allTests) {
       if (test.testType == 'asymmetry') {
-        final sid = test.asymmetrySessionId ?? test.id;
+        final sid = test.sessionId ?? test.id;
         if (seenAsymmetrySessions.contains(sid)) continue;
         seenAsymmetrySessions.add(sid);
 
         final pair = allTests
             .where(
-              (t) =>
-                  t.testType == 'asymmetry' &&
-                  (t.asymmetrySessionId ?? t.id) == sid,
+              (t) => t.testType == 'asymmetry' && (t.sessionId ?? t.id) == sid,
             )
             .toList();
         final leftList = pair.where((t) => t.leg == 'left').toList();

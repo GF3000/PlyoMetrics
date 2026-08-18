@@ -8,6 +8,8 @@ class IsarService {
   late final Isar _db;
 
   IsarService._();
+  IsarService.withDatabase(Isar database) : _db = database, _initialized = true;
+
   static final IsarService _instance = IsarService._();
   static IsarService get instance => _instance;
 
@@ -16,10 +18,11 @@ class IsarService {
   Future<void> init() async {
     if (_initialized) return;
     final dir = await getApplicationSupportDirectory();
-    _db = await Isar.open(
-      [AthleteSchema, AthleteGroupSchema, JumpTestSchema],
-      directory: dir.path,
-    );
+    _db = await Isar.open([
+      AthleteSchema,
+      AthleteGroupSchema,
+      JumpTestSchema,
+    ], directory: dir.path);
     _initialized = true;
   }
 
@@ -44,7 +47,20 @@ class IsarService {
   }
 
   Future<void> deleteGroup(int groupId) async {
+    final group = await _db.athleteGroups.get(groupId);
+    if (group == null) return;
+    await group.athletes.load();
+    final athleteIds = group.athletes.map((athlete) => athlete.id).toList();
+
     await _db.writeTxn(() async {
+      for (final athleteId in athleteIds) {
+        final tests = await _db.jumpTests
+            .filter()
+            .athleteIdEqualTo(athleteId)
+            .findAll();
+        await _db.jumpTests.deleteAll(tests.map((test) => test.id).toList());
+      }
+      await _db.athletes.deleteAll(athleteIds);
       await _db.athleteGroups.delete(groupId);
     });
   }
@@ -80,15 +96,35 @@ class IsarService {
 
   Future<void> deleteAthlete(Athlete athlete) async {
     await _db.writeTxn(() async {
+      final tests = await _db.jumpTests
+          .filter()
+          .athleteIdEqualTo(athlete.id)
+          .findAll();
+      await _db.jumpTests.deleteAll(tests.map((test) => test.id).toList());
       await _db.athletes.delete(athlete.id);
     });
   }
 
-  Future<Athlete> updateAthlete(Athlete athlete, {String? name, double? weightKg, double? heightCm}) async {
+  Future<Athlete> updateAthlete(
+    Athlete athlete, {
+    String? name,
+    double? weightKg,
+    double? heightCm,
+    bool clearWeight = false,
+    bool clearHeight = false,
+  }) async {
     await _db.writeTxn(() async {
       if (name != null) athlete.name = name;
-      if (weightKg != null) athlete.weightKg = weightKg;
-      if (heightCm != null) athlete.heightCm = heightCm;
+      if (clearWeight) {
+        athlete.weightKg = null;
+      } else if (weightKg != null) {
+        athlete.weightKg = weightKg;
+      }
+      if (clearHeight) {
+        athlete.heightCm = null;
+      } else if (heightCm != null) {
+        athlete.heightCm = heightCm;
+      }
       await _db.athletes.put(athlete);
     });
     return athlete;
@@ -116,6 +152,85 @@ class IsarService {
     await _db.writeTxn(() async {
       await _db.jumpTests.putAll(tests);
     });
+  }
+
+  Future<Athlete?> saveCmjBaselineSession({
+    required List<JumpTest> tests,
+    required int athleteId,
+    required double heightCm,
+    required DateTime baselineDate,
+  }) async {
+    Athlete? updated;
+    await _db.writeTxn(() async {
+      await _db.jumpTests.putAll(tests);
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete == null) return;
+      athlete
+        ..baselineCmjHeight = heightCm
+        ..baselineDate = baselineDate;
+      await _db.athletes.put(athlete);
+      updated = athlete;
+    });
+    return updated;
+  }
+
+  Future<Athlete?> saveRsiSession({
+    required List<JumpTest> tests,
+    required int athleteId,
+    required double rsiScore,
+  }) async {
+    Athlete? updated;
+    await _db.writeTxn(() async {
+      await _db.jumpTests.putAll(tests);
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete == null) return;
+      athlete.baselineRsi = rsiScore;
+      await _db.athletes.put(athlete);
+      updated = athlete;
+    });
+    return updated;
+  }
+
+  Future<Athlete?> saveAsymmetrySession({
+    required List<JumpTest> tests,
+    required int athleteId,
+    required double asymmetryPct,
+    required String strongerLeg,
+    required DateTime timestamp,
+  }) async {
+    Athlete? updated;
+    await _db.writeTxn(() async {
+      await _db.jumpTests.putAll(tests);
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete == null) return;
+      athlete
+        ..latestAsymmetryPct = asymmetryPct
+        ..asymmetryStrongerLeg = strongerLeg
+        ..asymmetryDate = timestamp;
+      await _db.athletes.put(athlete);
+      updated = athlete;
+    });
+    return updated;
+  }
+
+  Future<Athlete?> saveFatiguePersonalBest({
+    required List<JumpTest> tests,
+    required int athleteId,
+    required double baselineHeightCm,
+    required DateTime timestamp,
+  }) async {
+    Athlete? updated;
+    await _db.writeTxn(() async {
+      await _db.jumpTests.putAll(tests);
+      final athlete = await _db.athletes.get(athleteId);
+      if (athlete == null) return;
+      athlete
+        ..baselineCmjHeight = baselineHeightCm
+        ..baselineDate = timestamp;
+      await _db.athletes.put(athlete);
+      updated = athlete;
+    });
+    return updated;
   }
 
   Future<void> updateAthleteBaseline(
@@ -166,6 +281,7 @@ class IsarService {
         .filter()
         .athleteIdEqualTo(athleteId)
         .testTypeEqualTo('asymmetry')
+        .isSummaryEqualTo(true)
         .sortByTimestampDesc()
         .findAll();
   }
@@ -177,12 +293,22 @@ class IsarService {
       if (test == null) return;
 
       final athleteId = test.athleteId;
-      await _db.jumpTests.delete(testId);
+      if (test.sessionId == null) {
+        await _db.jumpTests.delete(testId);
+      } else {
+        final sessionTests = await _db.jumpTests
+            .filter()
+            .athleteIdEqualTo(athleteId)
+            .sessionIdEqualTo(test.sessionId!)
+            .findAll();
+        await _db.jumpTests.deleteAll(sessionTests.map((t) => t.id).toList());
+      }
 
       // Recalculate baseline from remaining jumps
       final remaining = await _db.jumpTests
           .filter()
           .athleteIdEqualTo(athleteId)
+          .isSummaryEqualTo(true)
           .findAll();
 
       final athlete = await _db.athletes.get(athleteId);
@@ -195,17 +321,14 @@ class IsarService {
           athlete.baselineCmjHeight = null;
           athlete.baselineDate = null;
         } else {
-          athlete.baselineCmjHeight = cmjTests
-              .map((t) => t.heightCm)
-              .reduce((a, b) => a > b ? a : b);
           cmjTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-          athlete.baselineDate = cmjTests.first.timestamp;
+          final latest = cmjTests.first;
+          athlete.baselineCmjHeight = latest.heightCm;
+          athlete.baselineDate = latest.timestamp;
         }
 
         // Recalculate RSI baseline
-        final rsiTests = remaining
-            .where((t) => t.testType == 'rsi')
-            .toList();
+        final rsiTests = remaining.where((t) => t.testType == 'rsi').toList();
         if (rsiTests.isEmpty) {
           athlete.baselineRsi = null;
         } else {
@@ -223,19 +346,37 @@ class IsarService {
           athlete.asymmetryDate = null;
         } else {
           asymmetryTests.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-          final latestSessionId = asymmetryTests.first.asymmetrySessionId;
-          final pair = asymmetryTests
-              .where((t) => t.asymmetrySessionId == latestSessionId)
-              .toList();
-          final left = pair.where((t) => t.leg == 'left').toList();
-          final right = pair.where((t) => t.leg == 'right').toList();
-          if (left.isNotEmpty && right.isNotEmpty) {
-            final leftH = left.first.heightCm;
-            final rightH = right.first.heightCm;
+          final sessionIds = asymmetryTests
+              .map((t) => t.sessionId ?? t.id)
+              .toSet();
+          JumpTest? latestLeft;
+          JumpTest? latestRight;
+          for (final sessionId in sessionIds) {
+            final pair = asymmetryTests
+                .where((t) => (t.sessionId ?? t.id) == sessionId)
+                .toList();
+            final left = pair.where((t) => t.leg == 'left').toList();
+            final right = pair.where((t) => t.leg == 'right').toList();
+            if (left.isNotEmpty && right.isNotEmpty) {
+              latestLeft = left.first;
+              latestRight = right.first;
+              break;
+            }
+          }
+
+          if (latestLeft == null || latestRight == null) {
+            athlete.latestAsymmetryPct = null;
+            athlete.asymmetryStrongerLeg = null;
+            athlete.asymmetryDate = null;
+          } else {
+            final leftH = latestLeft.heightCm;
+            final rightH = latestRight.heightCm;
             final maxH = leftH > rightH ? leftH : rightH;
-            athlete.latestAsymmetryPct = (rightH - leftH) / maxH * 100;
+            athlete.latestAsymmetryPct = maxH > 0
+                ? (rightH - leftH) / maxH * 100
+                : 0;
             athlete.asymmetryStrongerLeg = rightH >= leftH ? 'right' : 'left';
-            athlete.asymmetryDate = asymmetryTests.first.timestamp;
+            athlete.asymmetryDate = latestLeft.timestamp;
           }
         }
 
@@ -254,8 +395,28 @@ class IsarService {
         .filter()
         .athleteIdEqualTo(athleteId)
         .testTypeEqualTo(testType)
+        .isSummaryEqualTo(true)
         .sortByTimestampDesc()
         .findAll();
+  }
+
+  Future<List<JumpTest>> getSummaryTestsForAthletes(
+    Iterable<int> athleteIds, {
+    String? testType,
+  }) async {
+    final ids = athleteIds.toSet();
+    if (ids.isEmpty) return [];
+    final summaries = await _db.jumpTests
+        .filter()
+        .isSummaryEqualTo(true)
+        .findAll();
+    return summaries
+        .where(
+          (test) =>
+              ids.contains(test.athleteId) &&
+              (testType == null || test.testType == testType),
+        )
+        .toList();
   }
 
   Future<JumpTest?> getLatestJumpTest(int athleteId, String testType) {
@@ -263,6 +424,7 @@ class IsarService {
         .filter()
         .athleteIdEqualTo(athleteId)
         .testTypeEqualTo(testType)
+        .isSummaryEqualTo(true)
         .sortByTimestampDesc()
         .findFirst();
   }

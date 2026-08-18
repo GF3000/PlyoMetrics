@@ -16,6 +16,7 @@ class AddGroupDialog extends StatefulWidget {
 class _AddGroupDialogState extends State<AddGroupDialog> {
   final _nameController = TextEditingController();
   bool _saving = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -24,15 +25,27 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
   }
 
   Future<void> _create() async {
+    final l = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      setState(() => _errorMessage = l.requiredField);
+      return;
+    }
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
     try {
       final group = await IsarService.instance.addGroup(name);
       if (mounted) Navigator.of(context).pop(group);
     } catch (_) {
-      setState(() => _saving = false);
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _errorMessage = l.operationFailed;
+        });
+      }
     }
   }
 
@@ -42,23 +55,35 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
     return AlertDialog(
       backgroundColor: AppColors.card,
       title: Text(l.newGroup, style: const TextStyle(color: Colors.white)),
-      content: TextField(
-        controller: _nameController,
-        autofocus: true,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: l.groupName,
-          labelStyle: const TextStyle(color: AppColors.textSecondary),
-          enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: AppColors.borderLight),
-            borderRadius: BorderRadius.circular(8),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_errorMessage != null) ...[
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+            const SizedBox(height: 12),
+          ],
+          TextField(
+            controller: _nameController,
+            autofocus: true,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              labelText: l.groupName,
+              labelStyle: const TextStyle(color: AppColors.textSecondary),
+              enabledBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: AppColors.borderLight),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: const BorderSide(color: AppColors.brand),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onSubmitted: (_) => _create(),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: AppColors.brand),
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        onSubmitted: (_) => _create(),
+        ],
       ),
       actions: [
         TextButton(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/save_outcome.dart';
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
 import '../models/athlete.dart';
@@ -37,8 +38,10 @@ class AsymmetryTestScreen extends ConsumerWidget {
     final session = ref.watch(asymmetrySessionProvider);
     final activeSession = session.activeSession;
     final activeAthlete = activeSession != null
-        ? athletes.firstWhere((a) => a.id == activeSession.athleteId,
-            orElse: () => athletes.first)
+        ? athletes.firstWhere(
+            (a) => a.id == activeSession.athleteId,
+            orElse: () => athletes.first,
+          )
         : athletes.first;
 
     final activeLegSession = activeSession?.activeLeg == 'right'
@@ -120,8 +123,11 @@ class AsymmetryTestScreen extends ConsumerWidget {
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.info_outline,
-                            size: 32, color: AppColors.brand),
+                        Icon(
+                          Icons.info_outline,
+                          size: 32,
+                          color: AppColors.brand,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           l.asymmetryTestInstructions,
@@ -143,8 +149,9 @@ class AsymmetryTestScreen extends ConsumerWidget {
                     index: i,
                     jump: jumps[i],
                     isOutlier: outlierFlags.length > i && outlierFlags[i],
-                    onRemove: () =>
-                        ref.read(asymmetrySessionProvider.notifier).removeJump(i),
+                    onRemove: () => ref
+                        .read(asymmetrySessionProvider.notifier)
+                        .removeJump(i),
                   ),
                 ],
 
@@ -153,15 +160,21 @@ class AsymmetryTestScreen extends ConsumerWidget {
                 // Record jump button
                 if (jumps.length < 3 && activeSession?.saved != true)
                   OutlinedButton.icon(
-                    onPressed: () => _recordJump(context, ref,
-                        activeSession?.activeLeg ?? 'left', jumps.length + 1),
-                    icon: const Icon(Icons.videocam),
-                    label: Text(l.recordLegJumpNumber(
-                      activeSession?.activeLeg == 'right'
-                          ? l.rightLeg
-                          : l.leftLeg,
+                    onPressed: () => _recordJump(
+                      context,
+                      ref,
+                      activeSession?.activeLeg ?? 'left',
                       jumps.length + 1,
-                    )),
+                    ),
+                    icon: const Icon(Icons.videocam),
+                    label: Text(
+                      l.recordLegJumpNumber(
+                        activeSession?.activeLeg == 'right'
+                            ? l.rightLeg
+                            : l.leftLeg,
+                        jumps.length + 1,
+                      ),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.brand,
                       side: const BorderSide(color: AppColors.brand),
@@ -177,10 +190,8 @@ class AsymmetryTestScreen extends ConsumerWidget {
                 if (activeSession?.asymmetryPct != null) ...[
                   const SizedBox(height: 24),
                   _AsymmetrySummary(
-                    leftHeightCm:
-                        activeSession!.leftLeg.averageHeightCm ?? 0,
-                    rightHeightCm:
-                        activeSession.rightLeg.averageHeightCm ?? 0,
+                    leftHeightCm: activeSession!.leftLeg.averageHeightCm ?? 0,
+                    rightHeightCm: activeSession.rightLeg.averageHeightCm ?? 0,
                     asymmetryPct: activeSession.asymmetryPct!,
                     strongerLeg: activeSession.strongerLeg ?? 'right',
                   ),
@@ -202,8 +213,9 @@ class AsymmetryTestScreen extends ConsumerWidget {
                 activeAthlete,
                 popOnDone: !session.isMultiAthlete,
               ),
-              onSaveAll:
-                  session.isMultiAthlete ? () => _saveAll(context, ref, session) : null,
+              onSaveAll: session.isMultiAthlete
+                  ? () => _saveAll(context, ref, session)
+                  : null,
             ),
         ],
       ),
@@ -224,7 +236,7 @@ class AsymmetryTestScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _saveAthleteSession(
+  Future<SaveResult> _saveAthleteSession(
     BuildContext context,
     WidgetRef ref,
     AsymmetryAthleteSession athleteSession,
@@ -235,7 +247,9 @@ class AsymmetryTestScreen extends ConsumerWidget {
 
     final leftCount = athleteSession.leftLeg.jumps.length;
     final rightCount = athleteSession.rightLeg.jumps.length;
-    if (leftCount < 1 || rightCount < 1) return;
+    if (leftCount < 1 || rightCount < 1) {
+      return const SaveCancelled();
+    }
 
     // Warn if either leg has fewer than 3 jumps
     if (leftCount < 3 || rightCount < 3) {
@@ -243,13 +257,12 @@ class AsymmetryTestScreen extends ConsumerWidget {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppColors.card,
-          title: const Text(
-            'Incomplete Test',
-            style: TextStyle(color: Colors.white),
+          title: Text(
+            l.incompleteAsymmetryTest,
+            style: const TextStyle(color: Colors.white),
           ),
           content: Text(
-            'You have $leftCount left-leg and $rightCount right-leg jump(s). '
-            'It is recommended to record 3 per leg for accuracy. Save anyway?',
+            l.incompleteAsymmetryMessage(leftCount, rightCount),
             style: const TextStyle(color: AppColors.textSecondary),
           ),
           actions: [
@@ -260,92 +273,140 @@ class AsymmetryTestScreen extends ConsumerWidget {
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
-              child: const Text('Save Anyway'),
+              child: Text(l.saveAnyway),
             ),
           ],
         ),
       );
-      if (proceed != true) return;
+      if (proceed != true) return const SaveCancelled();
     }
 
-    final service = ref.read(isarServiceProvider);
-    final now = DateTime.now();
-    final sessionId = now.millisecondsSinceEpoch;
+    try {
+      final service = ref.read(isarServiceProvider);
+      final now = DateTime.now();
+      final sessionId = now.microsecondsSinceEpoch;
 
-    JumpTest buildTest(String leg, double heightCm, double deltaHCm,
-        double flightTimeMs, double fps) {
-      return JumpTest()
-        ..athleteId = athlete.id
-        ..testType = 'asymmetry'
-        ..timestamp = now
-        ..takeoffFrame = 0
-        ..landingFrame = 0
-        ..fps = fps
-        ..flightTimeMs = flightTimeMs
-        ..heightCm = heightCm
-        ..deltaHCm = deltaHCm
-        ..isOutlier = false
-        ..leg = leg
-        ..asymmetrySessionId = sessionId;
-    }
+      JumpTest buildSummary(
+        String leg,
+        double heightCm,
+        double deltaHCm,
+        double flightTimeMs,
+      ) {
+        return JumpTest()
+          ..athleteId = athlete.id
+          ..testType = 'asymmetry'
+          ..timestamp = now
+          ..flightTimeMs = flightTimeMs
+          ..heightCm = heightCm
+          ..deltaHCm = deltaHCm
+          ..sessionId = sessionId
+          ..isSummary = true
+          ..isOutlier = false
+          ..leg = leg;
+      }
 
-    final leftLeg = athleteSession.leftLeg;
-    final rightLeg = athleteSession.rightLeg;
+      final leftLeg = athleteSession.leftLeg;
+      final rightLeg = athleteSession.rightLeg;
 
-    final validLeft = [
-      for (int i = 0; i < leftLeg.jumps.length; i++)
-        if (leftLeg.outlierFlags.length <= i || !leftLeg.outlierFlags[i])
-          leftLeg.jumps[i],
-    ];
-    final validRight = [
-      for (int i = 0; i < rightLeg.jumps.length; i++)
-        if (rightLeg.outlierFlags.length <= i || !rightLeg.outlierFlags[i])
-          rightLeg.jumps[i],
-    ];
+      final validLeft = [
+        for (int i = 0; i < leftLeg.jumps.length; i++)
+          if (leftLeg.outlierFlags.length <= i || !leftLeg.outlierFlags[i])
+            leftLeg.jumps[i],
+      ];
+      final validRight = [
+        for (int i = 0; i < rightLeg.jumps.length; i++)
+          if (rightLeg.outlierFlags.length <= i || !rightLeg.outlierFlags[i])
+            rightLeg.jumps[i],
+      ];
 
-    final avgLeftFlight = validLeft.isEmpty
-        ? 0.0
-        : validLeft.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
-            validLeft.length;
-    final avgRightFlight = validRight.isEmpty
-        ? 0.0
-        : validRight.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
-            validRight.length;
+      final avgLeftFlight = validLeft.isEmpty
+          ? 0.0
+          : validLeft.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
+                validLeft.length;
+      final avgRightFlight = validRight.isEmpty
+          ? 0.0
+          : validRight.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
+                validRight.length;
 
-    final leftTest = buildTest(
-      'left',
-      leftLeg.averageHeightCm!,
-      leftLeg.propagatedErrorCm ?? 0,
-      avgLeftFlight,
-      leftLeg.jumps.first.fps,
-    );
-    final rightTest = buildTest(
-      'right',
-      rightLeg.averageHeightCm!,
-      rightLeg.propagatedErrorCm ?? 0,
-      avgRightFlight,
-      rightLeg.jumps.first.fps,
-    );
+      final trialTests = <JumpTest>[
+        for (int i = 0; i < leftLeg.jumps.length; i++)
+          JumpTest()
+            ..athleteId = athlete.id
+            ..testType = 'asymmetry'
+            ..timestamp = now
+            ..takeoffFrame = leftLeg.jumps[i].takeoffFrame
+            ..landingFrame = leftLeg.jumps[i].landingFrame
+            ..fps = leftLeg.jumps[i].fps
+            ..takeoffTimeSeconds = leftLeg.jumps[i].takeoffTimeSeconds
+            ..landingTimeSeconds = leftLeg.jumps[i].landingTimeSeconds
+            ..flightTimeMs = leftLeg.jumps[i].flightTimeMs
+            ..heightCm = leftLeg.jumps[i].heightCm
+            ..deltaHCm = leftLeg.jumps[i].deltaHCm
+            ..sessionId = sessionId
+            ..isSummary = false
+            ..isOutlier = leftLeg.outlierFlags[i]
+            ..leg = 'left',
+        for (int i = 0; i < rightLeg.jumps.length; i++)
+          JumpTest()
+            ..athleteId = athlete.id
+            ..testType = 'asymmetry'
+            ..timestamp = now
+            ..takeoffFrame = rightLeg.jumps[i].takeoffFrame
+            ..landingFrame = rightLeg.jumps[i].landingFrame
+            ..fps = rightLeg.jumps[i].fps
+            ..takeoffTimeSeconds = rightLeg.jumps[i].takeoffTimeSeconds
+            ..landingTimeSeconds = rightLeg.jumps[i].landingTimeSeconds
+            ..flightTimeMs = rightLeg.jumps[i].flightTimeMs
+            ..heightCm = rightLeg.jumps[i].heightCm
+            ..deltaHCm = rightLeg.jumps[i].deltaHCm
+            ..sessionId = sessionId
+            ..isSummary = false
+            ..isOutlier = rightLeg.outlierFlags[i]
+            ..leg = 'right',
+      ];
 
-    await service.saveJumpTests([leftTest, rightTest]);
-    await service.updateAthleteAsymmetry(
-      athlete.id,
-      athleteSession.asymmetryPct!,
-      athleteSession.strongerLeg!,
-    );
+      final leftTest = buildSummary(
+        'left',
+        leftLeg.averageHeightCm!,
+        leftLeg.propagatedErrorCm ?? 0,
+        avgLeftFlight,
+      );
+      final rightTest = buildSummary(
+        'right',
+        rightLeg.averageHeightCm!,
+        rightLeg.propagatedErrorCm ?? 0,
+        avgRightFlight,
+      );
 
-    ref.read(asymmetrySessionProvider.notifier).markSaved(athlete.id);
+      final updated = await service.saveAsymmetrySession(
+        tests: [...trialTests, leftTest, rightTest],
+        athleteId: athlete.id,
+        asymmetryPct: athleteSession.asymmetryPct!,
+        strongerLeg: athleteSession.strongerLeg!,
+        timestamp: now,
+      );
+      if (updated == null) {
+        throw StateError('Athlete ${athlete.id} no longer exists.');
+      }
 
-    final globalActive = ref.read(activeAthleteProvider);
-    if (globalActive?.id == athlete.id) {
-      final updated = await service.db.athletes.get(athlete.id);
-      if (updated != null) {
+      ref.read(asymmetrySessionProvider.notifier).markSaved(athlete.id);
+
+      final globalActive = ref.read(activeAthleteProvider);
+      if (globalActive?.id == athlete.id) {
         ref.read(activeAthleteProvider.notifier).state = updated;
       }
-    }
 
-    if (popOnDone && context.mounted) {
-      Navigator.of(context).pop();
+      if (popOnDone && context.mounted) {
+        Navigator.of(context).pop();
+      }
+      return const SaveSucceeded();
+    } catch (error, stackTrace) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.errorWithMessage(error.toString()))),
+        );
+      }
+      return SaveFailed(error, stackTrace);
     }
   }
 
@@ -363,20 +424,21 @@ class AsymmetryTestScreen extends ConsumerWidget {
       final athlete = athletes.firstWhere(
         (a) => a.id == athleteSession.athleteId,
       );
-      await _saveAthleteSession(
+      final result = await _saveAthleteSession(
         context,
         ref,
         athleteSession,
         athlete,
         popOnDone: false,
       );
+      if (result is SaveCancelled || result is SaveFailed) return;
       if (!context.mounted) return;
     }
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.allAsymmetryTestsSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.allAsymmetryTestsSaved)));
       ref.read(asymmetrySessionProvider.notifier).reset();
       Navigator.of(context).pop();
     }
@@ -446,14 +508,18 @@ class _AthleteChipBar extends StatelessWidget {
 
           if (s.saved) {
             return Chip(
-              avatar:
-                  const Icon(Icons.check_circle, size: 16, color: Colors.green),
+              avatar: const Icon(
+                Icons.check_circle,
+                size: 16,
+                color: Colors.green,
+              ),
               label: Text(
                 s.athleteName,
                 style: const TextStyle(
-                    color: Colors.green,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500),
+                  color: Colors.green,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               backgroundColor: Colors.green.withAlpha(20),
               side: BorderSide(color: Colors.green.withAlpha(80)),
@@ -541,18 +607,22 @@ class _JumpCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.amber.withAlpha(30),
                         borderRadius: BorderRadius.circular(4),
-                        border:
-                            Border.all(color: Colors.amber.withAlpha(80)),
+                        border: Border.all(color: Colors.amber.withAlpha(80)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.warning_amber,
-                              size: 14, color: Colors.amber),
+                          const Icon(
+                            Icons.warning_amber,
+                            size: 14,
+                            color: Colors.amber,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             l.outlier,
@@ -609,10 +679,7 @@ class _JumpCard extends StatelessWidget {
               jump.flightTimeMs.toStringAsFixed(1),
               jump.fps.toStringAsFixed(0),
             ),
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -660,7 +727,7 @@ class _AsymmetrySummary extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'ASYMMETRY RESULT',
+            l.asymmetryResult,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -712,8 +779,7 @@ class _AsymmetrySummary extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: color.withAlpha(25),
               borderRadius: BorderRadius.circular(20),
@@ -731,18 +797,12 @@ class _AsymmetrySummary extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '${l.strongerLeg}: ${strongerLeg == 'right' ? l.rightStronger : l.leftStronger}  ($signedStr)',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
           const SizedBox(height: 4),
           Text(
             l.asymmetryPositiveNote,
-            style: const TextStyle(
-              fontSize: 11,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 11, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -793,9 +853,7 @@ class _LegMetric extends StatelessWidget {
               'cm',
               style: TextStyle(
                 fontSize: 12,
-                color: isStronger
-                    ? AppColors.brand
-                    : AppColors.textTertiary,
+                color: isStronger ? AppColors.brand : AppColors.textTertiary,
               ),
             ),
           ],
@@ -827,7 +885,8 @@ class _SaveFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
-    final activeCanSave = session.activeSession?.canSave == true &&
+    final activeCanSave =
+        session.activeSession?.canSave == true &&
         session.activeSession?.saved != true;
 
     return Container(
@@ -847,15 +906,15 @@ class _SaveFooter extends StatelessWidget {
                     child: FilledButton.icon(
                       onPressed: onSaveActive,
                       icon: const Icon(Icons.save),
-                      label: Text(
-                          l.saveAthleteAsymmetry(activeAthlete.name)),
+                      label: Text(l.saveAthleteAsymmetry(activeAthlete.name)),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.black,
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -871,10 +930,11 @@ class _SaveFooter extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.brand,
                         side: const BorderSide(color: AppColors.brand),
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         textStyle: const TextStyle(
-                            fontSize: 15, fontWeight: FontWeight.w600),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
@@ -891,7 +951,9 @@ class _SaveFooter extends StatelessWidget {
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   textStyle: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w600),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

@@ -1,30 +1,30 @@
-# plyometrics
+# PlyoMetrics
 
-A new Flutter project.
+PlyoMetrics is a Flutter mobile app for coaches and athletes to measure jump
+performance using high-speed video.
 
-## Getting Started
+Users select the exact takeoff and landing frames manually, allowing the app to
+calculate accurate performance metrics without relying on automatic pose
+detection.
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- Athlete and group management
+- CMJ baseline and fatigue testing
+- RSI drop-jump testing
+- Single-leg asymmetry testing
+- Performance history and charts
+- High-speed video recording and frame selection
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Getting started
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter gen-l10n
+flutter run
+```
 
-## Continuous delivery
+## License
 
-Every push to `main` runs code generation, analysis, tests, and an Android APK
-build. If all steps pass, GitHub Actions creates a pre-release with an
-installable APK attached.
-
-The workflow keeps the major and minor version from `pubspec.yaml` and uses the
-GitHub Actions run number as the patch and Android build number. For example,
-run 42 with `version: 1.0.0+1` produces version `1.0.42`.
-
-These automated builds use Android debug signing so the workflow does not need
-repository secrets. A production Play Store release still requires a private
-release keystore and an AAB build.
+PlyoMetrics is available under the [MIT License](LICENSE).

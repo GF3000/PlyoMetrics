@@ -8,6 +8,7 @@ import 'package:video_player/video_player.dart';
 import '../core/theme.dart';
 import '../providers/cmj_session_provider.dart';
 import 'cmj_video_scrubber_screen.dart';
+import 'high_speed_video_capture_screen.dart';
 
 /// Phase 1: Coarse video selection.
 /// User picks a video, plays it, pauses near the jump, then taps
@@ -23,6 +24,7 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
   VideoPlayerController? _controller;
   String? _videoPath;
   bool _isInitializing = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -34,21 +36,50 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
     final picker = ImagePicker();
     final file = await picker.pickVideo(source: ImageSource.gallery);
     if (file == null) return;
+    await _loadVideo(file.path);
+  }
 
-    setState(() => _isInitializing = true);
-    _controller?.dispose();
+  Future<void> _recordVideo() async {
+    final path = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const HighSpeedVideoCaptureScreen()),
+    );
+    if (path != null && mounted) {
+      await _loadVideo(path);
+    }
+  }
 
-    final controller = VideoPlayerController.file(File(file.path));
-    await controller.initialize();
-    controller.addListener(() {
-      if (mounted) setState(() {});
-    });
-
+  Future<void> _loadVideo(String path) async {
+    final l = AppLocalizations.of(context)!;
     setState(() {
-      _videoPath = file.path;
-      _controller = controller;
-      _isInitializing = false;
+      _isInitializing = true;
+      _errorMessage = null;
     });
+
+    try {
+      final previous = _controller;
+      final controller = VideoPlayerController.file(File(path));
+      await controller.initialize();
+      controller.addListener(() {
+        if (mounted) setState(() {});
+      });
+      await previous?.dispose();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+      setState(() {
+        _videoPath = path;
+        _controller = controller;
+        _isInitializing = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+          _errorMessage = l.operationFailed;
+        });
+      }
+    }
   }
 
   Future<void> _analyzeFromHere() async {
@@ -80,8 +111,10 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
   String _formatDuration(Duration d) {
     final minutes = d.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    final millis =
-        (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(2, '0');
+    final millis = (d.inMilliseconds.remainder(1000) ~/ 10).toString().padLeft(
+      2,
+      '0',
+    );
     return '$minutes:$seconds.$millis';
   }
 
@@ -133,7 +166,8 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                l.pickVideoToAnalyze,
+                                _errorMessage ?? l.pickVideoToAnalyze,
+                                textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: AppColors.textSecondary,
@@ -149,9 +183,7 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
             padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               color: AppColors.card,
-              border: Border(
-                top: BorderSide(color: AppColors.borderLight),
-              ),
+              border: Border(top: BorderSide(color: AppColors.borderLight)),
             ),
             child: Column(
               children: [
@@ -174,7 +206,9 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                           ),
                       max: controller.value.duration.inMilliseconds.toDouble(),
                       onChanged: (value) {
-                        controller.seekTo(Duration(milliseconds: value.toInt()));
+                        controller.seekTo(
+                          Duration(milliseconds: value.toInt()),
+                        );
                       },
                     ),
                   ),
@@ -237,13 +271,12 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                     ),
                   ),
                 ] else ...[
-                  // Pick video button
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: _isInitializing ? null : _pickVideo,
-                      icon: const Icon(Icons.video_library),
-                      label: Text(l.pickVideoFromGallery),
+                      onPressed: _isInitializing ? null : _recordVideo,
+                      icon: const Icon(Icons.videocam),
+                      label: Text(l.recordHighSpeedVideo),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         foregroundColor: Colors.black,
@@ -252,6 +285,20 @@ class _CmjVideoTrimScreenState extends State<CmjVideoTrimScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _isInitializing ? null : _pickVideo,
+                      icon: const Icon(Icons.video_library),
+                      label: Text(l.pickVideoFromGallery),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.brand,
+                        side: const BorderSide(color: AppColors.brand),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
                   ),

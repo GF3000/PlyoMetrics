@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
+import '../core/localized_number_parser.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/athlete_group.dart';
@@ -21,6 +22,7 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   bool _saving = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -31,24 +33,37 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
   }
 
   Future<void> _add() async {
+    final l = AppLocalizations.of(context)!;
     final name = _nameController.text.trim();
     final weightStr = _weightController.text.trim();
     final heightStr = _heightController.text.trim();
-    if (name.isEmpty) return;
+    if (name.isEmpty) {
+      setState(() => _errorMessage = l.requiredField);
+      return;
+    }
 
     double? weight;
     if (weightStr.isNotEmpty) {
-      weight = double.tryParse(weightStr);
-      if (weight == null || weight <= 0) return;
+      weight = parseLocalizedPositiveDouble(weightStr, l.localeName);
+      if (weight == null) {
+        setState(() => _errorMessage = l.positiveNumberRequired);
+        return;
+      }
     }
 
     double? height;
     if (heightStr.isNotEmpty) {
-      height = double.tryParse(heightStr);
-      if (height == null || height <= 0) return;
+      height = parseLocalizedPositiveDouble(heightStr, l.localeName);
+      if (height == null) {
+        setState(() => _errorMessage = l.positiveNumberRequired);
+        return;
+      }
     }
 
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _errorMessage = null;
+    });
     try {
       final athlete = await IsarService.instance.addAthlete(
         name: name,
@@ -58,7 +73,12 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
       );
       if (mounted) Navigator.of(context).pop(athlete);
     } catch (_) {
-      setState(() => _saving = false);
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _errorMessage = l.operationFailed;
+        });
+      }
     }
   }
 
@@ -67,18 +87,26 @@ class _AddAthleteDialogState extends State<AddAthleteDialog> {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.card,
-      title: Text(l.addAthleteTitle, style: const TextStyle(color: Colors.white)),
+      title: Text(
+        l.addAthleteTitle,
+        style: const TextStyle(color: Colors.white),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+              const SizedBox(height: 12),
+            ],
             _buildField(_nameController, l.name, TextInputType.text),
             const SizedBox(height: 12),
-            _buildField(
-                _weightController, l.weightKg, TextInputType.number),
+            _buildField(_weightController, l.weightKg, TextInputType.number),
             const SizedBox(height: 12),
-            _buildField(
-                _heightController, l.heightLabel, TextInputType.number),
+            _buildField(_heightController, l.heightLabel, TextInputType.number),
           ],
         ),
       ),

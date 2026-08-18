@@ -9,6 +9,21 @@
   "save": "Save",
   "delete": "Delete",
   "add": "Add",
+  "requiredField": "This field is required",
+  "positiveNumberRequired": "Enter a positive number",
+  "operationFailed": "The operation failed. Please try again.",
+  "noGroups": "No groups",
+  "selectOrAddAthlete": "Select or add an athlete to get started",
+  "evolutionLatestAsymmetry": "Latest Asymmetry",
+  "evolutionChange": "Change",
+  "evolutionHeightGain": "Height Gain",
+  "evolutionVsGroupMean": "vs Group Mean",
+  "evolutionRsiGain": "RSI Gain",
+  "rsiNeedsImprovement": "Needs Improvement",
+  "rsiFair": "Fair",
+  "rsiGood": "Good",
+  "rsiExcellent": "Excellent",
+  "rsiElite": "Elite",
 
   "tagPerformance": "PERFORMANCE",
   "cmjBaselineMeasurement": "CMJ Baseline Measurement",
@@ -38,7 +53,7 @@
   "renameGroup": "Rename Group",
   "deleteGroup": "Delete Group",
   "groupName": "Group Name",
-  "confirmDeleteGroup": "Are you sure you want to delete \"{groupName}\"?",
+  "confirmDeleteGroup": "Delete \"{groupName}\" and permanently remove all athletes and test history in this group?",
   "@confirmDeleteGroup": {
     "placeholders": {
       "groupName": { "type": "String" }
@@ -85,6 +100,13 @@
   "pickVideoToAnalyze": "Pick a video to analyze",
   "analyzeJumpFromHere": "Analyze Jump from Here",
   "pickVideoFromGallery": "Pick Video from Gallery",
+  "recordHighSpeedVideo": "Record High-Speed Video",
+  "highSpeedRecording": "High-Speed Recording",
+  "targetFrameRate": "Target frame rate",
+  "startRecording": "Start Recording",
+  "stopRecording": "Stop Recording",
+  "cameraUnavailable": "No camera is available on this device.",
+  "cameraInitializationFailed": "The camera could not be initialized.",
 
   "landingFrameAfterTakeoff": "Landing frame must be after takeoff frame",
   "framesInOrder": "Frames must be in order: Landing 1 < Takeoff < Landing 2",
@@ -382,5 +404,27 @@
   "leftStrongerLabel": "Left",
   "leftAvg": "Left Avg",
   "rightAvg": "Right Avg",
-  "asymmetryPositiveNote": "Positive = Right stronger · Negative = Left stronger"
+  "asymmetryPositiveNote": "Positive = Right stronger · Negative = Left stronger",
+
+  "incompleteAsymmetryTest": "Incomplete Test",
+  "incompleteAsymmetryMessage": "You have {leftCount} left-leg and {rightCount} right-leg jump(s). It is recommended to record 3 per leg for accuracy. Save anyway?",
+  "@incompleteAsymmetryMessage": {
+    "placeholders": {
+      "leftCount": { "type": "int" },
+      "rightCount": { "type": "int" }
+    }
+  },
+  "asymmetryResult": "ASYMMETRY RESULT",
+  "noData": "No data",
+  "unitCm": "cm",
+  "unitKg": "kg",
+  "unitMs": "ms",
+  "unitPerKg": "W/kg",
+  "dashPlaceholder": "—",
+  "optimalLabel": "Optimal",
+  "moderateFatigueLabel": "Moderate Fatigue",
+  "highFatigueLabel": "High Fatigue",
+
+  "chartAxisLeft": "Left",
+  "chartAxisRight": "Right"
 }

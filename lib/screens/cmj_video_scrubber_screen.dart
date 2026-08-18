@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../core/theme.dart';
+import '../models/video_frame_sample.dart';
 import '../providers/cmj_session_provider.dart';
 import '../providers/rsi_session_provider.dart';
 import '../services/video_service.dart';
@@ -43,7 +45,7 @@ class _CmjVideoScrubberScreenState
   String? _errorMessage;
 
   // Frame data
-  List<String> _framePaths = [];
+  List<VideoFrameSample> _frames = [];
   double _fps = 0;
   int _currentFrame = 0;
 
@@ -89,8 +91,9 @@ class _CmjVideoScrubberScreenState
       final videoService = ref.read(videoServiceProvider);
 
       developer.log(
-          'Starting extraction: path="${widget.videoPath}", startTime=${widget.startTimeSeconds}s',
-          name: tag);
+        'Starting extraction: path="${widget.videoPath}", startTime=${widget.startTimeSeconds}s',
+        name: tag,
+      );
 
       // Get framerate
       _fps = await videoService.getFramerate(widget.videoPath);
@@ -107,6 +110,7 @@ class _CmjVideoScrubberScreenState
         videoPath: widget.videoPath,
         startTimeSeconds: widget.startTimeSeconds,
         outputDir: _tempDir!,
+        fallbackFps: _fps,
         onProgress: (progress) {
           if (mounted) {
             setState(() => _extractionProgress = progress);
@@ -118,13 +122,16 @@ class _CmjVideoScrubberScreenState
 
       if (mounted) {
         setState(() {
-          _framePaths = frames;
+          _frames = frames;
           _isExtracting = false;
         });
       }
     } catch (e, stackTrace) {
-      developer.log('Extraction FAILED: $e\n$stackTrace',
-          name: tag, level: 900);
+      developer.log(
+        'Extraction FAILED: $e\n$stackTrace',
+        name: tag,
+        level: 900,
+      );
       if (mounted) {
         setState(() {
           _errorMessage = e.toString();
@@ -138,11 +145,11 @@ class _CmjVideoScrubberScreenState
     if (_isPlaying) {
       _stopPlayback();
     } else {
-      if (_currentFrame >= _framePaths.length - 1) return;
+      if (_currentFrame >= _frames.length - 1) return;
       setState(() => _isPlaying = true);
       final interval = Duration(milliseconds: (1000 / _fps).round());
       _playTimer = Timer.periodic(interval, (_) {
-        if (!mounted || _currentFrame >= _framePaths.length - 1) {
+        if (!mounted || _currentFrame >= _frames.length - 1) {
           _stopPlayback();
           return;
         }
@@ -161,22 +168,37 @@ class _CmjVideoScrubberScreenState
 
   void _startLongPress(int delta) {
     _stopPlayback();
-    _longPressTimer = Timer.periodic(
-      const Duration(milliseconds: 50),
-      (_) {
-        final next = _currentFrame + delta;
-        if (next < 0 || next >= _framePaths.length) {
-          _longPressTimer?.cancel();
-          return;
-        }
-        if (mounted) setState(() => _currentFrame = next);
-      },
-    );
+    _longPressTimer = Timer.periodic(const Duration(milliseconds: 50), (_) {
+      final next = _currentFrame + delta;
+      if (next < 0 || next >= _frames.length) {
+        _longPressTimer?.cancel();
+        return;
+      }
+      if (mounted) setState(() => _currentFrame = next);
+    });
   }
 
   void _stopLongPress() {
     _longPressTimer?.cancel();
     _longPressTimer = null;
+  }
+
+  double _frameDurationAt(int index) {
+    if (_frames.length < 2) return 1 / _fps;
+    final durations = <double>[];
+    if (index > 0) {
+      durations.add(
+        _frames[index].timestampSeconds - _frames[index - 1].timestampSeconds,
+      );
+    }
+    if (index < _frames.length - 1) {
+      durations.add(
+        _frames[index + 1].timestampSeconds - _frames[index].timestampSeconds,
+      );
+    }
+    final valid = durations.where((duration) => duration > 0).toList();
+    if (valid.isEmpty) return 1 / _fps;
+    return valid.reduce(max);
   }
 
   void _confirmSelection() {
@@ -200,12 +222,21 @@ class _CmjVideoScrubberScreenState
       return;
     }
 
-    final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
+    final takeoffTime = _frames[_takeoffFrame!].timestampSeconds;
+    final landingTime = _frames[_landingFrame!].timestampSeconds;
+    final flightTimeSec = landingTime - takeoffTime;
     final flightTimeMs = flightTimeSec * 1000;
     const g = 9.81;
     final heightMeters = g * flightTimeSec * flightTimeSec / 8;
     final heightCm = heightMeters * 100;
-    final deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+    final frameDuration = max(
+      _frameDurationAt(_takeoffFrame!),
+      _frameDurationAt(_landingFrame!),
+    );
+    final deltaHCm = JumpResult.computeDeltaHForFrameDuration(
+      heightMeters,
+      frameDuration,
+    );
 
     final result = JumpResult(
       takeoffFrame: _takeoffFrame!,
@@ -215,6 +246,8 @@ class _CmjVideoScrubberScreenState
       heightCm: heightCm,
       deltaHCm: deltaHCm,
       videoPath: widget.videoPath,
+      takeoffTimeSeconds: takeoffTime,
+      landingTimeSeconds: landingTime,
     );
 
     Navigator.of(context).pop(result);
@@ -230,11 +263,7 @@ class _CmjVideoScrubberScreenState
         _takeoffFrame! < _landingFrame!)) {
       final l = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content:
-              Text(l.framesInOrder),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(l.framesInOrder), backgroundColor: Colors.red),
       );
       return;
     }
@@ -246,6 +275,13 @@ class _CmjVideoScrubberScreenState
       fps: _fps,
       dropHeightCm: 0, // set by the test screen
       videoPath: widget.videoPath,
+      landing1TimeSeconds: _frames[_landing1Frame!].timestampSeconds,
+      takeoffTimeSeconds: _frames[_takeoffFrame!].timestampSeconds,
+      landing2TimeSeconds: _frames[_landingFrame!].timestampSeconds,
+      frameDurationSeconds: max(
+        _frameDurationAt(_landing1Frame!),
+        max(_frameDurationAt(_takeoffFrame!), _frameDurationAt(_landingFrame!)),
+      ),
     );
 
     Navigator.of(context).pop(result);
@@ -273,8 +309,8 @@ class _CmjVideoScrubberScreenState
       body: _isExtracting
           ? _buildExtractionProgress()
           : _errorMessage != null
-              ? _buildError()
-              : _buildScrubber(),
+          ? _buildError()
+          : _buildScrubber(),
     );
   }
 
@@ -287,11 +323,7 @@ class _CmjVideoScrubberScreenState
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
-              Icons.auto_fix_high,
-              size: 48,
-              color: AppColors.brand,
-            ),
+            const Icon(Icons.auto_fix_high, size: 48, color: AppColors.brand),
             const SizedBox(height: 24),
             Text(
               l.extractingFrames,
@@ -303,7 +335,9 @@ class _CmjVideoScrubberScreenState
             ),
             const SizedBox(height: 8),
             Text(
-              _fps > 0 ? l.processingVideoAtFps(_fps.toStringAsFixed(0)) : l.processingVideo,
+              _fps > 0
+                  ? l.processingVideoAtFps(_fps.toStringAsFixed(0))
+                  : l.processingVideo,
               style: const TextStyle(
                 fontSize: 14,
                 color: AppColors.textSecondary,
@@ -316,8 +350,9 @@ class _CmjVideoScrubberScreenState
                 value: _extractionProgress,
                 minHeight: 8,
                 backgroundColor: AppColors.borderLight,
-                valueColor:
-                    const AlwaysStoppedAnimation<Color>(AppColors.brand),
+                valueColor: const AlwaysStoppedAnimation<Color>(
+                  AppColors.brand,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -376,7 +411,7 @@ class _CmjVideoScrubberScreenState
 
   Widget _buildScrubber() {
     final l = AppLocalizations.of(context)!;
-    if (_framePaths.isEmpty) {
+    if (_frames.isEmpty) {
       return Center(
         child: Text(
           l.noFramesExtracted,
@@ -385,8 +420,12 @@ class _CmjVideoScrubberScreenState
       );
     }
 
-    final frameCount = _framePaths.length;
-    final currentTimeMs = (_currentFrame / _fps * 1000).toStringAsFixed(1);
+    final frameCount = _frames.length;
+    final currentTimeMs =
+        ((_frames[_currentFrame].timestampSeconds -
+                    _frames.first.timestampSeconds) *
+                1000)
+            .toStringAsFixed(1);
 
     // Compute results based on mode
     final bool isRsi = widget.mode == ScrubberMode.rsi;
@@ -398,15 +437,20 @@ class _CmjVideoScrubberScreenState
     final bool hasResults;
 
     if (isRsi) {
-      hasResults = _landing1Frame != null &&
+      hasResults =
+          _landing1Frame != null &&
           _takeoffFrame != null &&
           _landingFrame != null &&
           _landing1Frame! < _takeoffFrame! &&
           _takeoffFrame! < _landingFrame!;
       if (hasResults) {
         const g = 9.81;
-        final contactSec = (_takeoffFrame! - _landing1Frame!) / _fps;
-        final flightSec = (_landingFrame! - _takeoffFrame!) / _fps;
+        final contactSec =
+            _frames[_takeoffFrame!].timestampSeconds -
+            _frames[_landing1Frame!].timestampSeconds;
+        final flightSec =
+            _frames[_landingFrame!].timestampSeconds -
+            _frames[_takeoffFrame!].timestampSeconds;
         contactTimeMs = contactSec * 1000;
         flightTimeMs = flightSec * 1000;
         final heightMeters = g * flightSec * flightSec / 8;
@@ -414,16 +458,26 @@ class _CmjVideoScrubberScreenState
         rsiScore = heightMeters / contactSec;
       }
     } else {
-      hasResults = _takeoffFrame != null &&
+      hasResults =
+          _takeoffFrame != null &&
           _landingFrame != null &&
           _landingFrame! > _takeoffFrame!;
       if (hasResults) {
-        final flightTimeSec = (_landingFrame! - _takeoffFrame!) / _fps;
+        final flightTimeSec =
+            _frames[_landingFrame!].timestampSeconds -
+            _frames[_takeoffFrame!].timestampSeconds;
         flightTimeMs = flightTimeSec * 1000;
         const g = 9.81;
         final heightMeters = g * flightTimeSec * flightTimeSec / 8;
         heightCm = heightMeters * 100;
-        deltaHCm = JumpResult.computeDeltaH(heightMeters, _fps);
+        final frameDuration = max(
+          _frameDurationAt(_takeoffFrame!),
+          _frameDurationAt(_landingFrame!),
+        );
+        deltaHCm = JumpResult.computeDeltaHForFrameDuration(
+          heightMeters,
+          frameDuration,
+        );
       }
     }
 
@@ -440,17 +494,17 @@ class _CmjVideoScrubberScreenState
                 color: _takeoffFrame == _currentFrame
                     ? Colors.green
                     : _landingFrame == _currentFrame
-                        ? Colors.red
-                        : (isRsi && _landing1Frame == _currentFrame)
-                            ? Colors.amber
-                            : AppColors.borderLight,
+                    ? Colors.red
+                    : (isRsi && _landing1Frame == _currentFrame)
+                    ? Colors.amber
+                    : AppColors.borderLight,
                 width: 2,
               ),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(6),
               child: Image.file(
-                File(_framePaths[_currentFrame]),
+                File(_frames[_currentFrame].path),
                 fit: BoxFit.contain,
                 width: double.infinity,
                 gaplessPlayback: true,
@@ -513,7 +567,7 @@ class _CmjVideoScrubberScreenState
               ),
               const SizedBox(width: 24),
               IconButton(
-                onPressed: _framePaths.isNotEmpty ? _togglePlayback : null,
+                onPressed: _frames.isNotEmpty ? _togglePlayback : null,
                 icon: Icon(
                   _isPlaying ? Icons.pause_circle : Icons.play_circle,
                   size: 40,
@@ -564,9 +618,7 @@ class _CmjVideoScrubberScreenState
           padding: const EdgeInsets.all(16),
           decoration: const BoxDecoration(
             color: AppColors.card,
-            border: Border(
-              top: BorderSide(color: AppColors.borderLight),
-            ),
+            border: Border(top: BorderSide(color: AppColors.borderLight)),
           ),
           child: Column(
             children: [
@@ -657,29 +709,29 @@ class _CmjVideoScrubberScreenState
                               '${contactTimeMs!.toStringAsFixed(1)} ms',
                             ),
                             Container(
-                                width: 1,
-                                height: 32,
-                                color: AppColors.borderLight),
+                              width: 1,
+                              height: 32,
+                              color: AppColors.borderLight,
+                            ),
                             _buildMetric(
                               l.flight,
                               '${flightTimeMs!.toStringAsFixed(1)} ms',
                             ),
                             Container(
-                                width: 1,
-                                height: 32,
-                                color: AppColors.borderLight),
+                              width: 1,
+                              height: 32,
+                              color: AppColors.borderLight,
+                            ),
                             _buildMetric(
                               l.height,
                               '${heightCm!.toStringAsFixed(1)} cm',
                             ),
                             Container(
-                                width: 1,
-                                height: 32,
-                                color: AppColors.borderLight),
-                            _buildMetric(
-                              l.rsi,
-                              rsiScore!.toStringAsFixed(2),
+                              width: 1,
+                              height: 32,
+                              color: AppColors.borderLight,
                             ),
+                            _buildMetric(l.rsi, rsiScore!.toStringAsFixed(2)),
                           ],
                         )
                       : Row(
@@ -772,16 +824,15 @@ class _CmjVideoScrubberScreenState
     return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: compact ? 14 : 18),
-      label: Text(isMarked ? l.markButtonLabeled(label, markedFrame + 1) : label),
+      label: Text(
+        isMarked ? l.markButtonLabeled(label, markedFrame + 1) : label,
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: isMarked ? Colors.black : color,
         backgroundColor: isMarked ? color : Colors.transparent,
         side: BorderSide(color: color),
         padding: EdgeInsets.symmetric(vertical: 12, horizontal: hPadding),
-        textStyle: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.w600,
-        ),
+        textStyle: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -802,10 +853,7 @@ class _CmjVideoScrubberScreenState
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: AppColors.textSecondary,
-          ),
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
         ),
       ],
     );

@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
@@ -179,7 +178,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'L',
+                          l.chartAxisLeft,
                           style: const TextStyle(
                             color: AppColors.textTertiary,
                             fontSize: 10,
@@ -193,7 +192,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          'R',
+                          l.chartAxisRight,
                           style: const TextStyle(
                             color: AppColors.textTertiary,
                             fontSize: 10,
@@ -235,8 +234,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                             final isRight = pct >= 0;
                             return Row(
                               children: [
-                                SizedBox(
-                                  width: halfWidth,
+                                Expanded(
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
@@ -263,8 +261,7 @@ class GroupOverviewScreen extends ConsumerWidget {
                                   height: 18,
                                   color: AppColors.textSecondary,
                                 ),
-                                SizedBox(
-                                  width: halfWidth,
+                                Expanded(
                                   child: Row(
                                     children: [
                                       if (isRight)
@@ -603,7 +600,7 @@ class GroupOverviewScreen extends ConsumerWidget {
           // Divider
           Container(height: 1, color: AppColors.borderSubtle),
           const SizedBox(height: 12),
-          // Bottom row: 3 metric columns
+          // Bottom row: 4 metric columns
           Row(
             children: [
               Expanded(
@@ -638,6 +635,24 @@ class GroupOverviewScreen extends ConsumerWidget {
                   valueColor: AppColors.textPrimary,
                 ),
               ),
+              Container(width: 1, height: 32, color: AppColors.borderSubtle),
+              Expanded(
+                child: _metricCell(
+                  label: l.asymmetryPct,
+                  value: stats.latestAsymmetryPct != null
+                      ? '${stats.latestAsymmetryPct!.abs().round()}%'
+                      : '-',
+                  valueColor: stats.latestAsymmetryPct != null
+                      ? _asymmetryColor(stats.latestAsymmetryPct!.abs())
+                      : AppColors.textPrimary,
+                  subtitle: stats.asymmetryStrongerLeg == null
+                      ? null
+                      : stats.asymmetryStrongerLeg == 'right'
+                      ? l.rightStrongerLabel
+                      : l.leftStrongerLabel,
+                  subtitleColor: AppColors.textTertiary,
+                ),
+              ),
             ],
           ),
         ],
@@ -645,10 +660,19 @@ class GroupOverviewScreen extends ConsumerWidget {
     );
   }
 
+  Color _asymmetryColor(double absValue) {
+    if (absValue < 5) return Colors.green;
+    if (absValue < 10) return Colors.amber;
+    if (absValue < 15) return Colors.orange;
+    return Colors.red;
+  }
+
   Widget _metricCell({
     required String label,
     required String value,
     required Color valueColor,
+    String? subtitle,
+    Color? subtitleColor,
   }) {
     return Column(
       children: [
@@ -670,6 +694,16 @@ class GroupOverviewScreen extends ConsumerWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: subtitleColor ?? AppColors.textTertiary,
+              fontSize: 10,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -961,24 +995,6 @@ class _FullscreenCmjChart extends StatefulWidget {
 
 class _FullscreenCmjChartState extends State<_FullscreenCmjChart> {
   @override
-  void initState() {
-    super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final hasData = widget.stats.any(
       (s) => s.athlete.baselineCmjHeight != null,
@@ -1151,24 +1167,6 @@ class _FullscreenRsiChart extends StatefulWidget {
 
 class _FullscreenRsiChartState extends State<_FullscreenRsiChart> {
   @override
-  void initState() {
-    super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final scatterData = _filterScatterData(widget.stats);
 
@@ -1228,24 +1226,6 @@ class _FullscreenAsymmetryChart extends StatefulWidget {
 }
 
 class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
-  @override
-  void initState() {
-    super.initState();
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-  }
-
-  @override
-  void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final withData = widget.stats
@@ -1325,7 +1305,7 @@ class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'L',
+                        widget.l.chartAxisLeft,
                         style: const TextStyle(
                           color: AppColors.textTertiary,
                           fontSize: 12,
@@ -1339,7 +1319,7 @@ class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
                         ),
                       ),
                       Text(
-                        'R',
+                        widget.l.chartAxisRight,
                         style: const TextStyle(
                           color: AppColors.textTertiary,
                           fontSize: 12,
@@ -1398,8 +1378,7 @@ class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
                                     final isRight = pct >= 0;
                                     return Row(
                                       children: [
-                                        SizedBox(
-                                          width: halfWidth,
+                                        Expanded(
                                           child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.end,
@@ -1431,8 +1410,7 @@ class _FullscreenAsymmetryChartState extends State<_FullscreenAsymmetryChart> {
                                           height: 22,
                                           color: AppColors.textSecondary,
                                         ),
-                                        SizedBox(
-                                          width: halfWidth,
+                                        Expanded(
                                           child: Row(
                                             children: [
                                               if (isRight)

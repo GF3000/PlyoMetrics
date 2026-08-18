@@ -20,6 +20,9 @@ class RsiJumpResult {
   final double deltaRsi;
   final double dropHeightCm;
   final String videoPath;
+  final double? landing1TimeSeconds;
+  final double? takeoffTimeSeconds;
+  final double? landing2TimeSeconds;
 
   const RsiJumpResult({
     required this.landing1Frame,
@@ -33,6 +36,9 @@ class RsiJumpResult {
     required this.deltaRsi,
     required this.dropHeightCm,
     required this.videoPath,
+    this.landing1TimeSeconds,
+    this.takeoffTimeSeconds,
+    this.landing2TimeSeconds,
   });
 
   /// Compute RSI result from raw frame data.
@@ -43,11 +49,23 @@ class RsiJumpResult {
     required double fps,
     required double dropHeightCm,
     required String videoPath,
+    double? landing1TimeSeconds,
+    double? takeoffTimeSeconds,
+    double? landing2TimeSeconds,
+    double? frameDurationSeconds,
   }) {
     const g = 9.81;
-    final frameDuration = 1 / fps;
-    final contactTimeSec = (takeoffFrame - landing1Frame) / fps;
-    final flightTimeSec = (landing2Frame - takeoffFrame) / fps;
+    final frameDuration = frameDurationSeconds ?? 1 / fps;
+    final hasTimestamps =
+        landing1TimeSeconds != null &&
+        takeoffTimeSeconds != null &&
+        landing2TimeSeconds != null;
+    final contactTimeSec = hasTimestamps
+        ? takeoffTimeSeconds - landing1TimeSeconds
+        : (takeoffFrame - landing1Frame) / fps;
+    final flightTimeSec = hasTimestamps
+        ? landing2TimeSeconds - takeoffTimeSeconds
+        : (landing2Frame - takeoffFrame) / fps;
     final heightMeters = g * flightTimeSec * flightTimeSec / 8;
     final rsi = heightMeters / contactTimeSec;
 
@@ -77,26 +95,34 @@ class RsiJumpResult {
       deltaRsi: deltaRsi,
       dropHeightCm: dropHeightCm,
       videoPath: videoPath,
+      landing1TimeSeconds: landing1TimeSeconds,
+      takeoffTimeSeconds: takeoffTimeSeconds,
+      landing2TimeSeconds: landing2TimeSeconds,
     );
   }
 }
 
 // ── RSI quality thresholds ──
 
-({String label, Color color}) rsiQuality(double rsiScore) {
+enum RsiQualityLevel { needsImprovement, fair, good, excellent, elite }
+
+({RsiQualityLevel level, Color color}) rsiQuality(double rsiScore) {
   if (rsiScore < 1.50) {
-    return (label: 'Needs Improvement', color: const Color(0xFFEF4444));
+    return (
+      level: RsiQualityLevel.needsImprovement,
+      color: const Color(0xFFEF4444),
+    );
   }
   if (rsiScore < 2.00) {
-    return (label: 'Fair', color: const Color(0xFFF97316));
+    return (level: RsiQualityLevel.fair, color: const Color(0xFFF97316));
   }
   if (rsiScore < 2.50) {
-    return (label: 'Good', color: const Color(0xFFFACC15));
+    return (level: RsiQualityLevel.good, color: const Color(0xFFFACC15));
   }
   if (rsiScore < 3.00) {
-    return (label: 'Excellent', color: AppColors.brand);
+    return (level: RsiQualityLevel.excellent, color: AppColors.brand);
   }
-  return (label: 'Elite', color: const Color(0xFF4ADE80));
+  return (level: RsiQualityLevel.elite, color: const Color(0xFF4ADE80));
 }
 
 // ── Per-athlete RSI session ──

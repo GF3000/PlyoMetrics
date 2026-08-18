@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/outlier_detection.dart';
 import '../models/athlete.dart';
 import 'cmj_session_provider.dart';
 
@@ -84,8 +85,7 @@ class AsymmetryAthleteSession {
       rightLeg: rightLeg ?? this.rightLeg,
       activeLeg: activeLeg ?? this.activeLeg,
       asymmetryPct: clearAsymmetry ? null : (asymmetryPct ?? this.asymmetryPct),
-      strongerLeg:
-          clearStrongerLeg ? null : (strongerLeg ?? this.strongerLeg),
+      strongerLeg: clearStrongerLeg ? null : (strongerLeg ?? this.strongerLeg),
       canSave: canSave ?? this.canSave,
       saved: saved ?? this.saved,
     );
@@ -136,10 +136,7 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
     assert(athletes.isNotEmpty);
     final sessions = <int, AsymmetryAthleteSession>{
       for (final a in athletes)
-        a.id: AsymmetryAthleteSession(
-          athleteId: a.id,
-          athleteName: a.name,
-        ),
+        a.id: AsymmetryAthleteSession(athleteId: a.id, athleteName: a.name),
     };
     final activeId =
         defaultAthleteId != null && sessions.containsKey(defaultAthleteId)
@@ -208,18 +205,13 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
 
     AsymmetryLegSession updatedLeg;
     if (valid.isEmpty) {
-      updatedLeg = AsymmetryLegSession(
-        jumps: jumps,
-        outlierFlags: flags,
-      );
+      updatedLeg = AsymmetryLegSession(jumps: jumps, outlierFlags: flags);
     } else {
       final avg =
           valid.map((j) => j.heightCm).reduce((a, b) => a + b) / valid.length;
       final err =
           sqrt(
-            valid
-                .map((j) => j.deltaHCm * j.deltaHCm)
-                .reduce((a, b) => a + b),
+            valid.map((j) => j.deltaHCm * j.deltaHCm).reduce((a, b) => a + b),
           ) /
           valid.length;
       updatedLeg = AsymmetryLegSession(
@@ -262,29 +254,15 @@ class AsymmetrySessionNotifier extends Notifier<AsymmetrySessionState> {
   }
 
   List<bool> _computeOutlierFlags(List<JumpResult> jumps) {
-    final flags = List.filled(jumps.length, false);
-    if (jumps.length >= 2) {
-      for (int i = 0; i < jumps.length; i++) {
-        final others = <double>[
-          for (int j = 0; j < jumps.length; j++)
-            if (j != i) jumps[j].heightCm,
-        ];
-        final meanOthers = others.reduce((a, b) => a + b) / others.length;
-        final diff = (jumps[i].heightCm - meanOthers).abs();
-        final threshold = max(
-          0.10 * jumps[i].heightCm,
-          2.0 * jumps[i].deltaHCm,
-        );
-        flags[i] = diff > threshold;
-      }
-    }
-    return flags;
+    return detectOutliers([
+      for (final jump in jumps)
+        (value: jump.heightCm, uncertainty: jump.deltaHCm),
+    ]);
   }
 
   void _replaceSession(int athleteId, AsymmetryAthleteSession updated) {
-    final newMap =
-        Map<int, AsymmetryAthleteSession>.from(state.athleteSessions)
-          ..[athleteId] = updated;
+    final newMap = Map<int, AsymmetryAthleteSession>.from(state.athleteSessions)
+      ..[athleteId] = updated;
     final newOrdered = [
       for (final s in state.orderedSessions)
         if (s.athleteId == athleteId) updated else s,

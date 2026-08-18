@@ -17,14 +17,21 @@ class DeleteAthleteDialog extends StatefulWidget {
 
 class _DeleteAthleteDialogState extends State<DeleteAthleteDialog> {
   bool _deleting = false;
+  String? _errorMessage;
 
   Future<void> _delete() async {
+    final l = AppLocalizations.of(context)!;
     setState(() => _deleting = true);
     try {
       await IsarService.instance.deleteAthlete(widget.athlete);
       if (mounted) Navigator.of(context).pop(true);
     } catch (_) {
-      setState(() => _deleting = false);
+      if (mounted) {
+        setState(() {
+          _deleting = false;
+          _errorMessage = l.operationFailed;
+        });
+      }
     }
   }
 
@@ -33,11 +40,22 @@ class _DeleteAthleteDialogState extends State<DeleteAthleteDialog> {
     final l = AppLocalizations.of(context)!;
     return AlertDialog(
       backgroundColor: AppColors.card,
-      title:
-          Text(l.deleteAthlete, style: const TextStyle(color: Colors.white)),
-      content: Text(
-        l.confirmDeleteAthlete(widget.athlete.name),
-        style: const TextStyle(color: AppColors.textSecondary),
+      title: Text(l.deleteAthlete, style: const TextStyle(color: Colors.white)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l.confirmDeleteAthlete(widget.athlete.name),
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          ],
+        ],
       ),
       actions: [
         TextButton(
@@ -52,7 +70,9 @@ class _DeleteAthleteDialogState extends State<DeleteAthleteDialog> {
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white),
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : Text(l.delete),
         ),

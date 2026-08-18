@@ -33,6 +33,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'Add';
 
   @override
+  String get requiredField => 'This field is required';
+
+  @override
+  String get positiveNumberRequired => 'Enter a positive number';
+
+  @override
+  String get operationFailed => 'The operation failed. Please try again.';
+
+  @override
+  String get noGroups => 'No groups';
+
+  @override
+  String get selectOrAddAthlete => 'Select or add an athlete to get started';
+
+  @override
+  String get evolutionLatestAsymmetry => 'Latest Asymmetry';
+
+  @override
+  String get evolutionChange => 'Change';
+
+  @override
+  String get evolutionHeightGain => 'Height Gain';
+
+  @override
+  String get evolutionVsGroupMean => 'vs Group Mean';
+
+  @override
+  String get evolutionRsiGain => 'RSI Gain';
+
+  @override
+  String get rsiNeedsImprovement => 'Needs Improvement';
+
+  @override
+  String get rsiFair => 'Fair';
+
+  @override
+  String get rsiGood => 'Good';
+
+  @override
+  String get rsiExcellent => 'Excellent';
+
+  @override
+  String get rsiElite => 'Elite';
+
+  @override
   String get tagPerformance => 'PERFORMANCE';
 
   @override
@@ -110,7 +155,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String confirmDeleteGroup(String groupName) {
-    return 'Are you sure you want to delete \"$groupName\"?';
+    return 'Delete \"$groupName\" and permanently remove all athletes and test history in this group?';
   }
 
   @override
@@ -186,6 +231,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pickVideoFromGallery => 'Pick Video from Gallery';
+
+  @override
+  String get recordHighSpeedVideo => 'Record High-Speed Video';
+
+  @override
+  String get highSpeedRecording => 'High-Speed Recording';
+
+  @override
+  String get targetFrameRate => 'Target frame rate';
+
+  @override
+  String get startRecording => 'Start Recording';
+
+  @override
+  String get stopRecording => 'Stop Recording';
+
+  @override
+  String get cameraUnavailable => 'No camera is available on this device.';
+
+  @override
+  String get cameraInitializationFailed =>
+      'The camera could not be initialized.';
 
   @override
   String get landingFrameAfterTakeoff =>
@@ -697,4 +764,48 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get asymmetryPositiveNote =>
       'Positive = Right stronger · Negative = Left stronger';
+
+  @override
+  String get incompleteAsymmetryTest => 'Incomplete Test';
+
+  @override
+  String incompleteAsymmetryMessage(int leftCount, int rightCount) {
+    return 'You have $leftCount left-leg and $rightCount right-leg jump(s). It is recommended to record 3 per leg for accuracy. Save anyway?';
+  }
+
+  @override
+  String get asymmetryResult => 'ASYMMETRY RESULT';
+
+  @override
+  String get noData => 'No data';
+
+  @override
+  String get unitCm => 'cm';
+
+  @override
+  String get unitKg => 'kg';
+
+  @override
+  String get unitMs => 'ms';
+
+  @override
+  String get unitPerKg => 'W/kg';
+
+  @override
+  String get dashPlaceholder => '—';
+
+  @override
+  String get optimalLabel => 'Optimal';
+
+  @override
+  String get moderateFatigueLabel => 'Moderate Fatigue';
+
+  @override
+  String get highFatigueLabel => 'High Fatigue';
+
+  @override
+  String get chartAxisLeft => 'Left';
+
+  @override
+  String get chartAxisRight => 'Right';
 }

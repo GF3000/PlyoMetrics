@@ -33,6 +33,52 @@ class AppLocalizationsEs extends AppLocalizations {
   String get add => 'Agregar';
 
   @override
+  String get requiredField => 'Este campo es obligatorio';
+
+  @override
+  String get positiveNumberRequired => 'Introduce un número positivo';
+
+  @override
+  String get operationFailed => 'La operación falló. Inténtalo de nuevo.';
+
+  @override
+  String get noGroups => 'No hay grupos';
+
+  @override
+  String get selectOrAddAthlete =>
+      'Selecciona o agrega un atleta para comenzar';
+
+  @override
+  String get evolutionLatestAsymmetry => 'Asimetría Más Reciente';
+
+  @override
+  String get evolutionChange => 'Cambio';
+
+  @override
+  String get evolutionHeightGain => 'Mejora de Altura';
+
+  @override
+  String get evolutionVsGroupMean => 'vs Media del Grupo';
+
+  @override
+  String get evolutionRsiGain => 'Mejora de RSI';
+
+  @override
+  String get rsiNeedsImprovement => 'Necesita Mejorar';
+
+  @override
+  String get rsiFair => 'Aceptable';
+
+  @override
+  String get rsiGood => 'Bueno';
+
+  @override
+  String get rsiExcellent => 'Excelente';
+
+  @override
+  String get rsiElite => 'Élite';
+
+  @override
   String get tagPerformance => 'RENDIMIENTO';
 
   @override
@@ -112,7 +158,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String confirmDeleteGroup(String groupName) {
-    return '¿Estás seguro de que deseas eliminar \"$groupName\"?';
+    return '¿Eliminar \"$groupName\" y borrar permanentemente todos sus atletas y su historial de tests?';
   }
 
   @override
@@ -188,6 +234,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get pickVideoFromGallery => 'Seleccionar Video de la Galería';
+
+  @override
+  String get recordHighSpeedVideo => 'Grabar Video de Alta Velocidad';
+
+  @override
+  String get highSpeedRecording => 'Grabación de Alta Velocidad';
+
+  @override
+  String get targetFrameRate => 'Frecuencia objetivo';
+
+  @override
+  String get startRecording => 'Iniciar Grabación';
+
+  @override
+  String get stopRecording => 'Detener Grabación';
+
+  @override
+  String get cameraUnavailable =>
+      'No hay ninguna cámara disponible en este dispositivo.';
+
+  @override
+  String get cameraInitializationFailed => 'No se pudo inicializar la cámara.';
 
   @override
   String get landingFrameAfterTakeoff =>
@@ -701,4 +769,48 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get asymmetryPositiveNote =>
       'Positivo = Derecha más fuerte · Negativo = Izquierda más fuerte';
+
+  @override
+  String get incompleteAsymmetryTest => 'Test Incompleto';
+
+  @override
+  String incompleteAsymmetryMessage(int leftCount, int rightCount) {
+    return 'Tienes $leftCount salto(s) de pierna izquierda y $rightCount de pierna derecha. Se recomienda grabar 3 por pierna para precisión. ¿Guardar de todos modos?';
+  }
+
+  @override
+  String get asymmetryResult => 'RESULTADO ASIMETRÍA';
+
+  @override
+  String get noData => 'Sin datos';
+
+  @override
+  String get unitCm => 'cm';
+
+  @override
+  String get unitKg => 'kg';
+
+  @override
+  String get unitMs => 'ms';
+
+  @override
+  String get unitPerKg => 'W/kg';
+
+  @override
+  String get dashPlaceholder => '—';
+
+  @override
+  String get optimalLabel => 'Óptimo';
+
+  @override
+  String get moderateFatigueLabel => 'Fatiga Moderada';
+
+  @override
+  String get highFatigueLabel => 'Fatiga Alta';
+
+  @override
+  String get chartAxisLeft => 'Izquierda';
+
+  @override
+  String get chartAxisRight => 'Derecha';
 }

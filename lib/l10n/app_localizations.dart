@@ -146,6 +146,96 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get add;
 
+  /// No description provided for @requiredField.
+  ///
+  /// In en, this message translates to:
+  /// **'This field is required'**
+  String get requiredField;
+
+  /// No description provided for @positiveNumberRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive number'**
+  String get positiveNumberRequired;
+
+  /// No description provided for @operationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The operation failed. Please try again.'**
+  String get operationFailed;
+
+  /// No description provided for @noGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups'**
+  String get noGroups;
+
+  /// No description provided for @selectOrAddAthlete.
+  ///
+  /// In en, this message translates to:
+  /// **'Select or add an athlete to get started'**
+  String get selectOrAddAthlete;
+
+  /// No description provided for @evolutionLatestAsymmetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest Asymmetry'**
+  String get evolutionLatestAsymmetry;
+
+  /// No description provided for @evolutionChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get evolutionChange;
+
+  /// No description provided for @evolutionHeightGain.
+  ///
+  /// In en, this message translates to:
+  /// **'Height Gain'**
+  String get evolutionHeightGain;
+
+  /// No description provided for @evolutionVsGroupMean.
+  ///
+  /// In en, this message translates to:
+  /// **'vs Group Mean'**
+  String get evolutionVsGroupMean;
+
+  /// No description provided for @evolutionRsiGain.
+  ///
+  /// In en, this message translates to:
+  /// **'RSI Gain'**
+  String get evolutionRsiGain;
+
+  /// No description provided for @rsiNeedsImprovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Improvement'**
+  String get rsiNeedsImprovement;
+
+  /// No description provided for @rsiFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get rsiFair;
+
+  /// No description provided for @rsiGood.
+  ///
+  /// In en, this message translates to:
+  /// **'Good'**
+  String get rsiGood;
+
+  /// No description provided for @rsiExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get rsiExcellent;
+
+  /// No description provided for @rsiElite.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite'**
+  String get rsiElite;
+
   /// No description provided for @tagPerformance.
   ///
   /// In en, this message translates to:
@@ -299,7 +389,7 @@ abstract class AppLocalizations {
   /// No description provided for @confirmDeleteGroup.
   ///
   /// In en, this message translates to:
-  /// **'Are you sure you want to delete \"{groupName}\"?'**
+  /// **'Delete \"{groupName}\" and permanently remove all athletes and test history in this group?'**
   String confirmDeleteGroup(String groupName);
 
   /// No description provided for @newMeasurement.
@@ -433,6 +523,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Pick Video from Gallery'**
   String get pickVideoFromGallery;
+
+  /// No description provided for @recordHighSpeedVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Record High-Speed Video'**
+  String get recordHighSpeedVideo;
+
+  /// No description provided for @highSpeedRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'High-Speed Recording'**
+  String get highSpeedRecording;
+
+  /// No description provided for @targetFrameRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Target frame rate'**
+  String get targetFrameRate;
+
+  /// No description provided for @startRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Recording'**
+  String get startRecording;
+
+  /// No description provided for @stopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop Recording'**
+  String get stopRecording;
+
+  /// No description provided for @cameraUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No camera is available on this device.'**
+  String get cameraUnavailable;
+
+  /// No description provided for @cameraInitializationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The camera could not be initialized.'**
+  String get cameraInitializationFailed;
 
   /// No description provided for @landingFrameAfterTakeoff.
   ///
@@ -1339,6 +1471,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Positive = Right stronger · Negative = Left stronger'**
   String get asymmetryPositiveNote;
+
+  /// No description provided for @incompleteAsymmetryTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete Test'**
+  String get incompleteAsymmetryTest;
+
+  /// No description provided for @incompleteAsymmetryMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {leftCount} left-leg and {rightCount} right-leg jump(s). It is recommended to record 3 per leg for accuracy. Save anyway?'**
+  String incompleteAsymmetryMessage(int leftCount, int rightCount);
+
+  /// No description provided for @asymmetryResult.
+  ///
+  /// In en, this message translates to:
+  /// **'ASYMMETRY RESULT'**
+  String get asymmetryResult;
+
+  /// No description provided for @noData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data'**
+  String get noData;
+
+  /// No description provided for @unitCm.
+  ///
+  /// In en, this message translates to:
+  /// **'cm'**
+  String get unitCm;
+
+  /// No description provided for @unitKg.
+  ///
+  /// In en, this message translates to:
+  /// **'kg'**
+  String get unitKg;
+
+  /// No description provided for @unitMs.
+  ///
+  /// In en, this message translates to:
+  /// **'ms'**
+  String get unitMs;
+
+  /// No description provided for @unitPerKg.
+  ///
+  /// In en, this message translates to:
+  /// **'W/kg'**
+  String get unitPerKg;
+
+  /// No description provided for @dashPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get dashPlaceholder;
+
+  /// No description provided for @optimalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Optimal'**
+  String get optimalLabel;
+
+  /// No description provided for @moderateFatigueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate Fatigue'**
+  String get moderateFatigueLabel;
+
+  /// No description provided for @highFatigueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'High Fatigue'**
+  String get highFatigueLabel;
+
+  /// No description provided for @chartAxisLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'Left'**
+  String get chartAxisLeft;
+
+  /// No description provided for @chartAxisRight.
+  ///
+  /// In en, this message translates to:
+  /// **'Right'**
+  String get chartAxisRight;
 }
 
 class _AppLocalizationsDelegate

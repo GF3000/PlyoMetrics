@@ -14,9 +14,9 @@ class JumpTest {
 
   late DateTime timestamp;
 
-  late int takeoffFrame;
-  late int landingFrame;
-  late double fps;
+  int? takeoffFrame;
+  int? landingFrame;
+  double? fps;
 
   late double flightTimeMs;
   late double heightCm;
@@ -27,14 +27,18 @@ class JumpTest {
 
   double? baselineAtTest; // baseline height at time of fatigue test
 
-  int? baselineSessionId;
+  /// Unified identifier shared by every trial captured in one test session.
+  int? sessionId;
+  bool isSummary = true;
   bool isOutlier = false;
 
   double? deltaRsi; // RSI: margin of error (±1 frame)
 
   double? dropHeightCm; // RSI: drop height in cm
   int? landing1Frame; // RSI: first ground contact frame
+  double? landing1TimeSeconds;
+  double? takeoffTimeSeconds;
+  double? landingTimeSeconds;
 
   String? leg; // asymmetry: 'left' | 'right'
-  int? asymmetrySessionId; // links the left+right pair for one asymmetry session
 }

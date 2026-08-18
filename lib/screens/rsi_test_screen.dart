@@ -2,12 +2,23 @@ import 'package:flutter/material.dart';
 import '../l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/save_outcome.dart';
 import '../core/theme.dart';
 import '../models/athlete.dart';
 import '../models/jump_test.dart';
 import '../providers/management_providers.dart';
 import '../providers/rsi_session_provider.dart';
 import 'rsi_video_trim_screen.dart';
+
+String _rsiQualityLabel(AppLocalizations l, RsiQualityLevel level) {
+  return switch (level) {
+    RsiQualityLevel.needsImprovement => l.rsiNeedsImprovement,
+    RsiQualityLevel.fair => l.rsiFair,
+    RsiQualityLevel.good => l.rsiGood,
+    RsiQualityLevel.excellent => l.rsiExcellent,
+    RsiQualityLevel.elite => l.rsiElite,
+  };
+}
 
 class RsiTestScreen extends ConsumerWidget {
   final List<Athlete> athletes;
@@ -20,8 +31,10 @@ class RsiTestScreen extends ConsumerWidget {
     final session = ref.watch(rsiSessionProvider);
     final activeSession = session.activeSession;
     final activeAthlete = activeSession != null
-        ? athletes.firstWhere((a) => a.id == activeSession.athleteId,
-            orElse: () => athletes.first)
+        ? athletes.firstWhere(
+            (a) => a.id == activeSession.athleteId,
+            orElse: () => athletes.first,
+          )
         : athletes.first;
 
     return Scaffold(
@@ -67,8 +80,9 @@ class RsiTestScreen extends ConsumerWidget {
                   _AthleteChipBar(
                     sessions: session.orderedSessions,
                     activeAthleteId: session.activeAthleteId,
-                    onSelect: (id) =>
-                        ref.read(rsiSessionProvider.notifier).setActiveAthlete(id),
+                    onSelect: (id) => ref
+                        .read(rsiSessionProvider.notifier)
+                        .setActiveAthlete(id),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -130,7 +144,9 @@ class RsiTestScreen extends ConsumerWidget {
                   OutlinedButton.icon(
                     onPressed: () => _recordJump(context, ref),
                     icon: const Icon(Icons.videocam),
-                    label: Text(l.recordDropJumpNumber(session.jumps.length + 1)),
+                    label: Text(
+                      l.recordDropJumpNumber(session.jumps.length + 1),
+                    ),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.brand,
                       side: const BorderSide(color: AppColors.brand),
@@ -195,62 +211,101 @@ class RsiTestScreen extends ConsumerWidget {
       deltaRsi: result.deltaRsi,
       dropHeightCm: dropHeight,
       videoPath: result.videoPath,
+      landing1TimeSeconds: result.landing1TimeSeconds,
+      takeoffTimeSeconds: result.takeoffTimeSeconds,
+      landing2TimeSeconds: result.landing2TimeSeconds,
     );
 
     ref.read(rsiSessionProvider.notifier).addJump(adjusted);
   }
 
-  Future<void> _saveAthleteSession(
+  Future<SaveResult> _saveAthleteSession(
     BuildContext context,
     WidgetRef ref,
     RsiAthleteSession athleteSession,
     Athlete athlete, {
     required bool popOnDone,
   }) async {
-    final service = ref.read(isarServiceProvider);
-    final jumps = athleteSession.jumps;
-    final avgRsi = athleteSession.averageRsi!;
-    final avgDeltaRsi = athleteSession.averageDeltaRsi!;
-    final avgContactTimeMs =
-        jumps.map((j) => j.contactTimeMs).reduce((a, b) => a + b) / jumps.length;
-    final avgFlightTimeMs =
-        jumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) / jumps.length;
-    final avgHeightCm =
-        jumps.map((j) => j.heightCm).reduce((a, b) => a + b) / jumps.length;
-    final dropHeightCm = ref.read(rsiSessionProvider).dropHeightCm;
+    final l = AppLocalizations.of(context)!;
+    try {
+      final service = ref.read(isarServiceProvider);
+      final jumps = athleteSession.jumps;
+      final avgRsi = athleteSession.averageRsi!;
+      final avgDeltaRsi = athleteSession.averageDeltaRsi!;
+      final avgContactTimeMs =
+          jumps.map((j) => j.contactTimeMs).reduce((a, b) => a + b) /
+          jumps.length;
+      final avgFlightTimeMs =
+          jumps.map((j) => j.flightTimeMs).reduce((a, b) => a + b) /
+          jumps.length;
+      final avgHeightCm =
+          jumps.map((j) => j.heightCm).reduce((a, b) => a + b) / jumps.length;
+      final timestamp = DateTime.now();
+      final sessionId = timestamp.microsecondsSinceEpoch;
+      final trialTests = <JumpTest>[
+        for (final jump in jumps)
+          JumpTest()
+            ..athleteId = athlete.id
+            ..testType = 'rsi'
+            ..timestamp = timestamp
+            ..landing1Frame = jump.landing1Frame
+            ..takeoffFrame = jump.takeoffFrame
+            ..landingFrame = jump.landing2Frame
+            ..fps = jump.fps
+            ..landing1TimeSeconds = jump.landing1TimeSeconds
+            ..takeoffTimeSeconds = jump.takeoffTimeSeconds
+            ..landingTimeSeconds = jump.landing2TimeSeconds
+            ..flightTimeMs = jump.flightTimeMs
+            ..heightCm = jump.heightCm
+            ..deltaHCm = 0
+            ..contactTimeMs = jump.contactTimeMs
+            ..rsiScore = jump.rsiScore
+            ..deltaRsi = jump.deltaRsi
+            ..dropHeightCm = jump.dropHeightCm
+            ..sessionId = sessionId
+            ..isSummary = false,
+      ];
+      final summary = JumpTest()
+        ..athleteId = athlete.id
+        ..testType = 'rsi'
+        ..timestamp = timestamp
+        ..flightTimeMs = avgFlightTimeMs
+        ..heightCm = avgHeightCm
+        ..deltaHCm = 0.0
+        ..contactTimeMs = avgContactTimeMs
+        ..rsiScore = avgRsi
+        ..deltaRsi = avgDeltaRsi
+        ..dropHeightCm = jumps.first.dropHeightCm
+        ..sessionId = sessionId
+        ..isSummary = true;
 
-    final test = JumpTest()
-      ..athleteId = athlete.id
-      ..testType = 'rsi'
-      ..timestamp = DateTime.now()
-      ..landing1Frame = jumps.first.landing1Frame
-      ..takeoffFrame = jumps.first.takeoffFrame
-      ..landingFrame = jumps.first.landing2Frame
-      ..fps = jumps.first.fps
-      ..flightTimeMs = avgFlightTimeMs
-      ..heightCm = avgHeightCm
-      ..deltaHCm = 0.0
-      ..contactTimeMs = avgContactTimeMs
-      ..rsiScore = avgRsi
-      ..deltaRsi = avgDeltaRsi
-      ..dropHeightCm = dropHeightCm;
+      final updatedAthlete = await service.saveRsiSession(
+        tests: [...trialTests, summary],
+        athleteId: athlete.id,
+        rsiScore: avgRsi,
+      );
+      if (updatedAthlete == null) {
+        throw StateError('Athlete ${athlete.id} no longer exists.');
+      }
 
-    await service.saveJumpTests([test]);
-    await service.updateAthleteRsi(athlete.id, avgRsi);
-
-    // Keep activeAthleteProvider in sync for the dashboard
-    final globalActive = ref.read(activeAthleteProvider);
-    if (globalActive?.id == athlete.id) {
-      final updatedAthlete = await service.db.athletes.get(athlete.id);
-      if (updatedAthlete != null) {
+      final globalActive = ref.read(activeAthleteProvider);
+      if (globalActive?.id == athlete.id) {
         ref.read(activeAthleteProvider.notifier).state = updatedAthlete;
       }
-    }
 
-    ref.read(rsiSessionProvider.notifier).markSaved(athlete.id);
+      ref.read(rsiSessionProvider.notifier).markSaved(athlete.id);
 
-    if (popOnDone && context.mounted) {
-      Navigator.of(context).pop();
+      if (popOnDone && context.mounted) {
+        Navigator.of(context).pop();
+      }
+      return const SaveSucceeded();
+    } catch (error, stackTrace) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l.errorWithMessage(error.toString()))),
+        );
+      }
+      return SaveFailed(error, stackTrace);
     }
   }
 
@@ -260,27 +315,29 @@ class RsiTestScreen extends ConsumerWidget {
     RsiSessionState session,
   ) async {
     final l = AppLocalizations.of(context)!;
-    final toSave =
-        session.orderedSessions.where((s) => s.canSave && !s.saved).toList();
+    final toSave = session.orderedSessions
+        .where((s) => s.canSave && !s.saved)
+        .toList();
 
     for (final athleteSession in toSave) {
       final athlete = athletes.firstWhere(
         (a) => a.id == athleteSession.athleteId,
       );
-      await _saveAthleteSession(
+      final result = await _saveAthleteSession(
         context,
         ref,
         athleteSession,
         athlete,
         popOnDone: false,
       );
+      if (result is SaveCancelled || result is SaveFailed) return;
       if (!context.mounted) return;
     }
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l.allRsiTestsSaved)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l.allRsiTestsSaved)));
       ref.read(rsiSessionProvider.notifier).reset();
       Navigator.of(context).pop();
     }
@@ -393,10 +450,10 @@ class _DropHeightSelector extends StatelessWidget {
         const SizedBox(height: 8),
         SegmentedButton<double>(
           segments: heights
-              .map((h) => ButtonSegment(
-                    value: h,
-                    label: Text(l.heightCm(h.toInt())),
-                  ))
+              .map(
+                (h) =>
+                    ButtonSegment(value: h, label: Text(l.heightCm(h.toInt()))),
+              )
               .toList(),
           selected: {current},
           onSelectionChanged: (set) => onChanged(set.first),
@@ -489,7 +546,7 @@ class _RsiJumpCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                quality.label,
+                _rsiQualityLabel(l, quality.level),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -503,10 +560,7 @@ class _RsiJumpCard extends StatelessWidget {
             '${l.contact}: ${jump.contactTimeMs.toStringAsFixed(0)} ms  ·  '
             '${l.flight}: ${jump.flightTimeMs.toStringAsFixed(0)} ms  ·  '
             '${jump.fps.toStringAsFixed(0)} FPS',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textTertiary,
-            ),
+            style: const TextStyle(fontSize: 12, color: AppColors.textTertiary),
           ),
         ],
       ),
@@ -520,10 +574,7 @@ class _RsiSummary extends StatelessWidget {
   final double averageRsi;
   final double averageDeltaRsi;
 
-  const _RsiSummary({
-    required this.averageRsi,
-    required this.averageDeltaRsi,
-  });
+  const _RsiSummary({required this.averageRsi, required this.averageDeltaRsi});
 
   @override
   Widget build(BuildContext context) {
@@ -583,7 +634,7 @@ class _RsiSummary extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            quality.label,
+            _rsiQualityLabel(l, quality.level),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,

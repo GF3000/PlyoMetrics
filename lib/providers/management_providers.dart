@@ -30,10 +30,9 @@ final groupAthletesProvider = StreamProvider<List<Athlete>>((ref) {
 
   final service = ref.watch(isarServiceProvider);
   // Watch the athletes collection; reload the group's IsarLinks on each emission
-  return service.db.athletes
-      .where()
-      .watch(fireImmediately: true)
-      .asyncMap((_) async {
+  return service.db.athletes.where().watch(fireImmediately: true).asyncMap((
+    _,
+  ) async {
     await group.athletes.load();
     final list = group.athletes.toList();
     list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -51,6 +50,7 @@ final athleteJumpHistoryProvider = StreamProvider<List<JumpTest>>((ref) {
   return service.db.jumpTests
       .filter()
       .athleteIdEqualTo(athlete.id)
+      .isSummaryEqualTo(true)
       .sortByTimestampDesc()
       .watch(fireImmediately: true);
 });
@@ -63,7 +63,9 @@ final latestFatigueTestProvider = FutureProvider<JumpTest?>((ref) {
   final athlete = ref.watch(activeAthleteProvider);
   if (athlete == null) return null;
   ref.watch(athleteJumpHistoryProvider); // invalidate on new tests
-  return ref.watch(isarServiceProvider).getLatestJumpTest(athlete.id, 'fatigue');
+  return ref
+      .watch(isarServiceProvider)
+      .getLatestJumpTest(athlete.id, 'fatigue');
 });
 
 // ── Evolution Providers ──
@@ -72,10 +74,11 @@ final latestFatigueTestProvider = FutureProvider<JumpTest?>((ref) {
 final baselineHistoryProvider = Provider<List<JumpTest>>((ref) {
   final history = ref.watch(athleteJumpHistoryProvider);
   return history.whenOrNull(
-        data: (tests) => tests
-            .where((t) => t.testType == 'cmj_baseline' && !t.isOutlier)
-            .toList()
-          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+        data: (tests) =>
+            tests
+                .where((t) => t.testType == 'cmj_baseline' && !t.isOutlier)
+                .toList()
+              ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
       ) ??
       [];
 });
@@ -84,17 +87,34 @@ final baselineHistoryProvider = Provider<List<JumpTest>>((ref) {
 final fatigueHistoryProvider = Provider<List<JumpTest>>((ref) {
   final history = ref.watch(athleteJumpHistoryProvider);
   return history.whenOrNull(
-        data: (tests) => tests
-            .where((t) => t.testType == 'fatigue')
-            .toList()
-          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+        data: (tests) =>
+            tests.where((t) => t.testType == 'fatigue').toList()
+              ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
       ) ??
       [];
 });
 
 /// Computed stats for the Evolution tab metric cards.
-final athleteEvolutionStatsProvider =
-    FutureProvider<({String title1, String val1, String title2, String val2, bool isPositive1, bool isPositive2})>((ref) async {
+enum EvolutionMetricLabel {
+  latestAsymmetry,
+  change,
+  heightGain,
+  versusGroupMean,
+  rsiGain,
+}
+
+typedef AthleteEvolutionStats = ({
+  EvolutionMetricLabel title1,
+  String val1,
+  EvolutionMetricLabel title2,
+  String val2,
+  bool isPositive1,
+  bool isPositive2,
+});
+
+final athleteEvolutionStatsProvider = FutureProvider<AthleteEvolutionStats>((
+  ref,
+) async {
   final mode = ref.watch(historyModeProvider);
   final athlete = ref.watch(activeAthleteProvider);
   final groupAthletesAsync = ref.watch(groupAthletesProvider);
@@ -127,9 +147,9 @@ final athleteEvolutionStatsProvider =
     }
 
     return (
-      title1: 'Latest Asymmetry',
+      title1: EvolutionMetricLabel.latestAsymmetry,
       val1: latestStr,
-      title2: 'Change',
+      title2: EvolutionMetricLabel.change,
       val2: changeStr,
       isPositive1: isPositiveLatest,
       isPositive2: isPositiveChange,
@@ -144,8 +164,10 @@ final athleteEvolutionStatsProvider =
     if (baselines.length < 2) {
       heightGainStr = "-";
     } else if (athlete?.baselineCmjHeight != null) {
-      double heightGain = athlete!.baselineCmjHeight! - baselines.first.heightCm;
-      heightGainStr = '${heightGain >= 0 ? '+' : ''}${heightGain.toStringAsFixed(1)} cm';
+      double heightGain =
+          athlete!.baselineCmjHeight! - baselines.first.heightCm;
+      heightGainStr =
+          '${heightGain >= 0 ? '+' : ''}${heightGain.toStringAsFixed(1)} cm';
     } else {
       heightGainStr = "-";
     }
@@ -153,26 +175,44 @@ final athleteEvolutionStatsProvider =
     // Group mean comparison
     String groupMeanDiffStr;
     final hasActiveBaseline = athlete?.baselineCmjHeight != null;
-    final withBaseline = groupAthletes.where((a) => a.baselineCmjHeight != null).toList();
+    final withBaseline = groupAthletes
+        .where((a) => a.baselineCmjHeight != null)
+        .toList();
     if (withBaseline.length <= 1) {
       groupMeanDiffStr = "-";
     } else if (hasActiveBaseline) {
-      final mean = withBaseline.map((a) => a.baselineCmjHeight!).reduce((a, b) => a + b) / withBaseline.length;
+      final mean =
+          withBaseline
+              .map((a) => a.baselineCmjHeight!)
+              .reduce((a, b) => a + b) /
+          withBaseline.length;
       double groupMeanDiff = athlete!.baselineCmjHeight! - mean;
-      groupMeanDiffStr = '${groupMeanDiff >= 0 ? '+' : ''}${groupMeanDiff.toStringAsFixed(1)} cm';
+      groupMeanDiffStr =
+          '${groupMeanDiff >= 0 ? '+' : ''}${groupMeanDiff.toStringAsFixed(1)} cm';
     } else {
       groupMeanDiffStr = "-";
     }
 
-    String title1 = 'Height Gain';
+    final title1 = EvolutionMetricLabel.heightGain;
     String val1 = heightGainStr;
-    bool isPositive1 = heightGainStr == "-" ? false : (heightGainStr.contains('+') ? true : false);
+    bool isPositive1 = heightGainStr == "-"
+        ? false
+        : (heightGainStr.contains('+') ? true : false);
 
-    String title2 = 'vs Group Mean';
+    final title2 = EvolutionMetricLabel.versusGroupMean;
     String val2 = groupMeanDiffStr;
-    bool isPositive2 = groupMeanDiffStr == "-" ? false : (groupMeanDiffStr.contains('+') ? true : false);
+    bool isPositive2 = groupMeanDiffStr == "-"
+        ? false
+        : (groupMeanDiffStr.contains('+') ? true : false);
 
-    return (title1: title1, val1: val1, title2: title2, val2: val2, isPositive1: isPositive1, isPositive2: isPositive2);
+    return (
+      title1: title1,
+      val1: val1,
+      title2: title2,
+      val2: val2,
+      isPositive1: isPositive1,
+      isPositive2: isPositive2,
+    );
   } else {
     // RSI mode
     final rsiTests = ref.watch(rsiHistoryProvider);
@@ -190,16 +230,27 @@ final athleteEvolutionStatsProvider =
     // RSI vs group mean: active max RSI minus group average max RSI
     double? activeMaxRsi;
     if (rsiTests.isNotEmpty) {
-      activeMaxRsi = rsiTests.map((t) => t.rsiScore!).reduce((a, b) => a > b ? a : b);
+      activeMaxRsi = rsiTests
+          .map((t) => t.rsiScore!)
+          .reduce((a, b) => a > b ? a : b);
     }
 
     List<double> maxes = [];
     double? groupMean;
     if (groupAthletes.isNotEmpty) {
+      final groupRsiTests = await service.getSummaryTestsForAthletes(
+        groupAthletes.map((athlete) => athlete.id),
+        testType: 'rsi',
+      );
       for (final a in groupAthletes) {
-        final tests = await service.db.jumpTests.filter().athleteIdEqualTo(a.id).testTypeEqualTo('rsi').findAll();
+        final tests = groupRsiTests
+            .where((test) => test.athleteId == a.id)
+            .toList();
         if (tests.isNotEmpty) {
-          final validScores = tests.map((t) => t.rsiScore).where((r) => r != null).cast<double>();
+          final validScores = tests
+              .map((t) => t.rsiScore)
+              .where((r) => r != null)
+              .cast<double>();
           if (validScores.isNotEmpty) {
             final maxRsi = validScores.reduce((a, b) => a > b ? a : b);
             maxes.add(maxRsi);
@@ -221,15 +272,26 @@ final athleteEvolutionStatsProvider =
       diffStr = "-";
     }
 
-    String title1 = 'RSI Gain';
+    final title1 = EvolutionMetricLabel.rsiGain;
     String val1 = gainStr;
-    bool isPositive1 = gainStr == "-" ? false : (gainStr.contains('+') ? true : false);
+    bool isPositive1 = gainStr == "-"
+        ? false
+        : (gainStr.contains('+') ? true : false);
 
-    String title2 = 'vs Group Mean';
+    final title2 = EvolutionMetricLabel.versusGroupMean;
     String val2 = diffStr;
-    bool isPositive2 = diffStr == "-" ? false : (diffStr.contains('+') ? true : false);
+    bool isPositive2 = diffStr == "-"
+        ? false
+        : (diffStr.contains('+') ? true : false);
 
-    return (title1: title1, val1: val1, title2: title2, val2: val2, isPositive1: isPositive1, isPositive2: isPositive2);
+    return (
+      title1: title1,
+      val1: val1,
+      title2: title2,
+      val2: val2,
+      isPositive1: isPositive1,
+      isPositive2: isPositive2,
+    );
   }
 });
 
@@ -237,10 +299,9 @@ final athleteEvolutionStatsProvider =
 final rsiHistoryProvider = Provider<List<JumpTest>>((ref) {
   final history = ref.watch(athleteJumpHistoryProvider);
   return history.whenOrNull(
-        data: (tests) => tests
-            .where((t) => t.testType == 'rsi')
-            .toList()
-          ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
+        data: (tests) =>
+            tests.where((t) => t.testType == 'rsi').toList()
+              ..sort((a, b) => a.timestamp.compareTo(b.timestamp)),
       ) ??
       [];
 });
@@ -255,19 +316,20 @@ typedef AsymmetrySessionPoint = ({
   double rightHeightCm,
 });
 
-final asymmetrySessionHistoryProvider =
-    Provider<List<AsymmetrySessionPoint>>((ref) {
+final asymmetrySessionHistoryProvider = Provider<List<AsymmetrySessionPoint>>((
+  ref,
+) {
   final history = ref.watch(athleteJumpHistoryProvider);
-  final tests = history.whenOrNull(
-        data: (all) =>
-            all.where((t) => t.testType == 'asymmetry').toList(),
+  final tests =
+      history.whenOrNull(
+        data: (all) => all.where((t) => t.testType == 'asymmetry').toList(),
       ) ??
       [];
 
-  // Group by asymmetrySessionId
+  // Group summaries by measurement session.
   final grouped = <int, List<JumpTest>>{};
   for (final t in tests) {
-    final sid = t.asymmetrySessionId ?? t.timestamp.millisecondsSinceEpoch;
+    final sid = t.sessionId ?? t.timestamp.millisecondsSinceEpoch;
     grouped.putIfAbsent(sid, () => []).add(t);
   }
 
@@ -311,28 +373,50 @@ typedef GroupAthleteStats = ({
 });
 
 /// Aggregated stats for every athlete in the active group.
-final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((ref) async {
+final groupOverviewProvider = FutureProvider<List<GroupAthleteStats>>((
+  ref,
+) async {
   final athletesAsync = ref.watch(groupAthletesProvider);
   final athletes = athletesAsync.whenOrNull(data: (l) => l) ?? [];
   final service = ref.watch(isarServiceProvider);
+  final allTests = await service.getSummaryTestsForAthletes(
+    athletes.map((athlete) => athlete.id),
+  );
 
   final results = <GroupAthleteStats>[];
   for (final athlete in athletes) {
     // Latest RSI test data
-    final rsiTests = await service.getJumpTestsForAthlete(athlete.id, 'rsi');
+    final rsiTests =
+        allTests
+            .where(
+              (test) => test.athleteId == athlete.id && test.testType == 'rsi',
+            )
+            .toList()
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
     final latestRsi = rsiTests.isNotEmpty ? rsiTests.first.rsiScore : null;
-    final latestContact = rsiTests.isNotEmpty ? rsiTests.first.contactTimeMs : null;
-    final latestFlight = rsiTests.isNotEmpty ? rsiTests.first.flightTimeMs : null;
+    final latestContact = rsiTests.isNotEmpty
+        ? rsiTests.first.contactTimeMs
+        : null;
+    final latestFlight = rsiTests.isNotEmpty
+        ? rsiTests.first.flightTimeMs
+        : null;
 
     // CMJ % improvement: earliest non-outlier baseline vs current
-    final baselineTests = await service.getJumpTestsForAthlete(athlete.id, 'cmj_baseline');
+    final baselineTests = allTests
+        .where(
+          (test) =>
+              test.athleteId == athlete.id && test.testType == 'cmj_baseline',
+        )
+        .toList();
     final nonOutlier = baselineTests.where((t) => !t.isOutlier).toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
     double? improvement;
     if (nonOutlier.length >= 2 && athlete.baselineCmjHeight != null) {
       final earliestHeight = nonOutlier.first.heightCm;
       if (earliestHeight > 0) {
-        improvement = ((athlete.baselineCmjHeight! - earliestHeight) / earliestHeight) * 100;
+        improvement =
+            ((athlete.baselineCmjHeight! - earliestHeight) / earliestHeight) *
+            100;
       }
     }
 
