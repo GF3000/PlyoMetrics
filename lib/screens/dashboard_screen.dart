@@ -8,6 +8,7 @@ import '../services/isar_service.dart';
 import '../providers/cmj_session_provider.dart';
 import '../widgets/add_athlete_dialog.dart';
 import '../widgets/add_group_dialog.dart';
+import '../widgets/data_transfer_actions.dart';
 import '../widgets/delete_athlete_dialog.dart';
 import '../widgets/edit_athlete_dialog.dart';
 import 'asymmetry_test_screen.dart';
@@ -125,207 +126,275 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ],
             ),
           ),
-          groupsAsync.when(
-            loading: () => const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            error: (_, __) =>
-                Text(l.error, style: const TextStyle(color: Colors.red)),
-            data: (groups) {
-              if (groups.isEmpty) {
-                return GestureDetector(
-                  onTap: () async {
-                    final group = await showDialog<AthleteGroup>(
-                      context: context,
-                      builder: (_) => const AddGroupDialog(),
-                    );
-                    if (group != null && mounted) {
-                      setState(() => _reorderedAthletes = null);
-                      ref.read(activeGroupProvider.notifier).state = group;
-                      ref.read(activeAthleteProvider.notifier).state = null;
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.brand.withAlpha(100)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.add, color: AppColors.brand, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          l.newGroup,
-                          style: const TextStyle(
-                            color: AppColors.brand,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return PopupMenuButton<int>(
-                initialValue: activeGroup?.id,
-                tooltip: l.selectGroup,
-                color: AppColors.card,
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: AppColors.borderLight),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              groupsAsync.when(
+                loading: () => const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                position: PopupMenuPosition.under,
-                offset: const Offset(0, 8),
-                onSelected: (id) async {
-                  if (id == -1) {
-                    // "New Group" selected
-                    final group = await showDialog<AthleteGroup>(
-                      context: context,
-                      builder: (_) => const AddGroupDialog(),
-                    );
-                    if (group != null && mounted) {
-                      setState(() => _reorderedAthletes = null);
-                      ref.read(activeGroupProvider.notifier).state = group;
-                      ref.read(activeAthleteProvider.notifier).state = null;
-                    }
-                  } else {
-                    // Existing group selected
-                    final group = groups.firstWhere((g) => g.id == id);
-                    setState(() => _reorderedAthletes = null);
-                    ref.read(activeGroupProvider.notifier).state = group;
-                    ref.read(activeAthleteProvider.notifier).state = null;
-                  }
-                },
-                itemBuilder: (context) {
-                  final items = groups.map((g) {
-                    final isSelected = g.id == activeGroup?.id;
-                    return PopupMenuItem<int>(
-                      value: g.id,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              g.name,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? AppColors.brand
-                                    : Colors.white,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
+                error: (_, __) =>
+                    Text(l.error, style: const TextStyle(color: Colors.red)),
+                data: (groups) {
+                  if (groups.isEmpty) {
+                    return GestureDetector(
+                      onTap: () async {
+                        final group = await showDialog<AthleteGroup>(
+                          context: context,
+                          builder: (_) => const AddGroupDialog(),
+                        );
+                        if (group != null && mounted) {
+                          setState(() => _reorderedAthletes = null);
+                          ref.read(activeGroupProvider.notifier).state = group;
+                          ref.read(activeAthleteProvider.notifier).state = null;
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.card,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.brand.withAlpha(100)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.add, color: AppColors.brand, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              l.newGroup,
+                              style: const TextStyle(
+                                color: AppColors.brand,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                               ),
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                          ],
+                        ),
+                      ),
+                    );
+                  }
+
+                  return PopupMenuButton<int>(
+                    initialValue: activeGroup?.id,
+                    tooltip: l.selectGroup,
+                    color: AppColors.card,
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: AppColors.borderLight),
+                    ),
+                    position: PopupMenuPosition.under,
+                    offset: const Offset(0, 8),
+                    onSelected: (id) async {
+                      if (id == -1) {
+                        // "New Group" selected
+                        final group = await showDialog<AthleteGroup>(
+                          context: context,
+                          builder: (_) => const AddGroupDialog(),
+                        );
+                        if (group != null && mounted) {
+                          setState(() => _reorderedAthletes = null);
+                          ref.read(activeGroupProvider.notifier).state = group;
+                          ref.read(activeAthleteProvider.notifier).state = null;
+                        }
+                      } else {
+                        // Existing group selected
+                        final group = groups.firstWhere((g) => g.id == id);
+                        setState(() => _reorderedAthletes = null);
+                        ref.read(activeGroupProvider.notifier).state = group;
+                        ref.read(activeAthleteProvider.notifier).state = null;
+                      }
+                    },
+                    itemBuilder: (context) {
+                      final items = groups.map((g) {
+                        final isSelected = g.id == activeGroup?.id;
+                        return PopupMenuItem<int>(
+                          value: g.id,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              if (isSelected)
-                                const Icon(
-                                  Icons.check,
-                                  color: AppColors.brand,
-                                  size: 18,
+                              Expanded(
+                                child: Text(
+                                  g.name,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.brand
+                                        : Colors.white,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.more_vert,
-                                  color: AppColors.textSecondary,
-                                  size: 20,
-                                ),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                onPressed: () {
-                                  Navigator.pop(
-                                    context,
-                                  ); // Dismiss the popup menu
-                                  _showGroupOptions(
-                                    context,
-                                    g,
-                                    groups,
-                                  ); // Open bottom sheet
-                                },
+                              ),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (isSelected)
+                                    const Icon(
+                                      Icons.check,
+                                      color: AppColors.brand,
+                                      size: 18,
+                                    ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.more_vert,
+                                      color: AppColors.textSecondary,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    onPressed: () {
+                                      Navigator.pop(
+                                        context,
+                                      ); // Dismiss the popup menu
+                                      _showGroupOptions(
+                                        context,
+                                        g,
+                                        groups,
+                                      ); // Open bottom sheet
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    );
-                  }).toList();
+                        );
+                      }).toList();
 
-                  // Append the Add Group button to the bottom of the list
-                  items.add(
-                    PopupMenuItem<int>(
-                      value: -1,
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.add,
-                            color: AppColors.brand,
-                            size: 18,
+                      // Append the Add Group button to the bottom of the list
+                      items.add(
+                        PopupMenuItem<int>(
+                          value: -1,
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.add,
+                                color: AppColors.brand,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                l.newGroup,
+                                style: const TextStyle(
+                                  color: AppColors.brand,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
+                        ),
+                      );
+
+                      return items;
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.borderLight),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           Text(
-                            l.newGroup,
+                            activeGroup?.name ?? l.selectGroup,
                             style: const TextStyle(
-                              color: AppColors.brand,
-                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
                             ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: AppColors.textSecondary,
+                            size: 18,
                           ),
                         ],
                       ),
                     ),
                   );
-
-                  return items;
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.card,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.borderLight),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        activeGroup?.name ?? l.selectGroup,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: AppColors.textSecondary,
-                        size: 18,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+              ),
+              _buildDataMenu(l),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  // ── Data import/export menu ──
+
+  Widget _buildDataMenu(AppLocalizations l) {
+    return PopupMenuButton<int>(
+      tooltip: l.dataSection,
+      color: AppColors.card,
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.borderLight),
+      ),
+      position: PopupMenuPosition.under,
+      offset: const Offset(0, 8),
+      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+      onSelected: (value) {
+        if (value == 0) {
+          DataTransferActions.exportBackup(context, ref);
+        } else {
+          DataTransferActions.importBackup(context, ref);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<int>(
+          value: 0,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.upload_file, color: AppColors.brand),
+            title: Text(
+              l.exportData,
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              l.exportDataSubtitle,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+        PopupMenuItem<int>(
+          value: 1,
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.download, color: AppColors.brand),
+            title: Text(
+              l.importData,
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              l.importDataSubtitle,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

@@ -804,6 +804,96 @@ class AppLocalizationsEn extends AppLocalizations {
   String get highFatigueLabel => 'High Fatigue';
 
   @override
+  String get dataSection => 'Data';
+
+  @override
+  String get exportData => 'Export Data';
+
+  @override
+  String get exportDataSubtitle => 'Full backup in JSON format';
+
+  @override
+  String get importData => 'Import Data';
+
+  @override
+  String get importDataSubtitle => 'Restore groups, athletes and jumps';
+
+  @override
+  String get selectGroupsToExport => 'Select the groups to export';
+
+  @override
+  String get selectAll => 'Select all';
+
+  @override
+  String get export => 'Export';
+
+  @override
+  String get import => 'Import';
+
+  @override
+  String get exportJumps => 'Export jumps';
+
+  @override
+  String get exportGroupData => 'Export group';
+
+  @override
+  String get exportGroupMarks => 'Export athlete marks';
+
+  @override
+  String get exportGroupMarksSubtitle => 'CMJ, RSI, height and asymmetry per athlete';
+
+  @override
+  String get exportAllJumps => 'Export all jumps';
+
+  @override
+  String get exportAllJumpsSubtitle => 'Every jump of every athlete in the group';
+
+  @override
+  String get nothingToExport => 'There is no data to export';
+
+  @override
+  String get exportFailed => 'The export failed. Please try again.';
+
+  @override
+  String get importBackupTitle => 'Import backup';
+
+  @override
+  String backupContentSummary(int groups, int athletes, int jumps) {
+    return '$groups groups · $athletes athletes · $jumps jumps';
+  }
+
+  @override
+  String backupCreatedOn(String date) {
+    return 'Backup created on $date';
+  }
+
+  @override
+  String get duplicateGroupStrategy => 'If a group already exists';
+
+  @override
+  String get mergeIntoExistingGroup => 'Add athletes to the existing group';
+
+  @override
+  String get createSeparateGroup => 'Create a separate group';
+
+  @override
+  String importCompleted(int groups, int athletes, int jumps) {
+    return 'Imported $groups groups, $athletes athletes and $jumps jumps';
+  }
+
+  @override
+  String get importFailedMalformed => 'The selected file is not a valid PlyoMetrics backup.';
+
+  @override
+  String get importFailedVersion => 'This backup was created with a newer version of the app.';
+
+  @override
+  String get importFailedInvalid => 'The backup file is incomplete or corrupted.';
+
+  @override
+  String get importFailed => 'The import failed. Please try again.';
+
+  @override
   String get chartAxisLeft => 'Left';
 
   @override

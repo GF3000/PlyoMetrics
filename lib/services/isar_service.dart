@@ -419,6 +419,133 @@ class IsarService {
         .toList();
   }
 
+  /// Every jump test (summaries *and* raw trials) for the given athletes.
+  Future<List<JumpTest>> getAllJumpTestsForAthletes(
+    Iterable<int> athleteIds,
+  ) async {
+    final ids = athleteIds.toSet();
+    if (ids.isEmpty) return [];
+    final all = await _db.jumpTests.where().findAll();
+    return all.where((test) => ids.contains(test.athleteId)).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+  }
+
+  /// All groups with their athlete links already loaded.
+  Future<List<AthleteGroup>> getGroupsWithAthletes() async {
+    final groups = await _db.athleteGroups.where().findAll();
+    for (final group in groups) {
+      await group.athletes.load();
+    }
+    return groups;
+  }
+
+  /// Imports a backup atomically: creates groups, athletes and jump tests with
+  /// freshly assigned identifiers so nothing collides with existing data.
+  ///
+  /// [groups] maps a group name to the list of local athlete ids it contains.
+  /// [athletes] maps a local athlete id to the (unsaved) athlete instance.
+  /// [jumpTests] maps a local athlete id to that athlete's jump tests.
+  /// When [mergeIntoExistingGroups] is true, athletes are appended to a group
+  /// with the same name if it already exists; otherwise a new group is created
+  /// with a numeric suffix.
+  Future<ImportResult> importBackup({
+    required Map<String, List<int>> groups,
+    required Map<int, Athlete> athletes,
+    required Map<int, List<JumpTest>> jumpTests,
+    required bool mergeIntoExistingGroups,
+  }) async {
+    var groupsCreated = 0;
+    var groupsMerged = 0;
+    var athletesImported = 0;
+    var jumpTestsImported = 0;
+
+    await _db.writeTxn(() async {
+      final existingGroups = await _db.athleteGroups.where().findAll();
+      final existingNames = existingGroups.map((g) => g.name).toSet();
+
+      // Offset applied to imported session ids so they never collide with the
+      // sessions already stored on this device.
+      final storedTests = await _db.jumpTests.where().findAll();
+      var sessionOffset = 0;
+      for (final test in storedTests) {
+        final sessionId = test.sessionId;
+        if (sessionId != null && sessionId > sessionOffset) {
+          sessionOffset = sessionId;
+        }
+      }
+
+      // Persist athletes first so their new ids are known.
+      final athleteIdMap = <int, int>{};
+      for (final entry in athletes.entries) {
+        final athlete = entry.value..id = Isar.autoIncrement;
+        await _db.athletes.put(athlete);
+        athleteIdMap[entry.key] = athlete.id;
+        athletesImported++;
+      }
+
+      for (final entry in groups.entries) {
+        AthleteGroup? target;
+        if (existingNames.contains(entry.key)) {
+          if (mergeIntoExistingGroups) {
+            target = existingGroups.firstWhere((g) => g.name == entry.key);
+            await target.athletes.load();
+            groupsMerged++;
+          } else {
+            var suffix = 2;
+            var candidate = '${entry.key} ($suffix)';
+            while (existingNames.contains(candidate)) {
+              suffix++;
+              candidate = '${entry.key} ($suffix)';
+            }
+            existingNames.add(candidate);
+            target = AthleteGroup()..name = candidate;
+            await _db.athleteGroups.put(target);
+            groupsCreated++;
+          }
+        } else {
+          existingNames.add(entry.key);
+          target = AthleteGroup()..name = entry.key;
+          await _db.athleteGroups.put(target);
+          groupsCreated++;
+        }
+
+        for (final localAthleteId in entry.value) {
+          final newId = athleteIdMap[localAthleteId];
+          if (newId == null) continue;
+          final athlete = await _db.athletes.get(newId);
+          if (athlete == null) continue;
+          target.athletes.add(athlete);
+        }
+        await target.athletes.save();
+      }
+
+      for (final entry in jumpTests.entries) {
+        final newAthleteId = athleteIdMap[entry.key];
+        if (newAthleteId == null) continue;
+        final tests = <JumpTest>[];
+        for (final test in entry.value) {
+          test
+            ..id = Isar.autoIncrement
+            ..athleteId = newAthleteId;
+          final sessionId = test.sessionId;
+          if (sessionId != null) {
+            test.sessionId = sessionId + sessionOffset;
+          }
+          tests.add(test);
+        }
+        await _db.jumpTests.putAll(tests);
+        jumpTestsImported += tests.length;
+      }
+    });
+
+    return ImportResult(
+      groupsCreated: groupsCreated,
+      groupsMerged: groupsMerged,
+      athletesImported: athletesImported,
+      jumpTestsImported: jumpTestsImported,
+    );
+  }
+
   Future<JumpTest?> getLatestJumpTest(int athleteId, String testType) {
     return _db.jumpTests
         .filter()
@@ -428,4 +555,19 @@ class IsarService {
         .sortByTimestampDesc()
         .findFirst();
   }
+}
+
+/// Summary of a completed backup import.
+class ImportResult {
+  const ImportResult({
+    required this.groupsCreated,
+    required this.groupsMerged,
+    required this.athletesImported,
+    required this.jumpTestsImported,
+  });
+
+  final int groupsCreated;
+  final int groupsMerged;
+  final int athletesImported;
+  final int jumpTestsImported;
 }

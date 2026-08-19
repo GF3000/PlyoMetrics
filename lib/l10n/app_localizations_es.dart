@@ -809,6 +809,96 @@ class AppLocalizationsEs extends AppLocalizations {
   String get highFatigueLabel => 'Fatiga Alta';
 
   @override
+  String get dataSection => 'Datos';
+
+  @override
+  String get exportData => 'Exportar Datos';
+
+  @override
+  String get exportDataSubtitle => 'Copia completa en formato JSON';
+
+  @override
+  String get importData => 'Importar Datos';
+
+  @override
+  String get importDataSubtitle => 'Restaura grupos, atletas y saltos';
+
+  @override
+  String get selectGroupsToExport => 'Selecciona los grupos a exportar';
+
+  @override
+  String get selectAll => 'Seleccionar todo';
+
+  @override
+  String get export => 'Exportar';
+
+  @override
+  String get import => 'Importar';
+
+  @override
+  String get exportJumps => 'Exportar saltos';
+
+  @override
+  String get exportGroupData => 'Exportar grupo';
+
+  @override
+  String get exportGroupMarks => 'Exportar marcas de atletas';
+
+  @override
+  String get exportGroupMarksSubtitle => 'CMJ, RSI, altura y asimetría por atleta';
+
+  @override
+  String get exportAllJumps => 'Exportar todos los saltos';
+
+  @override
+  String get exportAllJumpsSubtitle => 'Todos los saltos de todos los atletas del grupo';
+
+  @override
+  String get nothingToExport => 'No hay datos que exportar';
+
+  @override
+  String get exportFailed => 'La exportación ha fallado. Inténtalo de nuevo.';
+
+  @override
+  String get importBackupTitle => 'Importar copia';
+
+  @override
+  String backupContentSummary(int groups, int athletes, int jumps) {
+    return '$groups grupos · $athletes atletas · $jumps saltos';
+  }
+
+  @override
+  String backupCreatedOn(String date) {
+    return 'Copia creada el $date';
+  }
+
+  @override
+  String get duplicateGroupStrategy => 'Si el grupo ya existe';
+
+  @override
+  String get mergeIntoExistingGroup => 'Añadir los atletas al grupo existente';
+
+  @override
+  String get createSeparateGroup => 'Crear un grupo aparte';
+
+  @override
+  String importCompleted(int groups, int athletes, int jumps) {
+    return 'Importados $groups grupos, $athletes atletas y $jumps saltos';
+  }
+
+  @override
+  String get importFailedMalformed => 'El archivo seleccionado no es una copia válida de PlyoMetrics.';
+
+  @override
+  String get importFailedVersion => 'Esta copia se creó con una versión más reciente de la app.';
+
+  @override
+  String get importFailedInvalid => 'El archivo de copia está incompleto o dañado.';
+
+  @override
+  String get importFailed => 'La importación ha fallado. Inténtalo de nuevo.';
+
+  @override
   String get chartAxisLeft => 'Izquierda';
 
   @override

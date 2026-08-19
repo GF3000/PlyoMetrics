@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/theme.dart';
 import '../l10n/app_localizations.dart';
+import '../providers/data_transfer_providers.dart';
 import '../providers/management_providers.dart';
+import '../widgets/data_transfer_actions.dart';
 
 // Deterministic color palette for athlete markers
 const _athletePalette = [
@@ -71,24 +73,45 @@ class GroupOverviewScreen extends ConsumerWidget {
             // Title
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text(
-                    l.groupOverview,
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.groupOverview,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          group.name,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    group.name,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 13,
-                    ),
+                  IconButton(
+                    tooltip: l.exportGroupData,
+                    icon: const Icon(Icons.ios_share, size: 20),
+                    color: AppColors.brand,
+                    disabledColor: AppColors.textTertiary,
+                    onPressed:
+                        ref.watch(dataTransferProvider) ==
+                            DataTransferStatus.running
+                        ? null
+                        : () => DataTransferActions.showGroupExportSheet(
+                            context,
+                            ref,
+                            group,
+                          ),
                   ),
                 ],
               ),
