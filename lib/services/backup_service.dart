@@ -120,6 +120,9 @@ class BackupService {
     if (version is! int) {
       throw const BackupFormatException(BackupFormatError.invalidContent);
     }
+    // Files produced by a newer build cannot be trusted. Older versions are
+    // intentionally accepted as-is: every field added so far is optional, so
+    // they read correctly. A future breaking change must migrate here.
     if (version > schemaVersion) {
       throw const BackupFormatException(BackupFormatError.unsupportedVersion);
     }

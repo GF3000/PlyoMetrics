@@ -32,6 +32,9 @@ class ExportFileService {
   /// Lets the user pick a JSON backup and returns its contents, or null when
   /// the picker was dismissed.
   Future<String?> pickBackupContent() async {
+    // `FileType.any` is used on purpose: extension filtering is unreliable on
+    // Android for files shared from cloud providers, and the content is
+    // validated by BackupService anyway.
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
       withData: true,

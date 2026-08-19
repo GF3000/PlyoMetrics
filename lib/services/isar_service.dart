@@ -425,9 +425,13 @@ class IsarService {
   ) async {
     final ids = athleteIds.toSet();
     if (ids.isEmpty) return [];
-    final all = await _db.jumpTests.where().findAll();
-    return all.where((test) => ids.contains(test.athleteId)).toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final tests = <JumpTest>[];
+    for (final athleteId in ids) {
+      tests.addAll(
+        await _db.jumpTests.filter().athleteIdEqualTo(athleteId).findAll(),
+      );
+    }
+    return tests..sort((a, b) => a.timestamp.compareTo(b.timestamp));
   }
 
   /// All groups with their athlete links already loaded.
