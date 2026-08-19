@@ -1544,6 +1544,174 @@ abstract class AppLocalizations {
   /// **'High Fatigue'**
   String get highFatigueLabel;
 
+  /// No description provided for @dataSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Data'**
+  String get dataSection;
+
+  /// No description provided for @exportData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export Data'**
+  String get exportData;
+
+  /// No description provided for @exportDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Full backup in JSON format'**
+  String get exportDataSubtitle;
+
+  /// No description provided for @importData.
+  ///
+  /// In en, this message translates to:
+  /// **'Import Data'**
+  String get importData;
+
+  /// No description provided for @importDataSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore groups, athletes and jumps'**
+  String get importDataSubtitle;
+
+  /// No description provided for @selectGroupsToExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the groups to export'**
+  String get selectGroupsToExport;
+
+  /// No description provided for @selectAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get selectAll;
+
+  /// No description provided for @export.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get export;
+
+  /// No description provided for @import.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get import;
+
+  /// No description provided for @exportJumps.
+  ///
+  /// In en, this message translates to:
+  /// **'Export jumps'**
+  String get exportJumps;
+
+  /// No description provided for @exportGroupData.
+  ///
+  /// In en, this message translates to:
+  /// **'Export group'**
+  String get exportGroupData;
+
+  /// No description provided for @exportGroupMarks.
+  ///
+  /// In en, this message translates to:
+  /// **'Export athlete marks'**
+  String get exportGroupMarks;
+
+  /// No description provided for @exportGroupMarksSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'CMJ, RSI, height and asymmetry per athlete'**
+  String get exportGroupMarksSubtitle;
+
+  /// No description provided for @exportAllJumps.
+  ///
+  /// In en, this message translates to:
+  /// **'Export all jumps'**
+  String get exportAllJumps;
+
+  /// No description provided for @exportAllJumpsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every jump of every athlete in the group'**
+  String get exportAllJumpsSubtitle;
+
+  /// No description provided for @nothingToExport.
+  ///
+  /// In en, this message translates to:
+  /// **'There is no data to export'**
+  String get nothingToExport;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The export failed. Please try again.'**
+  String get exportFailed;
+
+  /// No description provided for @importBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import backup'**
+  String get importBackupTitle;
+
+  /// No description provided for @backupContentSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{groups} groups · {athletes} athletes · {jumps} jumps'**
+  String backupContentSummary(int groups, int athletes, int jumps);
+
+  /// No description provided for @backupCreatedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup created on {date}'**
+  String backupCreatedOn(String date);
+
+  /// No description provided for @duplicateGroupStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'If a group already exists'**
+  String get duplicateGroupStrategy;
+
+  /// No description provided for @mergeIntoExistingGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Add athletes to the existing group'**
+  String get mergeIntoExistingGroup;
+
+  /// No description provided for @createSeparateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a separate group'**
+  String get createSeparateGroup;
+
+  /// No description provided for @importCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {groups} groups, {athletes} athletes and {jumps} jumps'**
+  String importCompleted(int groups, int athletes, int jumps);
+
+  /// No description provided for @importFailedMalformed.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected file is not a valid PlyoMetrics backup.'**
+  String get importFailedMalformed;
+
+  /// No description provided for @importFailedVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup was created with a newer version of the app.'**
+  String get importFailedVersion;
+
+  /// No description provided for @importFailedInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup file is incomplete or corrupted.'**
+  String get importFailedInvalid;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The import failed. Please try again.'**
+  String get importFailed;
+
   /// No description provided for @chartAxisLeft.
   ///
   /// In en, this message translates to:

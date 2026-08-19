@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../core/theme.dart';
 import '../models/jump_test.dart';
+import '../providers/data_transfer_providers.dart';
 import '../providers/management_providers.dart';
+import '../widgets/data_transfer_actions.dart';
 
 // ── History entry types ──────────────────────────────────────────────────────
 
@@ -36,6 +38,10 @@ class AthleteHistoryScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context)!;
     final athlete = ref.watch(activeAthleteProvider);
     final historyAsync = ref.watch(athleteJumpHistoryProvider);
+    final hasHistory =
+        historyAsync.whenOrNull(data: (tests) => tests.isNotEmpty) ?? false;
+    final isTransferring =
+        ref.watch(dataTransferProvider) == DataTransferStatus.running;
 
     return Column(
       children: [
@@ -43,26 +49,41 @@ class AthleteHistoryScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    l.performanceHistory,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (athlete != null)
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      athlete.name,
+                      l.performanceHistory,
                       style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                ],
+                    if (athlete != null)
+                      Text(
+                        athlete.name,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              IconButton(
+                tooltip: l.exportJumps,
+                icon: const Icon(Icons.ios_share, size: 20),
+                color: AppColors.brand,
+                disabledColor: AppColors.textTertiary,
+                onPressed: athlete == null || !hasHistory || isTransferring
+                    ? null
+                    : () => DataTransferActions.exportAthleteJumps(
+                        context,
+                        ref,
+                        athlete,
+                      ),
               ),
             ],
           ),

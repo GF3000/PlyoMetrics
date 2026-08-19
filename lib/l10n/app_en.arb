@@ -425,6 +425,54 @@
   "moderateFatigueLabel": "Moderate Fatigue",
   "highFatigueLabel": "High Fatigue",
 
+  "dataSection": "Data",
+  "exportData": "Export Data",
+  "exportDataSubtitle": "Full backup in JSON format",
+  "importData": "Import Data",
+  "importDataSubtitle": "Restore groups, athletes and jumps",
+  "selectGroupsToExport": "Select the groups to export",
+  "selectAll": "Select all",
+  "export": "Export",
+  "import": "Import",
+  "exportJumps": "Export jumps",
+  "exportGroupData": "Export group",
+  "exportGroupMarks": "Export athlete marks",
+  "exportGroupMarksSubtitle": "CMJ, RSI, height and asymmetry per athlete",
+  "exportAllJumps": "Export all jumps",
+  "exportAllJumpsSubtitle": "Every jump of every athlete in the group",
+  "nothingToExport": "There is no data to export",
+  "exportFailed": "The export failed. Please try again.",
+  "importBackupTitle": "Import backup",
+  "backupContentSummary": "{groups} groups · {athletes} athletes · {jumps} jumps",
+  "@backupContentSummary": {
+    "placeholders": {
+      "groups": { "type": "int" },
+      "athletes": { "type": "int" },
+      "jumps": { "type": "int" }
+    }
+  },
+  "backupCreatedOn": "Backup created on {date}",
+  "@backupCreatedOn": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "duplicateGroupStrategy": "If a group already exists",
+  "mergeIntoExistingGroup": "Add athletes to the existing group",
+  "createSeparateGroup": "Create a separate group",
+  "importCompleted": "Imported {groups} groups, {athletes} athletes and {jumps} jumps",
+  "@importCompleted": {
+    "placeholders": {
+      "groups": { "type": "int" },
+      "athletes": { "type": "int" },
+      "jumps": { "type": "int" }
+    }
+  },
+  "importFailedMalformed": "The selected file is not a valid PlyoMetrics backup.",
+  "importFailedVersion": "This backup was created with a newer version of the app.",
+  "importFailedInvalid": "The backup file is incomplete or corrupted.",
+  "importFailed": "The import failed. Please try again.",
+
   "chartAxisLeft": "Left",
   "chartAxisRight": "Right"
 }
