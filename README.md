@@ -15,6 +15,7 @@ detection.
 - Single-leg asymmetry testing
 - Performance history and charts
 - High-speed video recording and frame selection
+- JSON backup import/export and CSV exports for athletes and groups
 
 ## Getting started
 
