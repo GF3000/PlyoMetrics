@@ -35,7 +35,7 @@ class ExportFileService {
     // `FileType.any` is used on purpose: extension filtering is unreliable on
     // Android for files shared from cloud providers, and the content is
     // validated by BackupService anyway.
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.any,
       withData: true,
     );
